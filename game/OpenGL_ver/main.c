@@ -8,17 +8,24 @@
 
 /* include SDL library's header and declare external 5 spec variables */
 /*=====================|SDL CODE BLOCK 1| =====================================*/
-#include <SDL/SDL.h>
+#define GL_GLEXT_PROTOTYPES
+// include SDL library's header
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_opengl.h> 
+#include <GL/glu.h> 
 
-/* OpenGL accelerated 3D graphics lib */
 #include <GL/gl.h>
-// #include <GL/glu.h> // not needed in this game!! it's a 'game' but it's also an general 3D graphics example/excerice that illustrate how to 'set up' points of view by gettingthe triangles' vertexes' coordinate in the virtual camera's reference frame.
+#include <GL/glcorearb.h>
 
 #define WIDTH 480 
 #define HEIGHT 320 
 #define COLDEPTH 16 
 SDL_Surface *screen ;
 SDL_Event event; /* for real-time interactivity functions provided by SDL library */
+SDL_Window* window = NULL; // New for SDL 2
+SDL_GLContext context; // New for SDL2
+const GLdouble pi = 3.1415926535897932384626433832795;
+
 // Uint8 *pixel ;
 // Uint8 colour ;
 int low_graphics = 1 ;
@@ -89,7 +96,6 @@ void GLaddftriang_perspTEXTURED(   float x1, float y1, float z1,
 int textures_available = 0; // this is quite obvious... how many textures are loaded or remdom-genrated... ok.
 
 void load_textures_wOpenGL() ;				  
-void load_textures32x32_wOpenGL() ;   //equivalent for smaller textures	
 void load_textures96x96_SEMITRANSPARENT_wOpenGL() ; // similarly but wwww alpha values transparency info too, etc.							  
 				  
 				  
@@ -697,22 +703,42 @@ float color[4] = { 0.0, 0.0, 0.0, 1.0 } ;
 
 // Enable double-buffering
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3); 
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 
-/* Initialize the screen / window */
- screen = 
-SDL_SetVideoMode( WIDTH, HEIGHT, COLDEPTH, SDL_OPENGL |  SDL_SWSURFACE  /* SDL_FULLSCREEN */  ) ;
-
-/*  SDL_SWSURFACE */
-
-    if(!screen) 
+    /* Initialize the screen / window */
+    window = SDL_CreateWindow("FlightCraft_3D (GL) - by Simon Hasur",
+        SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+        WIDTH, HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+    if (window == NULL)
     {
-        printf("Couldn't set %dx%d GL video mode: %s\n", WIDTH,
-                     HEIGHT, SDL_GetError());
+        printf("Couldn't create window.");
         SDL_Quit();
         exit(2);
     }
-/*give title to graphics window*/
-SDL_WM_SetCaption("FlightCraft_3D (GL) - by Simon Hasur", "SDL+ OpenGL window");
+    printf("Created window\n");
+    // Create context
+    context = SDL_GL_CreateContext( window );
+    if( context == NULL )
+    {
+        printf( "OpenGL context could not be created! SDL Error: %s\n", SDL_GetError() );
+        SDL_Quit();
+        exit(1);
+    }
+
+    screen = SDL_GetWindowSurface(window);
+    printf("Set global screen variable by calling SDL_GetWindowSurface\n");
+    /* SDL_SWSURFACE */
+
+    if (!screen)
+    {
+        printf("Couldn't set %dx%d GL video mode: %s\n", WIDTH,
+        HEIGHT, SDL_GetError());
+        SDL_Quit();
+        exit(2);
+    }
+    SDL_UpdateWindowSurface(window);
 /*=====================================================================*/
 
 glEnable(GL_DEPTH_TEST); // activate hidden_surface_removal in OpenGL.
@@ -2345,34 +2371,24 @@ return 0;
 
 //================================================
 void xclearpixboard( int xlimit, int ylimit ){
-int i, j ;
-    /* reset all values to 0 */
-glClearColor( 0.4, 0.4, 0.8, 0.0); /* OBLIGATORILY BALCK FOR TRANSPARENCY STUFF background */
-glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );   /* clear the window ! otherwise background color remains that one set at beginnign  of display() function! */  
+int i, j;
+GLdouble fW, fH;
+double aspect;
 
 
- 
 
-/*
-glPixelStorei (GL_UNPACK_ALIGNMENT, 1);
-  
-
-glColor3f( 1, 1 , 1 );  
-glRasterPos2i (0, 0);
-   glBitmap (10, 12, 0.0, 0.0, 11.0, 0.0, byteslogo);
-   glBitmap (10, 12, 0.0, 0.0, 11.0, 0.0, byteslogo);
-   glBitmap (10, 12, 0.0, 0.0, 11.0, 0.0, byteslogo);
-   glFlush();
-*/
-   
 //set GL stuff
+glMatrixMode(GL_PROJECTION);
 glLoadIdentity();
 
+/* reset all values to 0 */
+glClearColor(0.4, 0.4, 0.8, 0.0); 
+glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
 
-// gluPerspective( MAG, 1.0, 1.0 ,6000.0 ) ;
-// do it with glFrustum as soon as possible.
-
-gluPerspective( MAG, (double) 640 / (double) 480 , 0.1 ,100000.0 ) ;
+aspect = (double)640 / (double)480;
+fH = tan(MAG / 360 * pi) * 0.1;
+fW = fH * aspect;
+glFrustum(-fW, fW, -fH, fH, 0.1, 100000.0);
 
 glViewport(0, 0, xlimit, ylimit);
 // gluLookAt( 0.0, 0.0, 0.0,   0.0, 0.0, -1.0,   0.0, 1.0, 0.0  ); //superfluous but---
@@ -2406,7 +2422,7 @@ void sdldisplay( int sw, int sh )
 
 
 
-SDL_GL_SwapBuffers();
+SDL_GL_SwapWindow(window);
 }
 /*===================================================================================*/
 
@@ -4380,9 +4396,7 @@ texName = texn ;
 
 glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-#ifdef GL_VERSION_1_1
    glGenTextures(1, &texName);
-#endif
 
 texid[texn-1] = (int) texName ; // [texn-1] because startd fron 1, be careful
 
@@ -4398,25 +4412,16 @@ glBindTexture(GL_TEXTURE_2D, texid[texn-1] ) ;  // [texn-1] because startd fron 
 
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,  GL_NEAREST  /* GL_LINEAR  */ ) ; // what OpgnGL should do when texture is magnified GL_NEAREST: non-smoothed texture | GL_LINEAR: smoothed  
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST ) ;  // ...when texture is miniaturized because far; GL_NEAREST: non-smoothed tecture 
-#ifdef GL_VERSION_1_1
-   /* glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB4, txtRES, txtRES, 
-                0, GL_RGB, GL_UNSIGNED_BYTE, txt1 ); */
-		
- gluBuild2DMipmaps( GL_TEXTURE_2D,  GL_RGB4, txtRES, txtRES, GL_RGB, GL_UNSIGNED_BYTE, txt1  ) ;	
-#else
- /*  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB4, txtRES, txtRES, 
-                0, GL_RGB, GL_UNSIGNED_BYTE, txt1 ); */
- gluBuild2DMipmaps( GL_TEXTURE_2D,  GL_RGB4, txtRES, txtRES, GL_RGB, GL_UNSIGNED_BYTE, txt1  ) ;
-#endif
+
+   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB4, txtRES, txtRES, 0, GL_RGB, GL_UNSIGNED_BYTE, txt1);
+   glGenerateMipmap(GL_TEXTURE_2D);
 
    glEnable(GL_TEXTURE_2D);                        
    glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, /*GL_COMBINE*/ GL_DECAL ); // the GL_DECAL option draws texture as is: no color mixing thigs. GL_MODULATE lets mixing.
 
 //   glTexEnvf(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_BLEND) ; //THIS WAS ACTIVE AND WORKED; BUT NOW CHANGE IN STRATEDY FOR TEXTURES.
 
-#ifdef GL_VERSION_1_1
    glBindTexture(GL_TEXTURE_2D, texName);
-#endif
 //--------------------------| END OF TEXTURE LOAD PROCESSING |-------------------------------
 
 texn++ ; // augment count... next texture 
@@ -4439,181 +4444,6 @@ printf("SDL_GetError() notify: %s\n", SDL_GetError());
 
 
 
-
-
-
-
-
-/*=================================AS FUNCTION NAME SAYS===================================*/
-void load_textures32x32_wOpenGL(){
-
-static int texture_generated = 0 ; /* at first call of this function, a 32x32 texture sample will be generated */  
-  
-  /*	Create texture	*/
-/* maximal vlues... IF POSSIBLE DON'T EXPLOIT MAXIMUMS. */
-#define	txtWidth2  32
-#define	txtHeight2 32
-
-int txtRES2 = 32 ; // A REASONAMBLE TEXTURE RESOUTION
- 
-//static GLubyte checkImage[txtHeight][txtWidth][4];
-
-
-static GLubyte txt1[txtHeight2][txtWidth2][3] ;
-
-#ifdef GL_VERSION_1_1
-static GLuint texName ;
-#endif
-  
-  int j, i,k ;
-
-  
-  if( texture_generated == 0  ){
-   texture_generated = 1 ;  
-    
-    for( j = 0 ; j < txtHeight2 ; j++ ){
-      for( i = 0 ; i < txtWidth2 ; i++ ){
-	   for( k = 0 ; k < 3 ; k++ ){
-	   txt1[j][i][k] = (GLubyte) 0.5*255.0 + (double) 255.0*rand() / (double) RAND_MAX ;
-	   
-	   }
-      }
-    }
-    
-    //=================GROUND TEXTURE PERSONALISED...=====================
-   // texture_size = TEXRES ;
-//float bigvect[10000], bigvect2[10000], bigvect3[10000] ;
-//int image[10000][3]; // first number here is 1024 pixels in my image, 3 is for RGB values
-
-/* WE USE SDL LIBRARY's Bitmap image file reading routine so... this is not used anymore because proved rather unreliable.
-FILE *streamIn;
- char byte ; 
-*/
-
-int texn = 1 ; // > 0 ABSOLUTELY!!!
-
-
-while ( texn > 0 ){
-char filename[100] ;
-SDL_Surface *image;	//This pointer will reference our bitmap.
-
-int bytes_per_color, imhe ; 
-Uint8  red, green, blue ;
-Uint32 color_to_convert ;	
-
-bytes_per_color = COLDEPTH/8 ;
-	
-
-sprintf( filename, "textures/ground/texture_%i.bmp", texn ) ;
-printf( "TRYING TO OPEN FILE: %s", filename ) ;  
- 
-
- 
-//little example:  image = SDL_LoadBMP("image.bmp") ; 
-image = SDL_LoadBMP(filename) ;
-
-
-imhe = 32 ;
-	if (image != NULL) {
-		printf("bitmap found: %s\n", filename );
-	
-	
-   imhe = image->h ;
-   txtRES2 = imhe ; // set TEXTURE RESOLUTION txt must be SQUARE!!!
-printf("bitmap RES: %i\n", imhe );
-SDL_Delay(5);
-	
-
-/*---------feed into 'the' array used for this.....---------*/
-   for( j = 0 ; j < txtRES2 ; j++ ){      // vertical
-	for( i = 0 ; i < txtRES2 ; i++ ){ // horizontal
-	color_to_convert = getpixel( image, i, j ) ;
-	SDL_GetRGB( color_to_convert, image->format, &red, &green, &blue );
-                      
-	txt1[j][i][0] = (GLubyte) red   ;
-	txt1[j][i][1] = (GLubyte) green ;
-	txt1[j][i][2] = (GLubyte) blue  ;
-
-/* A GOOD TEST TO SEE IF TEXTURE DISPLAY ITSELF WORKS CORRECT... 
-txt1[j][i][0] = (GLubyte) i  ;
-txt1[j][i][1] = (GLubyte) j  ;
-txt1[j][i][2] = (GLubyte) i  ;
-*/
-
-// printf("pixel : [%d,%d,%d]\n",red,green,blue);
-	}
-   }
-/*----------------------------------------------------------*/
-//Release the surface
-SDL_FreeSurface(image);
-
-
-
-texName = textures_available + texn-2 ; // VERY CAREFUL!!! NOT OVERWRITE ALREADY OCCUPIED TEXTURES!!
-
-//---------| TEXTURE PROCESSING |-----THIS PART MUST BE EXECUTED ONLY ONCE!!! OTHEERWISE IT SILENTLY OVERLOADS MEMORY AT EACH CALL-----------
-
-
-glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
-#ifdef GL_VERSION_1_1
-   glGenTextures(1, &texName);
-#endif
-
-texid[textures_available + texn-2] = texName ; // [texn-1] because startd fron 1, be careful
-
-glBindTexture(GL_TEXTURE_2D, texid[textures_available + texn-2] ) ;  // [texn-1] because startd fron 1, be careful
-
-
-//#ifdef GL_VERSION_1_1
-//   glGenTextures(1, &texName);
-//#endif
-   
-
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,  GL_NEAREST  /* GL_LINEAR  */ ) ; // what OpgnGL should do when texture is magnified GL_NEAREST: non-smoothed texture | GL_LINEAR: smoothed  
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST ) ;  // ...when texture is miniaturized because far; GL_NEAREST: non-smoothed tecture 
-#ifdef GL_VERSION_1_1
-   /* glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB4, txtRES, txtRES, 
-                0, GL_RGB, GL_UNSIGNED_BYTE, txt1 ); */
-		
- gluBuild2DMipmaps( GL_TEXTURE_2D,  GL_RGB4, txtRES2, txtRES2, GL_RGB, GL_UNSIGNED_BYTE, txt1  ) ;	
-#else
- /*  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB4, txtRES, txtRES, 
-                0, GL_RGB, GL_UNSIGNED_BYTE, txt1 ); */
- gluBuild2DMipmaps( GL_TEXTURE_2D,  GL_RGB4, txtRES, txtRES, GL_RGB, GL_UNSIGNED_BYTE, txt1  ) ;
-#endif
-
-   glEnable(GL_TEXTURE_2D);                        
-   glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, /*GL_COMBINE*/ GL_DECAL ); // the GL_DECAL option draws texture as is: no color mixing thigs. GL_MODULATE lets mixing.
-
-//   glTexEnvf(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_BLEND) ; //THIS WAS ACTIVE AND WORKED; BUT NOW CHANGE IN STRATEDY FOR TEXTURES.
-
-#ifdef GL_VERSION_1_1
-   glBindTexture(GL_TEXTURE_2D, texName);
-#endif
-//--------------------------| END OF TEXTURE LOAD PROCESSING |-------------------------------
-
-texn++ ; // augment count... next texture 
-textures_available++ ; // idem but on an aextern variable... .
- }
- else {
- printf("File opening error ocurred. Using random generated texture.\n");
-printf("SDL_GetError() notify: %s\n", SDL_GetError());
-
- texn = -1 ; // cause exiting from while loop.
- }
-
-
-  }
-}
-
-}
-/*===================================END TEXTURE LOAD FUNCTION 1=================*/
-
-
-
-
-
 /*=================================AS FUNCTION NAME SAYS===================================*/
 void load_textures96x96_SEMITRANSPARENT_wOpenGL(){
 
@@ -4621,6 +4451,8 @@ static int texture_generated = 0 ; /* at first call of this function, a 32x32 te
   
   /*	Create texture	*/
 /* maximal vlues... IF POSSIBLE DON'T EXPLOIT MAXIMUMS. */
+#define	txtWidth2  32
+#define	txtHeight2 32
 #define	txtWidth3  96
 #define	txtHeight3 96
 
@@ -4735,9 +4567,7 @@ texName = textures_available + texn-1 ; // VERY CAREFUL!!! NOT OVERWRITE ALREADY
 
 glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-#ifdef GL_VERSION_1_1
    glGenTextures(1, &texName);
-#endif
 
 texid[textures_available + texn-1] = texName ; // [texn-1] because startd fron 1, be careful
 
@@ -4751,25 +4581,16 @@ glBindTexture(GL_TEXTURE_2D, texid[textures_available + texn-1] ) ;  // [texn-1]
 
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,  GL_NEAREST  /* GL_LINEAR  */ ) ; // what OpgnGL should do when texture is magnified GL_NEAREST: non-smoothed texture | GL_LINEAR: smoothed  
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST ) ;  // ...when texture is miniaturized because far; GL_NEAREST: non-smoothed tecture 
-#ifdef GL_VERSION_1_1
-   /* glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB4, txtRES, txtRES, 
-                0, GL_RGB, GL_UNSIGNED_BYTE, txt1 ); */
-		
- gluBuild2DMipmaps( GL_TEXTURE_2D,  GL_RGBA, txtRES2, txtRES2, GL_RGBA, GL_UNSIGNED_BYTE, txt1  ) ;	 // MUST BE OPTION Gl_RGBA because so also the alpha info (transparency constant, simple ) is loaded if the origianl source ha a 4-th value ofcourse.
-#else
- /*  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB4, txtRES, txtRES, 
-                0, GL_RGB, GL_UNSIGNED_BYTE, txt1 ); */
- gluBuild2DMipmaps( GL_TEXTURE_2D,  GL_RGB4, txtRES, txtRES2, GL_RGB4, GL_UNSIGNED_BYTE, txt1  ) ;
-#endif
+
+   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, txtRES2, txtRES2, 0, GL_RGBA, GL_UNSIGNED_BYTE, txt1);
+   glGenerateMipmap(GL_TEXTURE_2D);
 
    glEnable(GL_TEXTURE_2D);                        
    glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, /*GL_COMBINE*/ GL_DECAL ); // the GL_DECAL option draws texture as is: no color mixing thigs. GL_MODULATE lets mixing.
 
 //   glTexEnvf(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_BLEND) ; //THIS WAS ACTIVE AND WORKED; BUT NOW CHANGE IN STRATEDY FOR TEXTURES.
 
-#ifdef GL_VERSION_1_1
    glBindTexture(GL_TEXTURE_2D, texName);
-#endif
 //--------------------------| END OF TEXTURE LOAD PROCESSING |-------------------------------
 
 texn++ ; // augment count... next texture 
@@ -4892,7 +4713,7 @@ sdl_image = SDL_LoadBMP( filename ) ;
 	SDL_FreeSurface(sdl_image);
 	}
 	else{
-	printf("file 'terrain_data/maptex_300x300.bmp' was not found... USING RANDOM-GENERATED TEXTURE IDS... ALL WILL LOOK AWFUL...\n\n", sdl_image->h  );
+	printf("file 'terrain_data/maptex_300x300.bmp' was not found... USING RANDOM-GENERATED TEXTURE IDS... ALL WILL LOOK AWFUL...\n\n");
 	SDL_Delay(500) ;
 	}
 	
