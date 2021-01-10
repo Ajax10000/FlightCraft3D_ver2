@@ -26,8 +26,6 @@ SDL_Window* window = NULL; // New for SDL 2
 SDL_GLContext context; // New for SDL2
 const GLdouble pi = 3.1415926535897932384626433832795;
 
-// Uint8 *pixel ;
-// Uint8 colour ;
 int low_graphics = 1 ;
 
 // SUPERSAFE TOOK IT FROM PROFESSIONAL SITE: used for bitmap conversion to RGB value matrix (usual stuff)
@@ -93,7 +91,6 @@ int textures_available = 0; // this is quite obvious... how many textures are lo
 void load_textures_wOpenGL() ;				  
 void load_textures96x96_SEMITRANSPARENT_wOpenGL() ; // similarly but wwww alpha values transparency info too, etc.							  
 
-// #undef main 
 float MAG = 60.0 ;
 
 void xaddpoint_persp( float x1, float y1, float z1, float color[3], 
@@ -138,9 +135,6 @@ float GPunit ;
 float shmap[TERRAIN_SIZE][TERRAIN_SIZE] ;
 float  scol[TERRAIN_SIZE][TERRAIN_SIZE][3] ;
 int map_texture_indexes[TERRAIN_SIZE][TERRAIN_SIZE] ;
-
-// float imp_resist[300][300][3] ; // not used in CSTUNTS since terrain does not deform
-
 float auxnormal[3] ;
 } ;
 /*========================================================================*/
@@ -602,15 +596,11 @@ float h  = 0.01 ; // uno step di simulazione che da' un risultato non troppo dis
 double x1, y1, z1 ;
 
 double g = -9.81 ; // POSITIVE +++++ ASSUMED!!
-//double plane_vel = 0.1 ; /* [m/s] --> metri al secondo */ 
 
 float color[4] = { 0.0, 0.0, 0.0, 1.0 } ;
 /* code to start SDL graphics system: */
 /*==========================|SDL CODE BLOCK 2|=========================*/
     /* Initialize SDL */  
-// SDL_Init(SDL_INIT_VIDEO);
-
-// scanf("%f %f %f", &xp, &yp, &zp ) ; /* GAME TEST MODE... TELEPORT TO WHATEVER INITIAL PLACE ON x, and Y */
 
     if ( SDL_Init(SDL_INIT_VIDEO) != 0 ) {
         printf("Unable to initialize SDL: %s\n", SDL_GetError());
@@ -660,8 +650,6 @@ float color[4] = { 0.0, 0.0, 0.0, 1.0 } ;
 glEnable(GL_DEPTH_TEST); // activate hidden_surface_removal in OpenGL.
 glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 glEnable(GL_BLEND) ;
-
-// glBlendFunc (GL_SRC_ALPHA, GL_SRC_ALPHA);
 
 /* SET SOME GL OPTIONS FOR LEAST PRECISION, SINCE THIS IS NOT A GRAPHICS PROGRAM... WE NEED COMPUTER POWER FOR PHYSICS CALCS MORE */
   glHint( GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);			// Fastest - less expensive - Perspective Calculations
@@ -780,17 +768,10 @@ terrain1.map_size = load_hmap_from_bitmap( "terrain_data/hmap_300x300.bmp" ) ;
 load_textures_wOpenGL() ; // load textures in
 tree_texture_ID_bounds[0] = textures_available ; // at what ID do tree textures begin (and end also...)
 
-//load_textures32x32_wOpenGL() ; // load textures in
 load_textures96x96_SEMITRANSPARENT_wOpenGL() ; // idem but with "bitmap" image files with alpha value for transparency information on each pixel... this is mainly used ofr drawing trees in a quick, nie and simple way.
 
 load_maptex_from_bitmap( "terrain_data/maptex_300x300.bmp" ) ; // this comes after, because so during loading we can check if no texture index superior to the number of available textures is inserted... .
 
-	/*
-	for( j = 0 ; j < 100 ; j++ ){      // vertical
-	printf("ROUTINE CHECK: texid[%i] = %i \n",j, texid[j]  );
-	}
-	*/
-	
 int tree_group_n = 30 ;
 // trees' position and defult parameters for trees.
 for( k = 0 ; k < NTREES-tree_group_n ; k = k + tree_group_n ){
@@ -869,7 +850,6 @@ printf("CHECK Inertia tensor: %f  %f  %f \n", It_init[j][0],It_init[j][1],It_ini
 for( j = 0; j < 3; j++)    { //just check
 printf("CHECK its inverse   : %f  %f  %f \n", It_initINV[j][0],It_initINV[j][1],It_initINV[j][2] );
 }
-// getchar();
 
 printf("TRYING TO IMPORT VERTEX LIST OF 3D MODEL\n") ;
 		FILE *FilePtr ;         /* pointer to input file */  
@@ -973,16 +953,6 @@ Ra[2] = axis_3[2] ;
 
 /*===Calulate total Fcm and total torque, starting from external forces applied to vertices of using some 'magic' formula===*/
 /*--NOTE: g is already done below... so it's no bother----forces  of ultrasimple flight model:-- */
-/* THIS IS THE SIMPLE EXPLANATION.... JUST A COMMENT
-vperp = axis_2[0]*v[0] + axis_2[1]*v[1] + axis_2[2]*v[2] ;  // dot product explicited directly: clean work. 
-float vpar ;
-vpar  = axis_1[0]*v[0] + axis_1[1]*v[1] + axis_1[2]*v[2] ;
-
-
-Fcm[0] = -k_visc*vperp*axis_2[0] - 10.8*vpar*axis_1[0] + Pforce*axis_1[0] ;  
-Fcm[1] = -k_visc*vperp*axis_2[1] - 10.8*vpar*axis_1[1] + Pforce*axis_1[1] ; 
-Fcm[2] = -k_visc*vperp*axis_2[2] - 10.8*vpar*axis_1[2] + Pforce*axis_1[2] ; 
-*/
 
 //***********NOT needed for dynamics, it' only in this game: some approx of force on CM and torque due to a rudimental plane aerodynamical forces' consideration*******
 float vpar ;
@@ -1038,12 +1008,6 @@ torque_tot[0] += -k_visc_rot3*(boh)*axis_2[0]  ;
 torque_tot[1] += -k_visc_rot3*(boh)*axis_2[1]  ; 
 torque_tot[2] += -k_visc_rot3*(boh)*axis_2[2]  ; 
 
-// harder things:
-/*
-torque_tot[0] += -vpar*(k_visc_rot*rot1*axis_1[0] + k_visc_rot2*(1.0+rot2)*axis_2[0] + k_visc_rot3*(1.0+rot3)*axis_3[0]) ;    
-torque_tot[1] += -vpar*(k_visc_rot*rot1*axis_1[1] + k_visc_rot2*(1.0+rot2)*axis_2[1] + k_visc_rot3*(1.0+rot3)*axis_3[1]) ; 
-torque_tot[2] += -vpar*(k_visc_rot*rot1*axis_1[2] + k_visc_rot2*(1.0+rot2)*axis_2[2] + k_visc_rot3*(1.0+rot3)*axis_3[2]) ;
-*/
 /*=======tota Fcm and toal torque DONE=============*/
 
 /*===UPDATE VELOCITY, LINEAR AND ANGULAR TOO===*/
@@ -1063,8 +1027,6 @@ v[2] = p[2]/MASS ;
 L[0] = L[0] + torque_tot[0]*h ;
 L[1] = L[1] + torque_tot[1]*h ;
 L[2] = L[2] + torque_tot[2]*h ;
-//check
-// printf("1st L check: %f  %f  %f \n", L[0], L[1], L[2] );
 
 // now we get the updated velocity, component by component. 
 w[0] =    inv_It_now[0][0]*L[0] 
@@ -1080,13 +1042,6 @@ w[2] =    inv_It_now[2][0]*L[0]
 	+ inv_It_now[2][2]*L[2] ;
 
 	// angular momentum (angular/ rotational quantity ) 
-//deativated for test
-//THIS WAS WRONG.... just check L the angular momentum to assure... .
-/*
-L[0] = It_now[0][0]*w[0] + It_now[0][1]*w[1] + It_now[0][2]*w[2] ;
-L[1] = It_now[1][0]*w[0] + It_now[1][1]*w[1] + It_now[1][2]*w[2] ;
-L[2] = It_now[2][0]*w[0] + It_now[2][1]*w[1] + It_now[2][2]*w[2] ;
-*/
 	
 	/* DONE: */
 
@@ -1133,31 +1088,14 @@ for( j= 0 ; j < 3 ; j++ ){
 	}
 }
 
-/*
-SD2[0][0]=-u3*u3-u2*u2; SD2[0][1]= u1*u2      ; SD2[0][2]= u1*u3 ;
-SD2[1][0]= u1*u2      ; SD2[1][1]=-u3*u3-u1*u1; SD2[1][2]= u2*u3 ;
-SD2[2][0]= u1*u3      ; SD2[2][1]= u2*u3      ; SD2[2][2]=-u2*u2-u1*u1 ;
-*/
-
-// for( j = 0; j < 3; j++)    { //just check
-// printf("SD2 check : %f  %f  %f \n", SD2[j][0], SD2[j][1], SD2[j][2] );
-// }
-
 for( j= 0 ; j < 3 ; j++ ){
 	for(i = 0 ; i < 3 ; i++ ){
 	dR[j][i] = Id[j][i] + sin(dAng)*SD[j][i]  + ( 1.0 - cos(dAng) )*SD2[j][i] ; 	
 	}
 }
 
-// for( j = 0; j < 3; j++)    { //just check
-// printf("Rm 1st check : %f  %f  %f \n", Rm[j][0], Rm[j][1], Rm[j][2] );
-// }
 mat3x3_mult ( dR, Rm ) ;  /* ok it does the product and resulting matrix is put 
 in the "result_matrix" global variable. */
-
-// for( j = 0; j < 3; j++)    { //just check
-// printf("result_matrix AFTER SEME?: row %i| %f  %f  %f \n",j, result_matrix[j][0], result_matrix[j][1], result_matrix[j][2] );
-// }
 
 for( j= 0 ; j < 3 ; j++ ){
 	for(i = 0 ; i < 3 ; i++ ){
@@ -1165,9 +1103,6 @@ for( j= 0 ; j < 3 ; j++ ){
 	}
 }
 
-// for( j = 0; j < 3; j++)    { //just check
-// printf("result_matrix 2nd check (should be seme as prev): %f  %f  %f \n", Rm[j][0], Rm[j][1], Rm[j][2] );
-// }
 /* DONE */
 
 /*===update inertia tensor according to new orientation: It_now = R*It_init*transpose(R) ==== */
@@ -1178,20 +1113,8 @@ for( i = 0; i < 3 ; i++){
        }
 }
 
-// for( j = 0; j < 3; j++)    { //just check
-// printf("Rm vs RmT 1st check : %f  %f  %f \n", Rm[j][0], Rm[j][1], Rm[j][2] );
-// }
-
-// for( j = 0; j < 3; j++)    { //just check
-// printf("RmT check (should be transpose of): %f  %f  %f \n", R_T[j][0], R_T[j][1], R_T[j][2] );
-// }
-
 /* we perform the 2 matrix poroducts */
 mat3x3_mult( Rm , It_init ) ;
-
-// for( j = 0; j < 3; j++){ //check VERY IMPORTANT HOW TO SAFELY USE EXTERN VARIABLES!!!
-// printf("CHK1: result_matrix: row %i| %f  %f  %f \n",j, result_matrix[j][0], result_matrix[j][1], result_matrix[j][2] );
-// }
 
 for( j= 0 ; j < 3 ; j++ ){
 	for(i = 0 ; i < 3 ; i++ ){
@@ -1200,9 +1123,6 @@ for( j= 0 ; j < 3 ; j++ ){
 	}
 }
 
-// for( j = 0; j < 3; j++)    { //just check
-// printf("CHK2: result_matrix: row %i| %f  %f  %f \n",j, temp_mat[j][0], temp_mat[j][1], temp_mat[j][2] ) ;
-// }
 mat3x3_mult( temp_mat , R_T ) ;
 
 /* and put result into "It_now" */
@@ -1252,61 +1172,10 @@ for( j = 0; j < 3; j++)    {
     }
   }
 
-/**************TEST AREA (about the previous coe block: physics)********************************/
-//checks VARIOUS CHECKS TO VERIFY CORRECT PHYSICS CALCS and orientation stuff.
-/*
-
-mat3x3_mult ( Rm, R_T ) ;  // ok it does the product and resulting matrix is put 
-for( j = 0; j < 3; j++)    { //just check
-printf("THIS MUST BE Id k: %f  %f  %f \n", result_matrix[j][0], result_matrix[j][1], result_matrix[j][2] ); // 
-}
-// ok
-
-mat3x3_mult ( R_T, Rm ) ;  // ok it does the product and resulting matrix is put 
-for( j = 0; j < 3; j++)    { //just check
-printf("THIS MUST BE Id k: %f  %f  %f \n", result_matrix[j][0], result_matrix[j][1], result_matrix[j][2] ); // 
-}
-// ok
-
-
-// in vector and matrix symbols: axis_1 = Rm*axis_orig
-
-// ROUTINE CHECKS
-
-for( j = 0; j < 3; j++)    { //just check
-printf("dR: %3f  %3f  %3f \n", dR[j][0], dR[j][1], dR[j][2] );
-}
-
-for( j = 0; j < 3; j++)    { //just check
-printf("CHECK inv_It_now: %f  %f  %f \n", inv_It_now[j][0],inv_It_now[j][1],inv_It_now[j][2] );
-}
-printf("\n") ;
-
-for( j = 0; j < 3; j++)    { //just check
-printf("CHECK It_now: %f  %f  %f \n", It_now[j][0],It_now[j][1],It_now[j][2] );
-}
-printf("\n") ;
-
-// for( j = 0; j < 3; j++)    { //just check
-// printf("Rm: %f  %f  %f \n", Rm[j][0], Rm[j][1], Rm[j][2] );
-// }
-
-
-for( j = 0; j < 3; j++)    { //just check
-printf("Rm: %f  %f  %f \n", Rm[j][0], Rm[j][1], Rm[j][2] );
-}
-
-printf("dAng: %f  \n", dAng );
-*/
-
-// getchar();
-/*****************END TEST AREA******************/
-
 
 /*---------------representation and graphics perocedure--------------*/
 xclearpixboard( WIDTH, HEIGHT ) ; // CANCELLA SCHERMATA/ LAVAGNA. 
 
-// glDisable(GL_BLEND) ;
 /*------------------ scenario inquadrature 3D---------------------------------- */
 if( view == 1 ){
 P[0] =  -sin(theta) ;
@@ -1362,23 +1231,6 @@ Qp[0] = Qa[0] ;
 Qp[1] = Qa[1] ;
 Qp[2] = Qa[2] ;
 
-/*
-//------Ri, Qi, Pi------
-P[0] = Pp[0]*(-sin(theta) )        +Qp[0]*( cos(theta) )          +Rp[0]*0.0 ; 
-P[1] = Pp[1]*(-sin(theta) )        +Qp[1]*( cos(theta) )          +Rp[1]*0.0 ;
-P[2] = Pp[2]*(-sin(theta) )        +Qp[2]*( cos(theta) )          +Rp[2]*0.0 ;
-
-Q[0] = Pp[0]*(-cos(theta)*cos(fi)) +Qp[0]*(-sin(theta)*cos(fi))   +Rp[0]*sin(fi) ; 
-Q[1] = Pp[1]*(-cos(theta)*cos(fi)) +Qp[1]*(-sin(theta)*cos(fi))   +Rp[1]*sin(fi) ;
-Q[2] = Pp[2]*(-cos(theta)*cos(fi)) +Qp[2]*(-sin(theta)*cos(fi))   +Rp[2]*sin(fi) ;
-
-R[0] = Pp[0]*( cos(theta)*sin(fi)) +Qp[0]*(sin(theta)*sin(fi))    +Rp[0]*cos(fi) ; 
-R[1] = Pp[1]*( cos(theta)*sin(fi)) +Qp[1]*(sin(theta)*sin(fi))    +Rp[1]*cos(fi) ;
-R[2] = Pp[2]*( cos(theta)*sin(fi)) +Qp[2]*(sin(theta)*sin(fi))    +Rp[2]*cos(fi) ;
-
-// OK OK OK OK
-*/
-
 //------Ri, Pi, Qi------ this is most practival axis-order.
 P[0] = Rp[0]*(-sin(theta) )        +Pp[0]*( cos(theta) )          +Qp[0]*0.0 ; 
 P[1] = Rp[1]*(-sin(theta) )        +Pp[1]*( cos(theta) )          +Qp[1]*0.0 ;
@@ -1396,26 +1248,6 @@ R[2] = Rp[2]*( cos(theta)*sin(fi)) +Pp[2]*(sin(theta)*sin(fi))    +Qp[2]*cos(fi)
 
 /* FAILSAFE: OK always */
 
-/*
-R[0] = -Pa[0] ; // had to be mirrored sorry
-R[1] = -Pa[1] ;
-R[2] = -Pa[2] ;
-
-P[0] = Ra[0] ;
-P[1] = Ra[1] ;
-P[2] = Ra[2] ;
-
-Q[0] = Qa[0] ;
-Q[1] = Qa[1] ;
-Q[2] = Qa[2] ;
-*/
-
-/*
-	// now: here the camera position is very important.
-	x = xp + 1.0*P[0] + 1.0*Q[0] + 1.0*R[0] ; 
-	y = yp + 1.0*P[0] + 1.0*Q[0] + 1.0*R[1] ;
-	z = zp + 1.0*P[0] + 1.0*Q[0] + 1.0*R[2] ;
-	this was put elswhere in the code  */ 
 }
 
 /* moving plane's CM */
@@ -1523,30 +1355,17 @@ GPunit = terrain1.GPunit ;
 /*=== DISEGNA IL TERRENO IN MODO ALGORITMICO, UNA GRIGILIA RETTANGOLARE COME AL SOLITO,
 'REDERING' WIREFRAME O A TRINGOLI RIPIENI */
 
-/*
-xaddfpoly_persp(  x_c[0], y_c[0], -z_c[0],
-		  x_c[1], y_c[1], -z_c[1], 
-		  x_c[2], y_c[2], -z_c[2],  
-		  color, WIDTH, HEIGHT, -1 ) ; 
-*/ 
-
-/* USING OpenGL so not needed. CLAEAR ALL TRIANGLES FROM SCENARIO!!! */
-
-
 /* draw only near triangles, in order to avoid overloading graphics computational heavyness */
 int lv = 6 ; 
 
 Xi = floor( xp/(terrain1.GPunit) )  ;
 Yi = floor( yp/(terrain1.GPunit) )  ; 
 
-// lv = 4 + 0.5*zp/GPunit ;
 lv = 12 ;
 
 if(low_graphics == 1){
 lv = 6 ;
 }
-
-//lv = stp*16 ; /* for EFFICIENVY AND CONSTANCY OF FRAMERATE THiS SHOULD BE KEPT FIXED SO... ,instead stp parameter should be adjusted along, which actually augments far-sight even if doe this by maintainng however the seme number of triangles dran in the scenario.siple but very efficient method. to draw big terrains.  */
 
 for( xi = Xi- lv ; xi < Xi+ lv  ; xi = xi + 1 ){
 	for( yi = Yi - lv ; yi < Yi + lv  ; yi = yi + 1 ){
@@ -1603,8 +1422,6 @@ for( xi = Xi- lv ; xi < Xi+ lv  ; xi = xi + 1 ){
 	z_c[i] = R[0]*(Xo[i]-x) + R[1]*(Yo[i]-y) + R[2]*(Zo[i]-z) ;
 	}
 
-	// color[0] = 0.4 ; color[1] = 0.4 ; color[2] = 1.0 ;
-
 	xaddline_persp(  x_c[0], y_c[0], -z_c[0], 
 			 x_c[4], y_c[4], -z_c[4], color, WIDTH, HEIGHT ) ;
 	
@@ -1632,11 +1449,6 @@ for( xi = Xi- lv ; xi < Xi+ lv  ; xi = xi + 1 ){
 //trees
 glEnable(GL_TEXTURE_2D);       
 glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE );
-
-// glEnable(GL_BLEND) ;
-
-//glDepthMask(GL_FALSE);
-//glDisable(GL_DEPTH_TEST) ;
 
 for( k = 0 ; k < NTREES ; k++ ){
 float xctree, yctree, zctree, sctree ;  
@@ -1666,11 +1478,6 @@ yctree =  trees[k][1] ; // y of conventinal geometric center
 	z_c[i] = R[0]*(Xo[i]-x) + R[1]*(Yo[i]-y) + R[2]*(Zo[i]-z) ;
 	}
 
-	// color[0] = 0.4 ; color[1] = 0.4 ; color[2] = 1.0 ;
-
-	//xaddline_persp(  x_c[0], y_c[0], -z_c[0], 
-	//		 x_c[4], y_c[4], -z_c[4], color, WIDTH, HEIGHT ) ;
-				     
 	glBegin(GL_QUADS) ;          	     
         glTexCoord2f( 0.0, 0.0 ) ; glVertex3f( x_c[0], y_c[0], z_c[0] ) ; // point 1
         glTexCoord2f( 1.0, 0.0 ) ; glVertex3f( x_c[1], y_c[1], z_c[1] ) ; // point 2
@@ -1700,27 +1507,8 @@ yctree =  trees[k][1] ; // y of conventinal geometric center
         glTexCoord2f( 0.0, 1.0 ) ; glVertex3f( x_c[3], y_c[3], z_c[3] ) ; // point 4
 	glEnd()   ;
 	}
-			 
-/*			without the coordinate change mess, oit woulds have been as simple as this: 
-	glBegin(GL_QUADS) ;          	     
-        glTexCoord2f( 0.0, 0.0 ) ; glVertex3f( xctree - sctree*0.9, yctree,zctree -treeR1 +sctree*2.0 ) ; // point 1
-        glTexCoord2f( 1.0, 0.0 ) ; glVertex3f( xctree + sctree*0.9, yctree,zctree -treeR1 +sctree*2.0 ) ; // point 2
-        glTexCoord2f( 1.0, 1.0 ) ; glVertex3f( xctree + sctree*0.9, yctree,zctree -treeR1             ) ; // point 3
-        glTexCoord2f( 0.0, 1.0 ) ; glVertex3f( xctree - sctree*0.9, yctree,zctree -treeR1             ) ; // point 4
-	glEnd()   ;
-	
-	
-	glBegin(GL_QUADS) ;          	     
-        glTexCoord2f( 0.0, 0.0 ) ; glVertex3f( xctree , yctree - sctree*0.9,zctree -treeR1 +sctree*2.0 ) ; // point 1
-        glTexCoord2f( 1.0, 0.0 ) ; glVertex3f( xctree , yctree + sctree*0.9,zctree -treeR1 +sctree*2.0 ) ; // point 2
-        glTexCoord2f( 1.0, 1.0 ) ; glVertex3f( xctree , yctree + sctree*0.9,zctree -treeR1             ) ; // point 3 
-        glTexCoord2f( 0.0, 1.0 ) ; glVertex3f( xctree , yctree - sctree*0.9,zctree -treeR1             ) ; // point 4
-	glEnd()   ;
-	}
-*/
 	}     
 glDisable(GL_TEXTURE_2D);  
-//glEnable(GL_DEPTH_TEST) ;
 
 if( low_graphics == 0 ){
 addsmoke_wsim( 1, 2, 3, h,  0 ) ;          /* we must make special effect sequences go on. */
@@ -1761,10 +1549,7 @@ z3 = R[0]*( x3a + xp -x) + R[1]*( y3a + yp -y) + R[2]*( z3a + zp -z ) ;
 
 color[0] = col_tris[i][0] ; color[1] = col_tris[i][1] ; color[2] = col_tris[i][2] ;
 
-// xaddftriang_persp( x1, y1, -z1, x2, y2, -z2, x3, y3, -z3, 1,color, WIDTH, HEIGHT ) ;
-
 if(low_graphics==0){
-// xaddftriang_perspTEXTURED_pp( x1, y1, z1, x2, y2, z2, x3, y3, z3, 4,color, WIDTH, HEIGHT ) ;
 xaddftriang_persp(      x1, y1, -z1, 
 			x2, y2, -z2, 
 			x3, y3, -z3, 1,color, WIDTH, HEIGHT ) ;
@@ -1775,35 +1560,7 @@ xaddftriang_persp(      x1, y1, -z1,
 			x3, y3, -z3, 1,color, WIDTH, HEIGHT ) ;
 
 }
-// xaddfpoly_persp( x1, y1, -z1, x2, y2, -z2, x3, y3, -z3, color,8, WIDTH, HEIGHT ) ;
 }
-
-/* DISEGNA SOLO LA LA POLI-LINEA DELLA TRAIETTORIA GRAFICA VETTORIALE BELLO SEMPLICE...*/
-/*
-for( i = 0 ; i < 0*(NDOTS-2) ; i++ ){ // not needed... . comment it out. 
-
-// estremo 1 
-x1 = P[0]*(px[i]-x) + P[1]*(py[i]-y) + P[2]*(pz[i]-z ) ;
-y1 = Q[0]*(px[i]-x) + Q[1]*(py[i]-y) + Q[2]*(pz[i]-z ) ;
-z1 = R[0]*(px[i]-x) + R[1]*(py[i]-y) + R[2]*(pz[i]-z ) ;
-
-// estremo 2 
-x2 = P[0]*(px[i+1]-x) + P[1]*(py[i+1]-y) + P[2]*(pz[i+1]-z) ;
-y2 = Q[0]*(px[i+1]-x) + Q[1]*(py[i+1]-y) + Q[2]*(pz[i+1]-z) ;
-z2 = R[0]*(px[i+1]-x) + R[1]*(py[i+1]-y) + R[2]*(pz[i+1]-z) ;
-
-// colore: sbiadimento pogressivo 
-color[0] = ( (float) (NDOTS-i) )/( (float) NDOTS/1.0) ; 
-color[1] = ( (float) (NDOTS-i) )/( (float) NDOTS/1.0) ; 
-color[2] = ( (float) (NDOTS-i) )/( (float) NDOTS/1.0) ; 
-
-xaddline_persp(  x1, y1, -z1, x2, y2, -z2, color, WIDTH, HEIGHT ) ;
-
-// xaddpoint_persp( x1+ 1, y1+ 1, -z1, color, WIDTH, HEIGHT ) ; // TEST.OK CAREFUL TO PUT-z or z, see proof of why
-}
-*/
-
-// xadd1pix( 20, 20, color, WIDTH, HEIGHT ) ; /* TEST */
 
 if( low_graphics == 0 ){
 addfrantumation_wsim( x1, y1, z1, h, 0 ) ; /* we must make special effect sequences go on. */
@@ -1817,7 +1574,6 @@ projectile_launch( 10, 10, 10, 20, 10, -0.1, h, 0 ) ; /* idem */
 /*==================|SDL CODE BLOCK 4|=============================*/
 sdldisplay( WIDTH, HEIGHT ) ; 
 /*=================================================================*/
-// getchar() ;
   if(cycles%10 == 0 ){
   printf("GAME TIME [sec] =  %f \n", cycles*h  );
   printf("GOING ON...game cycle %i : plane position: x = %f, y = %f, z = %f \n theta = %3.2f, fi = %f3.2\n",cycles, x, y,z, theta, fi );
@@ -1830,15 +1586,12 @@ sdldisplay( WIDTH, HEIGHT ) ;
 	printf("\n");
    }
   }
-// waitdt_ms(best_dt_ms) ; /* little pause */
 SDL_Delay(10);
 cycles++ ;
 
 /*===============================|SDL's real-time interactivity|=============================*/    
 while(SDL_PollEvent(&event)){  /* Loop until there are no events left on the queue */
 	  if( event.type == SDL_KEYDOWN ){  /* condition: keypress event detected */
-	//  printf("Key press detected by SDL functions \n");
-	       
 	       if(event.key.keysym.sym == SDLK_ESCAPE){
 	       printf("ESC KEY PRESSED: PROGRAM TERMINATED\n");
 	       SDL_Quit();
@@ -1895,9 +1648,6 @@ while(SDL_PollEvent(&event)){  /* Loop until there are no events left on the que
 	       if( event.key.keysym.sym == SDLK_t ){	       
                MAG = MAG + 10.0 ; /* ... */         
 	       }
-	       //if( event.key.keysym.sym == SDLK_i ){	       
-               //scanf("%f", &xp ) ; /* "teleport" as it is intended in videogames */         
-	       //}
 		if( event.key.keysym.sym == SDLK_i ){
 		FILE *FilePtr ;         /* pointer to input file */  
 		  
@@ -1932,17 +1682,14 @@ while(SDL_PollEvent(&event)){  /* Loop until there are no events left on the que
 	       }
 	       if( event.key.keysym.sym == SDLK_5 ){
 	       
-	       // addsmoke_wsim( xp, yp, zp, h,  1 ) ; 
 	       h = h - 0.002 ;
 	       }
 	       if( event.key.keysym.sym == SDLK_6 ){
 	       h = h + 0.001 ;
 	       }
 	       if( event.key.keysym.sym == SDLK_s ){
-	       //projectile_launch( x, y, z, -40*R[0], -40*R[1], -40*R[2], h, 1 ) ;
 	       //velocity of Plane's CM + velocity of projectile... rotation ignored.
 	       projectile_launch( xp, yp, zp,v[0] +100.0*Pa[0],v[1] + 100.0*Pa[1],v[2] +100.0*Pa[2], h, 1 ) ;
-	       // projectile_launch( xp, yp, zp, -400*R[0], -400*R[1], -400*R[2], h, 2 ) ;
 	       }
 	       if(event.key.keysym.sym == SDLK_UP    || event.key.keysym.sym == SDLK_w ){	       
                
@@ -1956,19 +1703,15 @@ while(SDL_PollEvent(&event)){  /* Loop until there are no events left on the que
 	       }
 	       if(event.key.keysym.sym == SDLK_LEFT  || event.key.keysym.sym == SDLK_a ){	       
                // test
-	       //w[0] = w[0] + 0.01 ;
 	       
 	       plane_inclleft = 1 ;
 	       }
 	       if(event.key.keysym.sym == SDLK_RIGHT || event.key.keysym.sym == SDLK_d ){	       
                // test
-	       //w[1] = w[1] + 0.01 ;
-	       //w[2] = w[2] + 0.01 ;
 	       plane_inclright = 1 ;
 	       }
 	  } /* end condition of if-keypress-is-detected */
 	  if( event.type == SDL_KEYUP ){  /* condition: key-RELEASE event detected */
-	  //printf("Key RELEASE detected by SDL functions \n");
 	       if( event.key.keysym.sym == SDLK_c ){       
                turnch =  0.0  ; /* exmplanation... */ 
 	       }
@@ -2007,9 +1750,6 @@ while(SDL_PollEvent(&event)){  /* Loop until there are no events left on the que
 }
 
 printf("check graphics Window!\n");
-// getchar();   
-
-// getchar(); 
 /* close graphics Window to avoid abnormal terminations. */    
 SDL_Quit() ;           
 /*=======================================================*/        
@@ -2039,15 +1779,6 @@ fW = fH * aspect;
 glFrustum(-fW, fW, -fH, fH, 0.1, 100000.0);
 
 glViewport(0, 0, xlimit, ylimit);
-// gluLookAt( 0.0, 0.0, 0.0,   0.0, 0.0, -1.0,   0.0, 1.0, 0.0  ); //superfluous but---
-
-/*
-glBegin(GL_TRIANGLES) ;          
-        glVertex3f( 0, 0, 0.0 ) ; 
-	glVertex3f( 10.0, -10.0, 100.0 ) ;
-	glVertex3f( 10.0,  20.0, -100.0 ) ;	     	         
-  glEnd() ;
-*/
 }
 //======SET ALL ELEMS OF PIXMATRIX TO 0 .==========
 
@@ -2056,8 +1787,6 @@ glBegin(GL_TRIANGLES) ;
 void sdldisplay( int sw, int sh )
 {    
   int i,j ;
- /* update the screen (aka double buffering) */
- //   SDL_Flip(screen);
 
 SDL_GL_SwapWindow(window);
 }
@@ -2179,9 +1908,7 @@ void xadd1pix(int x, int y, float color[3],
 virtual camera pointing toward positive z-s and passes them to the failsafe pixel drawing function. */
 void xaddpoint_persp( float x1, float y1, float z1, float color[3], 
 				  int pbwidth, int pbheight ){
-//  if( z1 > 0.0 ){  
 glColor3f( color[0], color[1] , color[2] );  
-// gluLookAt( 0.0, 0.0, 0.0,   0.0, 100.0, 0.0,   0.0, 0.0, 1.0  );
 
      glPointSize(2) ;
      glBegin(GL_POINTS) ;          
@@ -2189,16 +1916,13 @@ glColor3f( color[0], color[1] , color[2] );
      glEnd() ;
 
   glFlush() ;
-// }
 }
 
 /*now we define the function which, given 2 points in 3D, calculates where they end up on the
 virtual camera pointing toward positive z-s and passes them to the 2D line drawing function. */
 void xaddline_persp( float x1, float y1, float z1, float x2, float y2, float z2, float color[3], 
 				  int pbwidth, int pbheight ){
-// if( z1 > 0.0 && z2 > 0.0 ){   // MAXIMUM SAFETY...
 glColor3f( color[0], color[1] , color[2] );  
-// gluLookAt( 0.0, 0.0, 0.0,   0.0, 100.0, 0.0,   0.0, 0.0, 1.0  );
 
   glBegin(GL_LINES) ;          
         glVertex3f( x1, y1, -z1 ) ; 
@@ -2206,7 +1930,6 @@ glColor3f( color[0], color[1] , color[2] );
   glEnd() ;
 
 glFlush() ;
-// }
 }
 
 /* --------OK---point frantumation sequence function (a special effect)----- */
@@ -2220,13 +1943,8 @@ static double xm[NAUTSM][NPS], ym[NAUTSM][NPS], zm[NAUTSM][NPS], vx[NAUTSM][NPS]
 float xt, yt, zt,    xt2, yt2, zt2, xt3, yt3, zt3,          color[4], colors[NAUTSM][NPS][3]  ;
 static int auxc = 0  ;
 
-// glEnable(GL_BLEND) ;
-
 glDisable(GL_DEPTH_TEST) ;
-//printf("FRANTUMATION SEQUENCE's function CALLED\n");   
 if(option == 1 && N_as < NAUTSM){ /* FIRST PLACE RESERVED TO AUTOSMOKE... POINTLIKE EVAPORATING SMOKE */
-//option = 0 ; // FIRST THING!!! OTHERWISE IT CAUSES INFINITE LOOP!!!
-
 count[N_as] = LT ;
 xc = (float) x0 ;
 yc = (float) y0 ;
@@ -2299,14 +2017,12 @@ if(option == 2){
   for(j = 0 ; j < N_as ; j++){
      if(count[j] > 0){ /* CHECK EXTENSION process stuff and decrease count only as long as it's above 0 yet */
 	/*this anyway*/
-	// printf("DRAWING SMOKE SEQUENCE...\n"); 
 	/* all combination of 1 and 0, see why... JUST A BASIC TRICK, this is NOT A PROFI SPECIAL EFFECT...*/
 	float F_pullup = 3.0 ;
  
 	/* update positions and draw, at the seme time... */
 	for( i = 0; i < LT-count[j]  /*!!!!!*/ && i < MAXN-1 ; i++ ){ /* start 'simulating' progressively more of the total particles... 
 	  so smoke will seem to be fed from it's start point... */ 
-	// printf("DRAWING SMOKE SEQUENCE...STEP: %i\n", i);   
 	float rand_F = 300.0*( (double)0.3*rand()/ (double) RAND_MAX ) ;  /* it makes dissolution */      
 	
 	radius[j][i] = radius[j][i] + 13.8*( (double) rand()/ (double) RAND_MAX )*dft ;  
@@ -2323,12 +2039,9 @@ if(option == 2){
 	  double je ;
 	  je = terrain1.auxnormal[0]*vx[j][i] + terrain1.auxnormal[1]*vy[j][i] + terrain1.auxnormal[2]*vz[j][i] ;
       
-	     //if(je < 0.0){ ??
 	  vx[j][i] =  vx[j][i] - (1.0 + 0.95)*je*terrain1.auxnormal[0]/1.0 ; // OK.
 	  vy[j][i] =  vy[j][i] - (1.0 + 0.95)*je*terrain1.auxnormal[1]/1.0 ; 
 	  vz[j][i] =  vz[j][i] - (1.0 + 0.95)*je*terrain1.auxnormal[2]/1.0 ; 
-	  // printf(">>>>>>>>>IMPACT \n"); 
-              //}
 	  }
 	
 	xt = P[0]*(xm[j][i]-x) + P[1]*(ym[j][i]-y) + P[2]*(zm[j][i]-z ) ;
@@ -2344,10 +2057,7 @@ if(option == 2){
 	yt3 = Q[0]*(xm[j][i]+0.6*radius[j][i]-x) + Q[1]*(ym[j][i]+1.3*radius[j][i]-y) + Q[2]*(zm[j][i]+radius[j][i]-z ) ;
 	zt3 = R[0]*(xm[j][i]+0.6*radius[j][i]-x) + R[1]*(ym[j][i]+1.3*radius[j][i]-y) + R[2]*(zm[j][i]+radius[j][i]-z ) ;
 
-	// xaddpoint_persp( xt, yt, -zt, color, WIDTH, HEIGHT ) ; /* draw points in 3D scnario Z NEGATIVE!!!!!! */ 
-
 	color[0] = colors[j][i][0] ; color[1] = colors[j][i][1] ; color[2] = colors[j][i][2] ; 
-	// color[3] = (float) (MAXN - i)/ (float) (MAXN-1) ; /* trasparency stuff */
 	color[3] = 0.1 ;  
 	  
 	xaddftriang_persp(  xt,  yt,  -zt, 
@@ -2363,7 +2073,6 @@ if(option == 2){
   }
   else if ( /*j != 0 && */ count[j] == 0  ){
      for(k = j ; k < N_as ; k++){ 
-       // if( k != 0  ){
         for(i = MAXN-1 ; i > 0 ; i-- ){
 	xm[k][i] = xm[k+1][i] ;
 	ym[k][i] = ym[k+1][i] ;
@@ -2375,7 +2084,6 @@ if(option == 2){
 
 	radius[k][i] = radius[k+1][i] ;
 	}
-    // }
     
        if( count[k+1] >= 0 && count[k+1] < NAUTSM ){
        count[k] = count[k+1] ;
@@ -2384,15 +2092,11 @@ if(option == 2){
        count[k] = 0 ;
        }
      }
- // count[N_as-1] = 0 ;
  N_as-- ; // reduce total num of smoke sequences in scene but 'delete' the ended slot too bu meking shrink into it all previous ones.
    }  // else block
-
-  // say_terrain_height( &terrain1 , x, z ) ;
 } // NAUTSM count
 
 glEnable(GL_DEPTH_TEST) ;
-// printf("\n %i %i %i %i \n",count[0], count[1], count[2], count[3] ) ; // good test
 }
 /*------end function definition-------------*/
 
@@ -2407,10 +2111,7 @@ int i,j, k, auxc ;
 static float xm[NP], ym[NP], zm[NP], vx[NP], vy[NP], vz[NP] ;
 float xt, yt, zt,    xt2, yt2, zt2, xt3, yt3, zt3 ;
 
-//printf("FRANTUMATION SEQUENCE's function CALLED\n");   
 if(option == 1){
-//option = 0 ; // FIRST THING!!! OTHERWISE IT CAUSES INFINITE LOOP!!!
-
 count = LT ;
 xc = x0 ;
 yc = y0 ;
@@ -2491,7 +2192,6 @@ for( i = -1; i < 2 ; i++ ){ // SO: -1, 0 , 1
 	}
 	
   count-- ;
-  // say_terrain_height( &terrain1 , x, z ) ;
 }
 }
 /*------end function definition-------------*/
@@ -2507,9 +2207,8 @@ static int life[100] ;
 float xm, ym, zm, xt, yt, zt ;
 float x1, y1, z1, x2, y2, z2 ;
 int i , k ;
-//printf("PROJECTILE SEQUENCE's function CALLED\n"); 
+
 if( do_add == 1 ){
-// position new projectile in catesian space - the scenario, essentially.
 poss[n][0] = xpr ;
 poss[n][1] = ypr ;
 poss[n][2] = zpr ;
@@ -2521,11 +2220,8 @@ vels[n][2] = vz ;
 life[n] = 1 ; // do not set to 0 because it mekes start the explosion cycle.
 
 n++ ;
-
-//addsmoke_wsim( poss[0][0], poss[0][1], poss[0][2], dft, 1 ) ; // add a smoke sequance at disappeared point.
 }
 if( life[0] > 0 ){
-// addsmoke_wsim( poss[0][0], poss[0][1], poss[0][2], dft, 2 ) ; // PUT IN  LAST POSITION OF THE 0-th POINT!!!.
 }
 /* draw projectiles */
 for( i = 0 ; i < n ; i++ ){
@@ -2564,8 +2260,6 @@ poss[i][2] =  poss[i][2] + vels[i][2]*dft ;
 vels[i][0] =  vels[i][0] + 0.0 ;
 vels[i][1] =  vels[i][1] + 0.0 ;
 vels[i][2] =  vels[i][2] - 9.81*dft ; /* classical gravity */
-
-// printf("PROJECTILE AT: %3.3f    %3.3f   %3.3f \n",  poss[i][0], poss[i][1], poss[i][2] );  
 
     if( poss[i][2] < say_terrain_height( &terrain1, poss[i][0], poss[i][1] )  ){
     double je ;
@@ -2643,8 +2337,6 @@ Yi = floor( z/ite[0].GPunit ) ;  //z axis (right/left-of-screen)
 
 Xf = x/ite[0].GPunit ;
 Zf = z/ite[0].GPunit ;
-// printf("Xi= %i, Yi= %i \n", Xi, Yi ) ; // checks
-// printf("Xf= %f, Yf= %f \n", Xf, Zf ) ;
 
 /*a cautional correction to avoi SegmentationFault: SECURE. */
 if( Xi < 0 || Xi > ite[0].map_size ){  /* if it accidentally becomes negative, put it zero but nuder that there is no terrain!! */
@@ -2656,15 +2348,12 @@ Yi = 0 ;
 
 dist_fp1 = sqrt( pow( Xf- Xi   ,2 )  + pow( Zf- Yi   ,2 ) ) ;
 dist_fp2 = sqrt( pow( Xf-(Xi+1),2 )  + pow( Zf-(Yi+1),2 ) ) ;
-//printf("X: %3f, Y: %3f : triangle: %d\n", Xf,Yf,col);
 //reusing Xi and Yi...:
      if (      dist_fp1 < dist_fp2  ){  //careful if negativ or positive the Z axis... in fact.
      col = 0 ; //lower triangle region.
-     // printf("ON TRI_0... \n\n");
      }      
      else{    
      col = 1 ;
-     // printf("ON TRI_1... \n\n");
      }
 
 /*-----------*/
@@ -2689,8 +2378,6 @@ vector1[0] = 0.0 ; //pick from the on-purpose triangle storer....
 vector1[1] = ite[0].shmap[Xi+1][Yi] - ite[0].shmap[Xi+1][Yi+1] ;
 vector1[2] = -1.0 ;
 }
-
-// s_nloc = cross( s_vector0 , s_vector1 ) ;
 
 /* we do directly the cross product */
 s_nloc[0] = vector0[1]*vector1[2] - vector0[2]*vector1[1] ; // IMPLEMENT IT WARNING
@@ -2721,8 +2408,6 @@ y = -( //is negative!chenck equation members always!!
 	                                                        cpl*z + // cx +
                                                           dpl)/bpl                                               // d )/b
 	) ;
-
-// printf("TERRAIN CHECK!! -- x= %3.3f, y= %3.3f, HEIGHT= %3.3f \n", x, z, y ) ; // checks
 
 /* additional stuff( NOT part of previous procedures) */
 lenght = sqrt( pow(s_nloc[0],2) + pow(s_nloc[1],2) + pow(s_nloc[2],2) ) ;
@@ -2771,19 +2456,7 @@ color[1] = 1.0 ;
 if(color[2] > 1.0 ){
 color[2] = 1.0 ;
 }
-
-/*
-glColor3f( color[0], color[1] , color[2] );  
-
-  glBegin(GL_TRIANGLES) ;          
-        glVertex3f( x1, y1, 10.0 ) ; 
-	glVertex3f( x2, y2, 10.0 ) ;
-	glVertex3f( x3, y3, 10.0 ) ;	     	         
-  glEnd() ;
-
-glFlush() ;
-*/
- } 
+} 
 /*========================================================================================================*/
 
 /*now we define the function which, given 2 points in 3D, calculates where they end up on the
@@ -2793,14 +2466,7 @@ void xaddftriang_persp( float x1, float y1, float z1,
 				    float x3 ,float y3, float z3, 
 				int step, 
 				  float color[4], int pbwidth, int pbheight ){
-//  printf("xaddftriang() \n\n") ; // without '\n' (newline) is useless.... . 
-
-  //mag = ( (float) pbwidth )/tan(angle_aperture)  ;  /*smaller angle magnifies more! like the telescope meghanism! */
-
-  //if( z1 > 0.0 && z2 > 0.0 && z > 0.0 ){  
-
 glColor4f( color[0], color[1] , color[2], color[3] );  
-// gluLookAt( 0.0, 0.0, 0.0,   0.0, 100.0, 0.0,   0.0, 0.0, 1.0  );
 
   glBegin(GL_TRIANGLES) ;          
         glVertex3f( x1, y1, -z1 ) ; 
@@ -2811,7 +2477,6 @@ glColor4f( color[0], color[1] , color[2], color[3] );
 glFlush() ;
 
 /* this causes deformation and it is both gemetrically and visually WRONG, but the deformations are minimal, and it is just a trick to avoid bad looking scenaries, like pieces missing from the car just because in an internal visualisation some triangles have a vertex behind the obserzer ( z < 0 ) */
-//  }
 }
 
 void GLaddftriang_perspTEXTURED(   float x1, float y1, float z1, 
@@ -2819,9 +2484,7 @@ void GLaddftriang_perspTEXTURED(   float x1, float y1, float z1,
 				   float x3 ,float y3, float z3, 
 				int texId, float texcoords[3][2], 
 				  float color[3], int pbwidth, int pbheight ){
-//#ifdef GL_VERSION_1_1
    glBindTexture(GL_TEXTURE_2D, texId );
-//#endif
 
  glEnable(GL_TEXTURE_2D);                        //GL_DECAL
   glColor3f( color[0], color[1] , color[2] ) ;  
@@ -2846,7 +2509,6 @@ glEnd() ;
 glFlush() ;
 
 glDisable(GL_TEXTURE_2D);                     
-// printf("TEXTURE OpenGL done??\n\n");
 }
 
 void xaddftriang_perspTEXTURED_pp( float x1, float y1, float z1, 
@@ -2856,7 +2518,6 @@ void xaddftriang_perspTEXTURED_pp( float x1, float y1, float z1,
 				  float color[3], int pbwidth, int pbheight ){
 static int alternative = 0 ;
 static int texture_generated = 0 ; /* at first call of this function, a 32x32 texture sample will be generated */
-//  printf("xaddftriang() \n\n") ; // without '\n' (newline) is useless.... . 
   float mag ;
   static float txt[32][32] ;
   int j, i ;
@@ -2870,8 +2531,6 @@ static int texture_generated = 0 ; /* at first call of this function, a 32x32 te
       }
     }
   }
-  //mag = ( (float) pbwidth )/tan(angle_aperture)  ;  /*smaller angle magnifies more! like the telescope meghanism! */
-// if( z > 0.0  ){ 
   
 if( ( pow(x3-x2,2) + pow(y3-y2,2) + pow(z3-z2,2) ) > ( pow(x3-x1,2) + pow(y3-y1,2) + pow(z3-z1,2) )  && ( pow(x3-x2,2) + pow(y3-y2,2) + pow(z3-z2,2) ) > pow(x2-x1,2 ) + pow( y2-y1,2 ) + pow( z2-z1,2 )   ){  //side 2 longer than the others: x2 IS the hypothenuse of a quasi-rect triagle.
 // lave p1, p2, p3 as they are... they are ok.
@@ -2947,7 +2606,6 @@ float v_ver[3] = { 1.2 , 2.3, 1.0 } ; // the one wiht greter y-component... ('mo
             /* first x-y couple is intact... MIDPOINT, DOWNER */ 
 
 float jff, iff, limh, limv, texres  ;
-// texres = 10.0 ; //texture resolution 
 texres = step ; //texture resolution 
 
 v_ver[0] = (x2-x1)/texres ;
@@ -2959,40 +2617,10 @@ v_hor[1] = (y3-y1)/texres ;
 v_hor[2] = (z3-z1)/texres ;
  
 //=== dimension = texres!!! ===
-/*
-static float txt[16][16] = {   { 0.98, 0.91,  0.91, 0.90, 0.91, 0.91,  0.93 , 0.94, 0.95, 0.96,  0.97, 0.98, 0.99, 0.99, 0.97, 0.94  }, 
-			{ 0.95, 0.95,  0.98, 0.95, 0.90, 0.92,  0.98 , 0.95, 0.90, 0.95,  0.98, 0.95, 0.99, 0.97, 0.94, 0.95  },
-			{ 0.97, 0.91,  0.89, 0.97, 0.90, 0.93,  0.98 , 0.95, 0.90, 0.95,  0.98, 0.95, 0.95, 0.98, 0.95, 0.88  },
-			{ 0.92, 0.88,  0.94, 0.99, 0.95, 0.94,  0.91 , 0.96, 0.99, 0.97,  0.90, 0.95, 0.98, 0.95, 0.90, 0.95  },
-			{ 0.99, 0.95,  0.98, 0.95, 0.90, 0.95,  0.98 , 0.95, 0.90, 0.95,  0.98, 0.95, 0.99, 0.97, 0.94, 0.95  },
-			{ 0.85, 0.90,  0.98, 0.94, 0.95, 0.96,  0.97 , 0.94, 0.95, 0.99,  0.97, 0.94, 0.95, 0.99, 0.97, 0.94  }, 
-			{ 0.90, 0.95,  0.98, 0.95, 0.80, 0.87,  0.98 , 0.95, 0.80, 0.95,  0.98, 0.95, 0.99, 0.97, 0.94, 0.95  },
-			{ 0.95, 0.99,  0.87, 0.94, 0.85, 0.88,  0.97 , 0.94, 0.95, 0.99,  0.97, 0.94, 0.95, 0.99, 0.97, 0.94  }, 
-			{ 0.91, 0.93,  0.99, 0.97, 0.90, 0.95,  0.98 , 0.95, 0.90, 0.95,  0.98, 0.95, 0.95, 0.98, 0.95, 0.88  },
-			{ 0.97, 0.95,  0.98, 0.95, 0.90, 0.95,  0.98 , 0.95, 0.90, 0.95,  0.98, 0.95, 0.99, 0.97, 0.94, 0.95  },
-			{ 0.91, 0.91,  0.99, 0.97, 0.90, 0.95,  0.98 , 0.95, 0.80, 0.95,  0.98, 0.95, 0.95, 0.98, 0.95, 0.88  },
-			{ 0.90, 0.95,  0.98, 0.95, 0.90, 0.95,  0.98 , 0.95, 0.90, 0.95,  0.98, 0.95, 0.99, 0.97, 0.94, 0.95  },
-			{ 0.94, 0.92,  0.99, 0.95, 0.94, 0.95,  0.98 , 0.92, 0.90, 0.95,  0.88, 0.95, 0.89, 0.97, 0.94, 0.95  },
-			{ 0.90, 0.95,  0.98, 0.95, 0.90, 0.95,  0.98 , 0.95, 0.90, 0.95,  0.98, 0.95, 0.99, 0.97, 0.94, 0.95  },
-			{ 0.90, 0.91,  0.99, 0.95, 0.90, 0.95,  0.98 , 0.95, 0.90, 0.95,  0.98, 0.95, 0.99, 0.97, 0.94, 0.95  },
-			{ 0.91, 0.96,  0.99, 0.97, 0.90, 0.95,  0.98 , 0.95, 0.90, 0.95,  0.98, 0.95, 0.95, 0.98, 0.95, 0.88  }
-
-		} ;
-
-*/
 float color_app[3] ;
 
   for( jff = 0 ; jff < texres ; jff = jff + 1.0 ){
-     //if ( alternative == 1 ){
      limh = -jff + texres ; 
-     /*}
-     else if( alternative == 2 ){
-     limh = -jff + texres ;
-     }
-     else if( alternative == 3 ){
-     limh = -jff + texres ;	
-     }
-*/
 
 	for( iff = 0 ; iff < limh ; iff = iff + 1.0 ){ // SEEMS OK... LOOKS OK.
 color_app[0] = color[0]*(txt[(int)jff][(int)iff] ) ;
@@ -3001,19 +2629,11 @@ color_app[2] = color[2]*(txt[(int)jff][(int)iff] ) ;
 // OK.
 
 /* A pseudo-3D tree sprite could  be put here... onlt at *some* grid intersections... */
-/* 
-xaddpoint_persp( x1 +jff*v_hor[0] +iff*v_ver[0], 
-		 y1 +jff*v_hor[1] +iff*v_ver[1],
-		 z1 +jff*v_hor[2] +iff*v_ver[2], 
-color_app, pbwidth, pbheight  ) ;
-//OK. uncomment if this kind of visuaisation is needed.
-*/
 
 // OK.
 
 // tri 1 
 glColor3f( color_app[0], color_app[1] , color_app[2] );  
-// gluLookAt( 0.0, 0.0, 0.0,   0.0, 100.0, 0.0,   0.0, 0.0, 1.0  );
 
   glBegin(GL_TRIANGLES) ;          
 	glVertex3f( x1 +jff*v_hor[0] +iff*v_ver[0],  
@@ -3053,7 +2673,6 @@ glBegin(GL_TRIANGLES) ;
 			}
 	 }
    }
-// } // zi > 0 check
 }
 /*--------------|end function|----------------*/
 
@@ -3101,7 +2720,6 @@ int im, jm, k ;
          sum = 0 ;
                for( k = 0; k < 3; k++) {
                sum = sum + mat1[im][k]*mat2[k][jm] ;
-		// printf("matrix_mult check: j i k  %i %i %i| sum: %f\n\n\n",j,i,k ,sum );
 	       }
          result_matrix[im][jm] = sum ; /* EXTERN VALUE!!! It's an easy way to implement all this. */
          }
@@ -3120,12 +2738,9 @@ void  inv( double in_3x3_matrix[3][3] ){
      int i,j;
      double x,n=0; /*n is the determinant of A*/  
 
-    /* printf("\n matrix A: \n");*/
      for(i=0;i<3;i++){     
-    /*   printf("; \n");*/
           for(j=0;j<3;j++){                    
                A[i][j] = in_3x3_matrix[i][j] ;  	
-     /*          printf("%3f ",A[i][j]); */
 	       B[i][j]=0;
                C[i][j]=0;
           }
@@ -3149,8 +2764,6 @@ void  inv( double in_3x3_matrix[3][3] ){
                n = n -A[i][j]*A[i-1][j+1]*A[i-2][j+2];
           }
  
-    /* printf("The determinant of matrix A is %.2f ",n); */
-         
      if( n != 0.0){ 
      x = 1.0/n ; 
      }
@@ -3193,14 +2806,6 @@ double vector0[3], vector1[3], axis[3] ;
 double vvertex[3], vnorm ;
 double auxv[3], auxv2[3], UP, DOWN ; // auxiliary to brake up some longer formulas into feasibly small parts.
 
-// s_nloc = cross( s_vector0 , s_vector1 ) ;
-/*
-/* we do directly the cross product 
-s_nloc[0] = vector0[1]*vector1[2] - vector0[2]*vector1[1] ; 
-s_nloc[1] = vector0[2]*vector1[0] - vector0[0]*vector1[2] ; 
-s_nloc[2] = vector0[0]*vector1[1] - vector0[1]*vector1[0] ; 
-*/
-  
 vector0[0] = nx ;
 vector0[1] = ny ;
 vector0[2] = nz ;
@@ -3214,15 +2819,6 @@ axis[1] = vector0[2]*vector1[0] - vector0[0]*vector1[2] ; // y component
 axis[2] = vector0[0]*vector1[1] - vector0[1]*vector1[0] ; // z component             
 
 // try this simplified way... . Well.. let's evoid bad work in a little game... .
-/*
-Fcm[0] = Fcm[0] + jel*nx  ;
-Fcm[1] = Fcm[1] + jel*ny  ;
-Fcm[2] = Fcm[2] + jel*nz  ;
-
-torque_tot[0] = torque_tot[0] - jel*axis[0] ;
-torque_tot[1] = torque_tot[1] - jel*axis[1] ;
-torque_tot[2] = torque_tot[2] - jel*axis[2] ;
-*/
 
 // let's do the hit resolution in a correct way, also becuase when it can be done, let's do it: good collision simulation for sigle ridig-body make good landings.
 
@@ -3255,8 +2851,6 @@ auxv2[2] = inv_It_now[2][0]*auxv[0] + inv_It_now[2][1]*auxv[1] +  inv_It_now[2][
 		UP   = -(1.0 + e )*vnorm ;
                 DOWN = 1.0/MASS +   ( auxv[0]*auxv2[0] + auxv[1]*auxv2[1] + auxv[2]*auxv2[2] ) ;
        
-		//DOWN = 1.0/inbody[0].MASS.x + dot3_st(  auxv , mat3x3_vect( inbody[0].TIworInv, auxv ) ) ;
-		
                 jel = UP/DOWN ;  
   		// "jel" is the rright impulse, now appy the impulse and assign final vleocity and rotation. 
 
@@ -3284,146 +2878,17 @@ auxv2[0] = inv_It_now[0][0]*auxv[0] + inv_It_now[0][1]*auxv[1] +  inv_It_now[0][
 auxv2[1] = inv_It_now[1][0]*auxv[0] + inv_It_now[1][1]*auxv[1] +  inv_It_now[1][2]*auxv[2]  ; // y component             
 auxv2[2] = inv_It_now[2][0]*auxv[0] + inv_It_now[2][1]*auxv[1] +  inv_It_now[2][2]*auxv[2]  ; // z component     
 
-//inbody[0].ww = vector_sum( inbody[0].ww ,  mat3x3_vect( inbody[0].TIworInv, auxv  ) ) ; 
-/*
-w[0] = w[0] +  inv_It_now[0][0]*auxv2[0] + inv_It_now[0][1]*auxv2[1] +  inv_It_now[0][2]*auxv2[2] ;
-w[1] = w[1] +  inv_It_now[1][0]*auxv2[0] + inv_It_now[1][1]*auxv2[1] +  inv_It_now[1][2]*auxv2[2] ;
-w[2] = w[2] +  inv_It_now[2][0]*auxv2[0] + inv_It_now[2][1]*auxv2[1] +  inv_It_now[2][2]*auxv2[2] ;
-*/
-
 w[0] = w[0] +  auxv2[0] ;
 w[1] = w[1] +  auxv2[1] ;
 w[2] = w[2] +  auxv2[2] ;
 
 // update also this, to be sure you know... .
-//L = mat3x3_vect( inbody[0].TIwor , inbody[0].ww )   ;
-
 L[0] = It_now[0][0]*w[0] + It_now[0][1]*w[1] +  It_now[0][2]*w[2] ;
 L[1] = It_now[1][0]*w[0] + It_now[1][1]*w[1] +  It_now[1][2]*w[2] ;
 L[2] = It_now[2][0]*w[0] + It_now[2][1]*w[1] +  It_now[2][2]*w[2] ;
 
-/*
-inbody[0].rotaxis.vector[0] = inbody[0].ww.vector[0] /inbody[0].vang.x  ;
-inbody[0].rotaxis.vector[1] = inbody[0].ww.vector[1] /inbody[0].vang.x  ;
-inbody[0].rotaxis.vector[2] = inbody[0].ww.vector[2] /inbody[0].vang.x  ;
-*/
-
 printf("COLLISION BEING RESOLVED ....\n\n");  
 }
-
-/*
-	//CALCULATE: velvector + cross(vang*axisversor, vertex_pos_vector_in_non-rotating-body_coordinates);
-	//FORMULA NORMSPEED. 
-	inbody[0].vvertex = vector_sum( 
-			    inbody[0].vel, cross( inbody[0].ww,  s_vector1 )
-				    ) ;
-				    
-				    
-        //here the friction normal... hard for the terrain triangle is inclined(general case)... we must combine the two infos: normal and vel vector....
-	//combine this two infos to get: how much of the speed of the vertex is arallel to the surface of the triangle it is touching?
-	//copy velocity vector of vertex into an auxiliary vector to work with easily.
-	aux_vect.vector[0] = inbody[0].vvertex.vector[0] ;
-	aux_vect.vector[1] = inbody[0].vvertex.vector[1] ; 
-	aux_vect.vector[2] = inbody[0].vvertex.vector[2] ;			     			     			     
-	//END FORMULA to calculate "vvertex".
-
-	//since the gound is the 'fix' reference system to measure relative velocities end positions, with it we can establish objectively: goes or not. 
-	if ( leng_vect3(aux_vect) > 0.1 ){        
-	s_nTloc =  cross( s_nloc, cross(s_nloc, aux_vect ) )  ;       //vector measuring the parto of motion parallel-to-surface: 3D....
-	s_nTloc =  pscv(s_nTloc, -1.0 ) ;                                                  //invert sense: friction opposes motion's direction!
-	} 
-	else{ 
-	s_nTloc.vector[0] = 0.0 ;
-	s_nTloc.vector[1] = 0.0 ;
-	s_nTloc.vector[2] = 0.0 ;
-	}
-
-
-	 vnorm = dot3_st( s_nloc , inbody[0].vvertex )  ; //the output is a float  anyway: 'vnorm' is a float, just as is. 				    
-	
-	
-	
-	     if (vnorm < 0 ) {
-       //REBOUNCE PART:                  
-       
-	        UP   = -(1.0 + e )*vnorm ;
-                DOWN = 1.0/inbody[0].MASS.x + dot3_st(  cross(s_vector1, s_nloc ) , mat3x3_vect( inbody[0].TIworInv, cross(s_vector1, s_nloc ) ) ) ;
-       
-                jel = UP/DOWN ;
-*/
-
-
-
-/*
-		//FRICTION PART:       
-		//FRICTION PART:       
-
-		if ( fabs(  pow( inbody[0].vvertex.vector[0],2 ) + pow( inbody[0].vvertex.vector[2],2 ) ) > 0.1 ) {  //see if parellely to ground there is relative motion.
-		s = 1; 
-		} 
-		else{
-		s = 0 ;
-		} //don't play w too small numbers,may cause /0 and INF.
-     
-	 
-	 
-       vnorm = s*dot3_st(s_nTloc, inbody[0].vvertex) ;   //we overwrite it, since it's been already used for what it was aimed.
-       UPf   = -(0.0 + fr_gro )*vnorm       ;     //careful with adaptation: here, the max restitution is 1.0.  
-
-       DOWNf = 1.0/inbody[0].MASS.x    +  dot3_st(  cross(s_vector1, s_nTloc ) , mat3x3_vect( inbody[0].TIworInv, cross(s_vector1, s_nTloc ) ) )  ;
- 
-       jelf = lat*(UPf/DOWNf)  ; // if lat = 0 it's NO FRICTION OF ANY KIND 
-       
-	//the more green component in ground color, the more friction.
-	if ( fabs(jelf) > mg.scol[Xi][Yi][1]*380000.0 ){ // if too much ==CHECK!!!==, it becomes dynamic friction and substantially we have lost control over the car!! 
-	jelf = (500*jelf)/fabs(jelf) ;   
-	}
-
-
-
-
-
- 		    
-// copy other angular momentum and other stuff here!!
-   
-                           //update linear and angular vel.
-                            inbody[0].vel.vector[0] = inbody[0].vel.vector[0] + (jel/inbody[0].MASS.x)*s_nloc.vector[0]  ;
-                            inbody[0].vel.vector[1] = inbody[0].vel.vector[1] + (jel/inbody[0].MASS.x)*s_nloc.vector[1]  ;
-                            inbody[0].vel.vector[2] = inbody[0].vel.vector[2] + (jel/inbody[0].MASS.x)*s_nloc.vector[2]  ;
-       
-
-//=====FOR VINCLAR DYNAMICS=========== 
-//calc virtual acceleration undeegone in the discreet dt simulaiton cycle time.      
-inbody[0].acc_tot    = pscv( vector_sum( inbody[0].vel, pscv( inbody[0].vel_pre, -1.0 ) ) , 1.0/dft )  ;			    
-//====================================			    
-
-
-
-
-//extract vector from vector-collection matrix of vertexes: 'j' number of bolyhedron. 'i' number of one of it's vertexes.
-aux_vect.vector[0] = rx ;
-aux_vect.vector[1] = ry ;
-aux_vect.vector[2] = rz ;
-
-//rebounce contribution:
-inbody[0].ww = vector_sum( inbody[0].ww ,  mat3x3_vect( inbody[0].TIworInv, cross( aux_vect, pscv( s_nloc  ,jel  ) )  ) ) ; 
-
-
-//update also the angular momentum, since ww chenged: then also angular momentum changes (obvious).
-inbody[0].L = mat3x3_vect( inbody[0].TIwor , inbody[0].ww )   ;  
-
-
-//recalc separately vang and rotation-axis versor.
-inbody[0].vang.x = leng_vect3( inbody[0].ww ) ;
-
-inbody[0].rotaxis.vector[0] = inbody[0].ww.vector[0] /inbody[0].vang.x  ;
-inbody[0].rotaxis.vector[1] = inbody[0].ww.vector[1] /inbody[0].vang.x  ;
-inbody[0].rotaxis.vector[2] = inbody[0].ww.vector[2] /inbody[0].vang.x  ;
-
-
-
-}
-*/
 
 return jel ;
 }
@@ -3478,11 +2943,8 @@ It_init[2][0] = -Ixz  ;
 It_init[1][2] = -Iyz  ; 
 It_init[2][1] = -Iyz  ;
 
-//printf("FINAL RESULT TO CHECK: \n");
    for(i=0;i<3;i++){
-  //        printf(" \n");
           for(j=0;j<3;j++){                         
-    //    printf("%3f  ",result_matrix.matrix[i][j]);               
           }
    }
 }
@@ -3498,7 +2960,6 @@ static int texture_generated = 0 ; /* at first call of this function, a 32x32 te
 
 int txtRES = 128 ; // A REASONAMBLE TEXTURE RESOUTION
  
-//static GLubyte checkImage[txtHeight][txtWidth][4];
 static GLubyte txt1[txtHeight][txtWidth][3] ;
 
 #ifdef GL_VERSION_1_1
@@ -3519,15 +2980,6 @@ static GLuint texName ;
     }
     
     //=================GROUND TEXTURE PERSONALISED...=====================
-   // texture_size = TEXRES ;
-//float bigvect[10000], bigvect2[10000], bigvect3[10000] ;
-//int image[10000][3]; // first number here is 1024 pixels in my image, 3 is for RGB values
-
-/* WE USE SDL LIBRARY's Bitmap image file reading routine so... this is not used anymore because proved rather unreliable.
-FILE *streamIn;
- char byte ; 
-*/
-
 int texn = 1 ;
 
 while ( texn > 0 ){
@@ -3552,7 +3004,6 @@ imhe = 128 ;
 	
    imhe = image->h ;
    txtRES = imhe ; // set TEXTURE RESOLUTION txt must be SQUARE!!!
-// printf("bitmap RES: %i\n", imhe );
 SDL_Delay(5);
 
 /*---------feed into 'the' array used for this.....---------*/
@@ -3564,14 +3015,6 @@ SDL_Delay(5);
 	txt1[j][i][0] = (GLubyte) red   ;
 	txt1[j][i][1] = (GLubyte) green ;
 	txt1[j][i][2] = (GLubyte) blue  ;
-
-/* A GOOD TEST TO SEE IF TEXTURE DISPLAY ITSELF WORKS CORRECT... 
-txt1[j][i][0] = (GLubyte) i  ;
-txt1[j][i][1] = (GLubyte) j  ;
-txt1[j][i][2] = (GLubyte) i  ;
-*/
-
-// printf("pixel : [%d,%d,%d]\n",red,green,blue);
 	}
    }
 /*----------------------------------------------------------*/
@@ -3592,10 +3035,6 @@ printf("teName %i\n", texid[texn-1] );
 
 glBindTexture(GL_TEXTURE_2D, texid[texn-1] ) ;  // [texn-1] because startd fron 1, be careful
 
-//#ifdef GL_VERSION_1_1
-//   glGenTextures(1, &texName);
-//#endif
-
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,  GL_NEAREST  /* GL_LINEAR  */ ) ; // what OpgnGL should do when texture is magnified GL_NEAREST: non-smoothed texture | GL_LINEAR: smoothed  
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST ) ;  // ...when texture is miniaturized because far; GL_NEAREST: non-smoothed tecture 
 
@@ -3604,8 +3043,6 @@ glBindTexture(GL_TEXTURE_2D, texid[texn-1] ) ;  // [texn-1] because startd fron 
 
    glEnable(GL_TEXTURE_2D);                        
    glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, /*GL_COMBINE*/ GL_DECAL ); // the GL_DECAL option draws texture as is: no color mixing thigs. GL_MODULATE lets mixing.
-
-//   glTexEnvf(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_BLEND) ; //THIS WAS ACTIVE AND WORKED; BUT NOW CHANGE IN STRATEDY FOR TEXTURES.
 
    glBindTexture(GL_TEXTURE_2D, texName);
 //--------------------------| END OF TEXTURE LOAD PROCESSING |-------------------------------
@@ -3636,7 +3073,6 @@ static int texture_generated = 0 ; /* at first call of this function, a 32x32 te
 #define	txtHeight3 96
 
 int txtRES2 = 96 ; // A REASONAMBLE TEXTURE RESOUTION
-//static GLubyte checkImage[txtHeight][txtWidth][4];
 static GLubyte txt1[txtHeight3][txtWidth3][4] ;
 
 #ifdef GL_VERSION_1_1
@@ -3657,15 +3093,6 @@ static GLuint texName ;
     }
     
     //=================GROUND TEXTURE PERSONALISED...=====================
-   // texture_size = TEXRES ;
-//float bigvect[10000], bigvect2[10000], bigvect3[10000] ;
-//int image[10000][3]; // first number here is 1024 pixels in my image, 3 is for RGB values
-
-/* WE USE SDL LIBRARY's Bitmap image file reading routine so... this is not used anymore because proved rather unreliable.
-FILE *streamIn;
- char byte ; 
-*/
-
 int texn = 1 ; // > 0 ABSOLUTELY!!!
 
 while ( texn > 0 ){
@@ -3706,14 +3133,8 @@ SDL_Delay(5);
 
 	if( txt1[j][i][0] == 0 && txt1[j][i][1] == 0 && txt1[j][i][2] == 0  ){ // ADD TRANSPARECY VALUE ARTIFICIALLY ACCORDING TO SOME CONVENTION LIKE BLACK => TRANSPARENT
 	txt1[j][i][3] = 0 ; // make this pixel totally transparent (alpha = 0) ; opaque is alpha = 255. .
-	 // printf("pixel : [%d,%d,%d ,alpha_value: %d]\n",red,green,blue, alpha );
 	}
 	
-/* A GOOD TEST TO SEE IF TEXTURE DISPLAY ITSELF WORKS CORRECT... 
-txt1[j][i][0] = (GLubyte) i  ;
-txt1[j][i][1] = (GLubyte) j  ;
-txt1[j][i][2] = (GLubyte) i  ;
-*/
 if( alpha < 255 ){
 printf("pixel : [%d,%d,%d ,alpha_value: %d]\n",red,green,blue, alpha );
 }
@@ -3734,10 +3155,6 @@ texid[textures_available + texn-1] = texName ; // [texn-1] because startd fron 1
 
 glBindTexture(GL_TEXTURE_2D, texid[textures_available + texn-1] ) ;  // [texn-1] because startd fron 1, be careful
 
-//#ifdef GL_VERSION_1_1
-//   glGenTextures(1, &texName);
-//#endif
-
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,  GL_NEAREST  /* GL_LINEAR  */ ) ; // what OpgnGL should do when texture is magnified GL_NEAREST: non-smoothed texture | GL_LINEAR: smoothed  
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST ) ;  // ...when texture is miniaturized because far; GL_NEAREST: non-smoothed tecture 
 
@@ -3746,8 +3163,6 @@ glBindTexture(GL_TEXTURE_2D, texid[textures_available + texn-1] ) ;  // [texn-1]
 
    glEnable(GL_TEXTURE_2D);                        
    glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, /*GL_COMBINE*/ GL_DECAL ); // the GL_DECAL option draws texture as is: no color mixing thigs. GL_MODULATE lets mixing.
-
-//   glTexEnvf(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_BLEND) ; //THIS WAS ACTIVE AND WORKED; BUT NOW CHANGE IN STRATEDY FOR TEXTURES.
 
    glBindTexture(GL_TEXTURE_2D, texName);
 //--------------------------| END OF TEXTURE LOAD PROCESSING |-------------------------------
@@ -3778,7 +3193,6 @@ isz = TERRAIN_SIZE ;
    for( j = 0 ; j < TERRAIN_SIZE ; j++ ){
       for( i = 0 ; i < TERRAIN_SIZE ; i++ ){
 	terrain1.shmap[j][i] =  (float) rand() / (float) RAND_MAX ;
-	// hmap[j][i] = 0.0 ;
       }
     }
 //=================GROUND TEXTURE PERSONALISED...=====================
@@ -3796,7 +3210,6 @@ isz = image->h ;
 	color_to_convert = getpixel( image, i,TERRAIN_SIZE-1 -j ) ;
 	SDL_GetRGB( color_to_convert, image->format, &red, &green, &blue );
 
-     // hmap[j][i] = ( (float) red + (float) 256.0*blue )/(256.0*256.0) ; /* generic but way difficult to edit with GIMP of similare image manipulation programs */
       terrain1.shmap[i][j] = ( (float) red + 256.0*((float) green) )/(256.0) ; /* SIMPLIFICED WAY... */
       }
  }
@@ -3834,13 +3247,10 @@ sdl_image = SDL_LoadBMP( filename ) ;
 		color_to_convert = getpixel( sdl_image, i, j ) ;
 		SDL_GetRGB( color_to_convert, sdl_image->format, &red, &green, &blue ) ;
                       
-		// mg.maptex[299-j][i] = red + green*256 ; // divided by two because of our convention... 
-		
 		terrain1.map_texture_indexes[i][299-j] = -0 + (int) red + ( (int) green)*256 ; // divided by two because of our convention...
 		if( terrain1.map_texture_indexes[i][299-j] >= textures_available ){ // if indes is superior to the number of total loaded textures, put it to some defult number within num of availble textures.
 		terrain1.map_texture_indexes[i][299-j] = 0 ; // defult. 
 		}
-		//printf("pixel : [%d,%d,%d]\n",red,green,blue);
 		
 		if( i < 14 && i < 22 ){
 		printf("%2i|", terrain1.map_texture_indexes[i][299-j] ) ;
@@ -3939,22 +3349,6 @@ nelem = check_vector_elements( "input/vertexes.txt" ) ;
 				col_tris[j][i] = auxxv[ j*3 + i ] ;
 				}
 			}
-		
-		/*
-		printf("TRYING TO IMPORT TEXTURE ID AND ACCOMODATION CONFIGURATION FOR EACH FACE\n") ;
-		// CONVENTION: TEXTURE_ID_NUMBER | texture_coordinate_index_1   ""index_2   ""index_3 
-		
-		
-		
-		FilePtr = fopen( "input/face_texord.txt", "r" ) ;
-					  
-			 // feed into 'the' array used for this..... 
-			for( j = 0 ; j < ntris ; j++ ){
-			 printf("line %i of text file...\n", j ) ; 
-			fscanf( FilePtr,"%4i | %4i %4i %4i\n", &face_texid[j], &face_texord[j][0], &face_texord[j][1], &face_texord[j][2] ) ;
-			}
-		fclose(FilePtr)	;			
-		*/
 }
 //==============END FUNCTION DEFINITION==========================
 
