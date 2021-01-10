@@ -1,0 +1,19 @@
+'5': framerate augment.
+'6': framerat diminish.
+
+arrows: airplane control.
+'8': gas diminish.
+'9': gas augment
+
+',': not implemented
+'-': not implemented
+
+
+'1' zoom in.
+'2' zoom out.
+
+'o': change camera view type. at least as soon as this feature will be implemented.
+
+
+
+NOTE: is multimedial content is too large, just delete the terrain_textutre_n.bmp files except one bulkfill one that you like with title terrai_texture_1.bmp, and the game works seme. SDL versio shall not have textures at all instead... but this was just to say that game can run also without multimedial contents. I will also implement support for randomised tree-generation in case no textures at all are available. the game should be able to run also without hmap.bmp and texmap.bmp but it will do it all random which is not the best thing. 
