@@ -1,7 +1,3 @@
-/* FULL 3D */
-/* OK: works correctly */
-/* ill */
-
 #include <stdio.h>
 #include <math.h>
 #include <time.h>
@@ -17,21 +13,25 @@
 #include <GL/gl.h>
 #include <GL/glcorearb.h>
 
-#define WIDTH 480
-#define HEIGHT 320
-#define COLDEPTH 16
-SDL_Surface *screen;
-SDL_Event event;		   /* for real-time interactivity functions provided by SDL library */
-SDL_Window *window = NULL; // New for SDL 2
-SDL_GLContext context;	   // New for SDL2
-const GLdouble pi = 3.1415926535897932384626433832795;
+/*===the structure representing relevant quantities concerning game's terrain====*/
+#define TERRAIN_SIZE 300
+struct subterrain
+{
+	int map_size;
+	float GPunit;
+	float shmap[TERRAIN_SIZE][TERRAIN_SIZE];
+	float scol[TERRAIN_SIZE][TERRAIN_SIZE][3];
+	int map_texture_indexes[TERRAIN_SIZE][TERRAIN_SIZE];
+	float auxnormal[3];
+};
 
-int low_graphics = 1;
+// ####################################################################################################################
+// # Function prototypes                                                                                              #
+// #                                                                                                                  #
 
 // SUPERSAFE TOOK IT FROM PROFESSIONAL SITE: used for bitmap conversion to RGB value matrix (usual stuff)
 Uint32 getpixel(SDL_Surface *surface, int x, int y);
 
-float pixmatrix[HEIGHT][WIDTH][3];
 
 /* this is the prototype of the function which will draw the pixel. */
 void sdldisplay(int sw, int sh);
@@ -76,20 +76,16 @@ void xaddftriang_perspTEXTURED(float x1, float y1, float z1,
 							   int step,
 							   float color[3], int pbwidth, int pbheight);
 
-int texture_ids[100];
-
 void GLaddftriang_perspTEXTURED(float x1, float y1, float z1,
 								float x2, float y2, float z2,
 								float x3, float y3, float z3,
 								int texId, float texcoords[3][2],
 								float color[3], int pbwidth, int pbheight);
 
-int textures_available = 0; // this is quite obvious... how many textures are loaded or remdom-genrated... ok.
-
 void load_textures_wOpenGL();
 void load_textures96x96_SEMITRANSPARENT_wOpenGL(); // similarly but wwww alpha values transparency info too, etc.
-
-float MAG = 60.0;
+int load_hmap_from_bitmap(char *filename); // ...describtion at definition
+int load_maptex_from_bitmap(char *filename); // ...describtion at definition
 
 void xaddpoint_persp(float x1, float y1, float z1, float color[3],
 					 int pbwidth, int pbheight);
@@ -97,9 +93,51 @@ void xaddpoint_persp(float x1, float y1, float z1, float color[3],
 void xaddline_persp(float x1, float y1, float z1, float x2, float y2, float z2, float color[3],
 					int pbwidth, int pbheight);
 
-double best_dt_ms = 10.0;
+/* basic SPECIAL EFFECTS IN VIDEOGAMES... */
+void addfrantumation_wsim(float x0, float y0, float z0, double dft, int option /*add new explosion or just process those already started */);
+
+void addsmoke_wsim(double x0, double y0, double z0, double dft, int option /*add new explosion or just process those already started */);
+
+void projectile_launch(float x, float y, float z, float vx, float vy, float vz, double dft, int do_add);
+
+// misc for import 3D models.
+long int check_vector_elements(char filename[]);
+void read_vector(char filename[], float dest_string[], long int maxsize);
+void import_airplane_polyheron(void); // polyherdron definition importing from simple text file containing list of coordinate triplets. does seme for face definition and colors and texture orderting if needed.
 
 int waitdt_ms(double tt_ms);
+
+double say_terrain_height(struct subterrain *ite, double x, double z /* this will be set... */);
+
+// #                                                                                                                  #
+// # End function prototypes                                                                                          #
+// ####################################################################################################################
+
+
+// ####################################################################################################################
+// # Global variable declarations                                                                                     #
+// #                                                                                                                  #
+
+#define WIDTH 480
+#define HEIGHT 320
+#define COLDEPTH 16
+SDL_Surface *screen;
+SDL_Event event;		   /* for real-time interactivity functions provided by SDL library */
+SDL_Window *window = NULL; // New for SDL 2
+SDL_GLContext context;	   // New for SDL2
+const GLdouble pi = 3.1415926535897932384626433832795;
+
+int low_graphics = 1;
+
+float pixmatrix[HEIGHT][WIDTH][3];
+
+double best_dt_ms = 10.0;
+
+int texture_ids[100];
+
+int textures_available = 0; // this is quite obvious... how many textures are loaded or remdom-genrated... ok.
+
+float MAG = 60.0;
 
 int view = 1; // start w external viwìew
 
@@ -117,27 +155,8 @@ datatype variables after going far more than 4300 Km from Origin */
 float P[3], Q[3], R[3];	   /* versori dei 3 assi della telecamera virtuale */
 float Pa[3], Qa[3], Ra[3]; /* versori dei 3 assi del sistema di riferimento rispetto cui sono dati i vertici dello aeroplano */
 
-/* FUNCTIONS used  FOR SPECIAL EFFECTS */
-/* -----------point frantumation sequence function (a special effect)----- */
-
-/*===the structure representing relevant quantities concerning game's terrain====*/
-#define TERRAIN_SIZE 300
-struct subterrain
-{
-
-	int map_size;
-	float GPunit;
-	float shmap[TERRAIN_SIZE][TERRAIN_SIZE];
-	float scol[TERRAIN_SIZE][TERRAIN_SIZE][3];
-	int map_texture_indexes[TERRAIN_SIZE][TERRAIN_SIZE];
-	float auxnormal[3];
-};
-
 struct subterrain terrain1;
 
-int load_hmap_from_bitmap(char *filename); // ...describtion at definition
-
-int load_maptex_from_bitmap(char *filename); // ...describtion at definition
 
 // misc
 #define NTRIS 610
@@ -190,8 +209,6 @@ int tree_texture_ID_bounds[2]; // texture_ID -related thing
 
 float treeR1 = 0.5;
 
-double say_terrain_height(struct subterrain *ite, double x, double z /* this will be set... */);
-
 // auxiloiary for giving right texture coordinates... the right way of 'splattering' the quadrangular texture image / color-matrix onto the some triangles into which all 3Dobjects in the simplest ase are divided.
 float texcoords_gnd_tri1[3][2] = {
 	{0.0, 0.0},
@@ -202,18 +219,6 @@ float texcoords_gnd_tri2[3][2] = {
 	{1.0, 0.0},
 	{0.0, 1.0},
 	{1.0, 1.0}};
-
-/* basic SPECIAL EFFECTS IN VIDEOGAMES... */
-void addfrantumation_wsim(float x0, float y0, float z0, double dft, int option /*add new explosion or just process those already started */);
-
-void addsmoke_wsim(double x0, double y0, double z0, double dft, int option /*add new explosion or just process those already started */);
-
-void projectile_launch(float x, float y, float z, float vx, float vy, float vz, double dft, int do_add);
-
-// misc for import 3D models.
-long int check_vector_elements(char filename[]);
-void read_vector(char filename[], float dest_string[], long int maxsize);
-void import_airplane_polyheron(void); // polyherdron definition importing from simple text file containing list of coordinate triplets. does seme for face definition and colors and texture orderting if needed.
 
 #define NLINES 20
 #define NVERTEXES 200
@@ -541,6 +546,10 @@ int logo[8][128] = {
 	{1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1},
 };
 
+// #                                                                                                                  #
+// # End global variable declarations                                                                                 #
+// ####################################################################################################################
+
 /* the C  main() function  */
 int main()
 {
@@ -642,7 +651,6 @@ int main()
 	// if there is an external polyhedron definition for better-defined airplanes, let's use it.
 
 	//============================"INITIALISATION" PROCEDURE STARTS HERE=============
-	/*------------sorry for bad prog structure-----------*/
 	float tmp[NVERTEXES][3];
 	for (i = 0; i < NVERTEXES; i++)
 	{
@@ -770,7 +778,6 @@ int main()
 	// trees' position and defult parameters for trees.
 	for (k = 0; k < NTREES - tree_group_n; k = k + tree_group_n)
 	{
-
 		//random x and y coordinates within a rectangular area... simple.
 		trees[k][0] = 5000 * ((double)-0 * RAND_MAX / 2 + rand()) / ((double)RAND_MAX);
 		trees[k][1] = 5000 * ((double)-0 * RAND_MAX / 2 + rand()) / ((double)RAND_MAX);
@@ -848,12 +855,12 @@ int main()
 	}
 
 	for (j = 0; j < 3; j++)
-	{ //just check
+	{ 
 		printf("CHECK Inertia tensor: %f  %f  %f \n", It_init[j][0], It_init[j][1], It_init[j][2]);
 	}
 
 	for (j = 0; j < 3; j++)
-	{ //just check
+	{ 
 		printf("CHECK its inverse   : %f  %f  %f \n", It_initINV[j][0], It_initINV[j][1], It_initINV[j][2]);
 	}
 
@@ -1037,8 +1044,6 @@ int main()
 
 		// angular momentum (angular/ rotational quantity )
 
-		/* DONE: */
-
 		/* reset forces to 0.0 */
 		for (i = 0; i < 3; i++)
 		{
@@ -1111,8 +1116,6 @@ in the "result_matrix" global variable. */
 				Rm[j][i] = result_matrix[j][i];
 			}
 		}
-
-		/* DONE */
 
 		/*===update inertia tensor according to new orientation: It_now = R*It_init*transpose(R) ==== */
 		/* we build the transpose matrix of R_3x3 matrix, just here */
@@ -1266,9 +1269,6 @@ in the "result_matrix" global variable. */
 			R[0] = Rp[0] * (cos(theta) * sin(fi)) + Pp[0] * (sin(theta) * sin(fi)) + Qp[0] * cos(fi);
 			R[1] = Rp[1] * (cos(theta) * sin(fi)) + Pp[1] * (sin(theta) * sin(fi)) + Qp[1] * cos(fi);
 			R[2] = Rp[2] * (cos(theta) * sin(fi)) + Pp[2] * (sin(theta) * sin(fi)) + Qp[2] * cos(fi);
-
-			// OK OK OK OK
-			/* FAILSAFE: OK always */
 		}
 
 		/* moving plane's CM */
@@ -1504,12 +1504,15 @@ go use uni-lenght references.it's obvious choice but saying it is not bad. */
 				Xo[0] = xctree - sctree * 0.9;
 				Yo[0] = yctree;
 				Zo[0] = zctree - treeR1 + sctree * 2.0;
+
 				Xo[1] = xctree + sctree * 0.9;
 				Yo[1] = yctree;
 				Zo[1] = zctree - treeR1 + sctree * 2.0;
+
 				Xo[2] = xctree + sctree * 0.9;
 				Yo[2] = yctree;
 				Zo[2] = zctree - treeR1;
+
 				Xo[3] = xctree - sctree * 0.9;
 				Yo[3] = yctree;
 				Zo[3] = zctree - treeR1;
@@ -1529,26 +1532,29 @@ go use uni-lenght references.it's obvious choice but saying it is not bad. */
 				}
 
 				glBegin(GL_QUADS);
-				glTexCoord2f(0.0, 0.0);
-				glVertex3f(x_c[0], y_c[0], z_c[0]); // point 1
-				glTexCoord2f(1.0, 0.0);
-				glVertex3f(x_c[1], y_c[1], z_c[1]); // point 2
-				glTexCoord2f(1.0, 1.0);
-				glVertex3f(x_c[2], y_c[2], z_c[2]); // point 3
-				glTexCoord2f(0.0, 1.0);
-				glVertex3f(x_c[3], y_c[3], z_c[3]); // point 4
+					glTexCoord2f(0.0, 0.0);
+					glVertex3f(x_c[0], y_c[0], z_c[0]); // point 1
+					glTexCoord2f(1.0, 0.0);
+					glVertex3f(x_c[1], y_c[1], z_c[1]); // point 2
+					glTexCoord2f(1.0, 1.0);
+					glVertex3f(x_c[2], y_c[2], z_c[2]); // point 3
+					glTexCoord2f(0.0, 1.0);
+					glVertex3f(x_c[3], y_c[3], z_c[3]); // point 4
 				glEnd();
 
 				// change theese coordinates:
 				Xo[0] = xctree;
 				Yo[0] = yctree - sctree * 0.9;
 				Zo[0] = zctree - treeR1 + sctree * 2.0;
+
 				Xo[1] = xctree;
 				Yo[1] = yctree + sctree * 0.9;
 				Zo[1] = zctree - treeR1 + sctree * 2.0;
+
 				Xo[2] = xctree;
 				Yo[2] = yctree + sctree * 0.9;
 				Zo[2] = zctree - treeR1;
+
 				Xo[3] = xctree;
 				Yo[3] = yctree - sctree * 0.9;
 				Zo[3] = zctree - treeR1;
@@ -1564,14 +1570,14 @@ go use uni-lenght references.it's obvious choice but saying it is not bad. */
 
 				// finally, draw also this:
 				glBegin(GL_QUADS);
-				glTexCoord2f(0.0, 0.0);
-				glVertex3f(x_c[0], y_c[0], z_c[0]); // point 1
-				glTexCoord2f(1.0, 0.0);
-				glVertex3f(x_c[1], y_c[1], z_c[1]); // point 2
-				glTexCoord2f(1.0, 1.0);
-				glVertex3f(x_c[2], y_c[2], z_c[2]); // point 3
-				glTexCoord2f(0.0, 1.0);
-				glVertex3f(x_c[3], y_c[3], z_c[3]); // point 4
+					glTexCoord2f(0.0, 0.0);
+					glVertex3f(x_c[0], y_c[0], z_c[0]); // point 1
+					glTexCoord2f(1.0, 0.0);
+					glVertex3f(x_c[1], y_c[1], z_c[1]); // point 2
+					glTexCoord2f(1.0, 1.0);
+					glVertex3f(x_c[2], y_c[2], z_c[2]); // point 3
+					glTexCoord2f(0.0, 1.0);
+					glVertex3f(x_c[3], y_c[3], z_c[3]); // point 4
 				glEnd();
 			}
 		}
@@ -1642,8 +1648,6 @@ go use uni-lenght references.it's obvious choice but saying it is not bad. */
 			projectile_launch(10, 10, 10, 20, 10, -0.1, h, 0); /* idem */
 		}
 
-		/*-----fine senario---3D--*/
-
 		/* call function which displays the matrix of pixels in a true graphics window  */
 
 		/*==================|SDL CODE BLOCK 4|=============================*/
@@ -1696,11 +1700,11 @@ go use uni-lenght references.it's obvious choice but saying it is not bad. */
 				}
 				if (event.key.keysym.sym == SDLK_9)
 				{
-					Pforce = Pforce + 5000.0; /* ... */
+					Pforce = Pforce + 5000.0; 
 				}
 				if (event.key.keysym.sym == SDLK_8)
 				{
-					Pforce = Pforce - 4000.0; /* ... */
+					Pforce = Pforce - 4000.0; 
 					if (Pforce <= 0.0)
 					{
 						Pforce = 0.0;
@@ -1708,7 +1712,7 @@ go use uni-lenght references.it's obvious choice but saying it is not bad. */
 				}
 				if (event.key.keysym.sym == SDLK_1)
 				{
-					RR = RR - 2.0; /* ... */
+					RR = RR - 2.0; 
 					if (view == 4)
 					{
 						x_cockpit_view = x_cockpit_view - 0.1;
@@ -1742,7 +1746,7 @@ go use uni-lenght references.it's obvious choice but saying it is not bad. */
 
 				if (event.key.keysym.sym == SDLK_t)
 				{
-					MAG = MAG + 10.0; /* ... */
+					MAG = MAG + 10.0; 
 				}
 				if (event.key.keysym.sym == SDLK_i)
 				{
@@ -1800,7 +1804,6 @@ go use uni-lenght references.it's obvious choice but saying it is not bad. */
 				}
 				if (event.key.keysym.sym == SDLK_UP || event.key.keysym.sym == SDLK_w)
 				{
-
 					x_pilot = x_pilot - 2.0 * R[0];
 					y_pilot = y_pilot - 2.0 * R[1];
 
@@ -1813,7 +1816,6 @@ go use uni-lenght references.it's obvious choice but saying it is not bad. */
 				if (event.key.keysym.sym == SDLK_LEFT || event.key.keysym.sym == SDLK_a)
 				{
 					// test
-
 					plane_inclleft = 1;
 				}
 				if (event.key.keysym.sym == SDLK_RIGHT || event.key.keysym.sym == SDLK_d)
@@ -1822,6 +1824,7 @@ go use uni-lenght references.it's obvious choice but saying it is not bad. */
 					plane_inclright = 1;
 				}
 			} /* end condition of if-keypress-is-detected */
+
 			if (event.type == SDL_KEYUP)
 			{ /* condition: key-RELEASE event detected */
 				if (event.key.keysym.sym == SDLK_c)
@@ -1864,7 +1867,7 @@ go use uni-lenght references.it's obvious choice but saying it is not bad. */
 				printf("GRAPHICS WINDOW CLOSED: PROGRAM TERMINATED\n");
 				SDL_Quit();
 
-				exit(1); /* /*standard C command to terminate program execution */
+				exit(1); 
 			}			 /* end of extra case handling part */
 		}				 /*end of continual event-check loop. */
 	}
@@ -1876,7 +1879,7 @@ go use uni-lenght references.it's obvious choice but saying it is not bad. */
 	getchar();
 
 	return 0;
-} /* end of program: end of C  main() funciton */
+} // end main function
 
 void xclearpixboard(int xlimit, int ylimit)
 {
@@ -1898,8 +1901,7 @@ void xclearpixboard(int xlimit, int ylimit)
 	glFrustum(-fW, fW, -fH, fH, 0.1, 100000.0);
 
 	glViewport(0, 0, xlimit, ylimit);
-}
-//======SET ALL ELEMS OF PIXMATRIX TO 0 .==========
+} // end xclearpixboard function
 
 /*THE SDL graphics function: ALL SDL DRAW COMMANDS HERE... */
 /*===============================|SDL CODE BLOCK 3|==================================*/
@@ -1908,7 +1910,7 @@ void sdldisplay(int sw, int sh)
 	int i, j;
 
 	SDL_GL_SwapWindow(window);
-}
+} // end sdldisplay function
 
 /*a timer function to pause to regulate FPS is a good utility to have...*/
 /* define function waitdt_sec(double): */
@@ -1927,7 +1929,7 @@ int waitdt_ms(double tt_ms)
 		dt_ms = (time2 - time1) / (CLOCKS_PER_SEC / 1000.0);
 	}
 	return 1;
-} /* end waitdt() function */
+} // end waitdt_ms() function 
 
 /* NOT USED IN OPENGL VERSION  */
 /* interpolate 2 points graphically */
@@ -2030,7 +2032,7 @@ void xaddline(int x1, int y1,
 			}
 		}
 	}
-} // end function definition
+} // end xaddline function
 
 /* add 1 pixel to output image but in a failsafe manner: no accidental segfaults. */
 void xadd1pix(int x, int y, float color[3],
@@ -2042,7 +2044,7 @@ void xadd1pix(int x, int y, float color[3],
 		pixmatrix[y][x][1] = color[1];
 		pixmatrix[y][x][2] = color[2];
 	}
-}
+} // end xadd1pix function
 
 /*now we define the function which, given 1 point in 3D, calculates where it ends up on the
 virtual camera pointing toward positive z-s and passes them to the failsafe pixel drawing function. */
@@ -2050,14 +2052,14 @@ void xaddpoint_persp(float x1, float y1, float z1, float color[3],
 					 int pbwidth, int pbheight)
 {
 	glColor3f(color[0], color[1], color[2]);
-
 	glPointSize(2);
+
 	glBegin(GL_POINTS);
-	glVertex3f(x1, y1, -z1);
+		glVertex3f(x1, y1, -z1);
 	glEnd();
 
 	glFlush();
-}
+} // end xaddpoint_persp function
 
 /*now we define the function which, given 2 points in 3D, calculates where they end up on the
 virtual camera pointing toward positive z-s and passes them to the 2D line drawing function. */
@@ -2067,12 +2069,12 @@ void xaddline_persp(float x1, float y1, float z1, float x2, float y2, float z2, 
 	glColor3f(color[0], color[1], color[2]);
 
 	glBegin(GL_LINES);
-	glVertex3f(x1, y1, -z1);
-	glVertex3f(x2, y2, -z2);
+		glVertex3f(x1, y1, -z1);
+		glVertex3f(x2, y2, -z2);
 	glEnd();
 
 	glFlush();
-}
+} // end xaddline_persp function
 
 /* --------OK---point frantumation sequence function (a special effect)----- */
 void addsmoke_wsim(double x0, double y0, double z0, double dft, int option /*add new explosion or just process those already started */)
@@ -2259,8 +2261,7 @@ void addsmoke_wsim(double x0, double y0, double z0, double dft, int option /*add
 	}				// NAUTSM count
 
 	glEnable(GL_DEPTH_TEST);
-}
-/*------end function definition-------------*/
+} // end addsmoke_wsim function
 
 /* GLI EFFETTI SPECIALI di base NEI GAMES */
 /* -----------point frantumation sequence function (a special effect)----- */
@@ -2307,7 +2308,6 @@ void addfrantumation_wsim(float x0, float y0, float z0, double dft, int option /
 
 	if (count > 0)
 	{ /* process stuff and decrease count only as long as it's above 0 yet */
-		/*this anyway*/
 		printf("DRAWING FRANTUMATION SEQUENCE...\n");
 		double visca = 0; /* copy */
 		/* all combination of 1 and 0, see why... JUST A BASIC TRICK, this is NOT A PROFI SPECIAL EFFECT...*/
@@ -2365,11 +2365,11 @@ void addfrantumation_wsim(float x0, float y0, float z0, double dft, int option /
 
 		count--;
 	}
-}
-/*------end function definition-------------*/
+} // end addfrantumation_wsim function
 
-/* -----desctiobtion of function----- */
-void projectile_launch(float xpr, float ypr, float zpr, float vx, float vy, float vz, double dft, int do_add)
+void projectile_launch(float xpr, float ypr, float zpr, 
+					   float vx, float vy, float vz, 
+					   double dft, int do_add)
 {
 	static int n = 0;
 	static float poss[100][3];
@@ -2429,7 +2429,6 @@ void projectile_launch(float xpr, float ypr, float zpr, float vx, float vy, floa
 	// update positions.
 	for (i = 0; i < n; i++)
 	{
-
 		if (life[i] > 0)
 		{ // normal life cycle ( goes ahead )
 			poss[i][0] = poss[i][0] + vels[i][0] * dft;
@@ -2448,7 +2447,7 @@ void projectile_launch(float xpr, float ypr, float zpr, float vx, float vy, floa
 
 				if (je < 0.0)
 				{
-					vels[i][0] = vels[i][0] - (1.0 + 0.1) * je * terrain1.auxnormal[0] / 1.0; // OK.
+					vels[i][0] = vels[i][0] - (1.0 + 0.1) * je * terrain1.auxnormal[0] / 1.0; 
 					vels[i][1] = vels[i][1] - (1.0 + 0.1) * je * terrain1.auxnormal[1] / 1.0;
 					vels[i][2] = vels[i][2] - (1.0 + 0.1) * je * terrain1.auxnormal[2] / 1.0;
 					life[i] = 0; /* put its lifetime near the end.... so soon explosion cycle will start  */
@@ -2510,7 +2509,7 @@ void projectile_launch(float xpr, float ypr, float zpr, float vx, float vy, floa
 			} // END for
 		}	  // END if
 	}
-}
+} // end projectile_launch function
 
 double say_terrain_height(struct subterrain *ite, double x, double z /* this will be set... */)
 {
@@ -2623,7 +2622,7 @@ double say_terrain_height(struct subterrain *ite, double x, double z /* this wil
 	ite[0].auxnormal[2] = s_nloc[1];
 
 	return y;
-}
+} // end say_terrain_height function
 
 /*====================================== draw a filled trinagle to pixel matrix ==================================*/
 void xaddftriang(int x1, int y1,
@@ -2651,7 +2650,7 @@ void xaddftriang(int x1, int y1,
 	{
 		color[2] = 1.0;
 	}
-}
+} // end xaddftriang function
 
 /*now we define the function which, given 2 points in 3D, calculates where they end up on the
 virtual camera pointing toward positive z-s and passes them to the 2D line drawing function. */
@@ -2664,15 +2663,15 @@ void xaddftriang_persp(float x1, float y1, float z1,
 	glColor4f(color[0], color[1], color[2], color[3]);
 
 	glBegin(GL_TRIANGLES);
-	glVertex3f(x1, y1, -z1);
-	glVertex3f(x2, y2, -z2);
-	glVertex3f(x3, y3, -z3);
+		glVertex3f(x1, y1, -z1);
+		glVertex3f(x2, y2, -z2);
+		glVertex3f(x3, y3, -z3);
 	glEnd();
 
 	glFlush();
 
 	/* this causes deformation and it is both gemetrically and visually WRONG, but the deformations are minimal, and it is just a trick to avoid bad looking scenaries, like pieces missing from the car just because in an internal visualisation some triangles have a vertex behind the obserzer ( z < 0 ) */
-}
+} // end xaddftriang_persp function
 
 void GLaddftriang_perspTEXTURED(float x1, float y1, float z1,
 								float x2, float y2, float z2,
@@ -2681,31 +2680,23 @@ void GLaddftriang_perspTEXTURED(float x1, float y1, float z1,
 								float color[3], int pbwidth, int pbheight)
 {
 	glBindTexture(GL_TEXTURE_2D, texId);
-
-	glEnable(GL_TEXTURE_2D); //GL_DECAL
+	glEnable(GL_TEXTURE_2D); 
 	glColor3f(color[0], color[1], color[2]);
 
 	glBegin(GL_TRIANGLES);
-	glTexCoord2f(texcoords[0][0], texcoords[0][1]);
-	glVertex3f(x1,
-			   y1,
-			   z1);
+		glTexCoord2f(texcoords[0][0], texcoords[0][1]);
+		glVertex3f(x1, y1, z1);
 
-	glTexCoord2f(texcoords[1][0], texcoords[1][1]);
-	glVertex3f(x2,
-			   y2,
-			   z2);
+		glTexCoord2f(texcoords[1][0], texcoords[1][1]);
+		glVertex3f(x2, y2, z2);
 
-	glTexCoord2f(texcoords[2][0], texcoords[2][1]);
-	glVertex3f(x3,
-			   y3,
-			   z3);
+		glTexCoord2f(texcoords[2][0], texcoords[2][1]);
+		glVertex3f(x3, y3, z3);
 	glEnd();
 
 	glFlush();
-
 	glDisable(GL_TEXTURE_2D);
-}
+} // end GLaddftriang_perspTEXTURED function
 
 void xaddftriang_perspTEXTURED_pp(float x1, float y1, float z1,
 								  float x2, float y2, float z2,
@@ -2831,27 +2822,22 @@ void xaddftriang_perspTEXTURED_pp(float x1, float y1, float z1,
 			color_app[0] = color[0] * (txt[(int)jff][(int)iff]);
 			color_app[1] = color[1] * (txt[(int)jff][(int)iff]);
 			color_app[2] = color[2] * (txt[(int)jff][(int)iff]);
-			// OK.
-
-			/* A pseudo-3D tree sprite could  be put here... onlt at *some* grid intersections... */
-
-			// OK.
 
 			// tri 1
 			glColor3f(color_app[0], color_app[1], color_app[2]);
 
 			glBegin(GL_TRIANGLES);
-			glVertex3f(x1 + jff * v_hor[0] + iff * v_ver[0],
-					   y1 + jff * v_hor[1] + iff * v_ver[1],
-					   (z1 + jff * v_hor[2] + iff * v_ver[2]));
+				glVertex3f(x1 + jff * v_hor[0] + iff * v_ver[0],
+						   y1 + jff * v_hor[1] + iff * v_ver[1],
+						  (z1 + jff * v_hor[2] + iff * v_ver[2]));
 
-			glVertex3f(x1 + (jff + 1.0) * v_hor[0] + (iff + 0.0) * v_ver[0],
-					   y1 + (jff + 1.0) * v_hor[1] + (iff + 0.0) * v_ver[1],
-					   (z1 + (jff + 1.0) * v_hor[2] + (iff + 0.0) * v_ver[2]));
+				glVertex3f(x1 + (jff + 1.0) * v_hor[0] + (iff + 0.0) * v_ver[0],
+						   y1 + (jff + 1.0) * v_hor[1] + (iff + 0.0) * v_ver[1],
+						  (z1 + (jff + 1.0) * v_hor[2] + (iff + 0.0) * v_ver[2]));
 
-			glVertex3f(x1 + (jff + 0.0) * v_hor[0] + (iff + 1.0) * v_ver[0],
-					   y1 + (jff + 0.0) * v_hor[1] + (iff + 1.0) * v_ver[1],
-					   (z1 + (jff + 0.0) * v_hor[2] + (iff + 1.0) * v_ver[2]));
+				glVertex3f(x1 + (jff + 0.0) * v_hor[0] + (iff + 1.0) * v_ver[0],
+						   y1 + (jff + 0.0) * v_hor[1] + (iff + 1.0) * v_ver[1],
+						  (z1 + (jff + 0.0) * v_hor[2] + (iff + 1.0) * v_ver[2]));
 			glEnd();
 			glFlush();
 
@@ -2860,27 +2846,23 @@ void xaddftriang_perspTEXTURED_pp(float x1, float y1, float z1,
 			{ // DON'T DRAW THIS if we are on edge. figure out why... very simple
 				glColor3f(color_app[0], color_app[1] + 0.01, color_app[2]);
 				glBegin(GL_TRIANGLES);
-				glVertex3f(
-					x1 + (jff + 1.0) * v_hor[0] + (iff + 0.0) * v_ver[0],
-					y1 + (jff + 1.0) * v_hor[1] + (iff + 0.0) * v_ver[1],
-					(z1 + (jff + 1.0) * v_hor[2] + (iff + 0.0) * v_ver[2]));
+					glVertex3f(x1 + (jff + 1.0) * v_hor[0] + (iff + 0.0) * v_ver[0],
+							   y1 + (jff + 1.0) * v_hor[1] + (iff + 0.0) * v_ver[1],
+							  (z1 + (jff + 1.0) * v_hor[2] + (iff + 0.0) * v_ver[2]));
 
-				glVertex3f(
-					x1 + (jff + 1.0) * v_hor[0] + (iff + 1.0) * v_ver[0],
-					y1 + (jff + 1.0) * v_hor[1] + (iff + 1.0) * v_ver[1],
-					(z1 + (jff + 1.0) * v_hor[2] + (iff + 1.0) * v_ver[2]));
+					glVertex3f(x1 + (jff + 1.0) * v_hor[0] + (iff + 1.0) * v_ver[0],
+							   y1 + (jff + 1.0) * v_hor[1] + (iff + 1.0) * v_ver[1],
+							  (z1 + (jff + 1.0) * v_hor[2] + (iff + 1.0) * v_ver[2]));
 
-				glVertex3f(
-					x1 + (jff + 0.0) * v_hor[0] + (iff + 1.0) * v_ver[0],
-					y1 + (jff + 0.0) * v_hor[1] + (iff + 1.0) * v_ver[1],
-					(z1 + (jff + 0.0) * v_hor[2] + (iff + 1.0) * v_ver[2]));
+					glVertex3f(x1 + (jff + 0.0) * v_hor[0] + (iff + 1.0) * v_ver[0],
+							   y1 + (jff + 0.0) * v_hor[1] + (iff + 1.0) * v_ver[1],
+							  (z1 + (jff + 0.0) * v_hor[2] + (iff + 1.0) * v_ver[2]));
 				glEnd();
 				glFlush();
 			}
 		}
 	}
-}
-/*--------------|end function|----------------*/
+} // end xaddftriang_perspTEXTURED_pp function
 
 /* Prototype of the struct meant to be the main container of data, 
 be it single numbers, couples, tripets or heterogeneous mixes of data */
@@ -2899,7 +2881,7 @@ void swap(struct mystruct *px, struct mystruct *py)
 	temp = *px;
 	*px = *py;
 	*py = temp;
-}
+} // end function swap
 
 /*========================| Shell Sort STRUCT |============================ 
 shellsort: sort v[0]...v[n-1] into increasing order, with respect to some elment of the struct: 
@@ -2917,18 +2899,17 @@ void shellsort_struct(struct mystruct *v, int n)
 			}
 		}
 	}
-}
+} // end shellsort_struct function
 
 void mat3x3_mult(double mat1[3][3], double mat2[3][3])
 {
 	double sum;
 	int im, jm, k;
 
-	/* operate. */
 	for (im = 0; im < 3; im++)
-	{ /* rows of A    */
+	{ 
 		for (jm = 0; jm < 3; jm++)
-		{ /* columns of B */
+		{ 
 			sum = 0;
 			for (k = 0; k < 3; k++)
 			{
@@ -2937,11 +2918,9 @@ void mat3x3_mult(double mat1[3][3], double mat2[3][3])
 			result_matrix[im][jm] = sum; /* EXTERN VALUE!!! It's an easy way to implement all this. */
 		}
 	}
-}
+} // end mat3x3_mult function
 
-/*INVERSE OF 3x3 MATRIC (USED FOR OBTAINING THE INVERSE OF THE INERTIA TENSOR):
-INVERSE OF 3x3 MATRIC (USED FOR OBTAINING THE INVERSE OF THE INERTIA TENSOR):
-INVERSE OF 3x3 MATRIC (USED FOR OBTAINING THE INVERSE OF THE INERTIA TENSOR):---*/
+/* INVERSE OF 3x3 MATRIC (USED FOR OBTAINING THE INVERSE OF THE INERTIA TENSOR):---*/
 void inv(double in_3x3_matrix[3][3])
 {
 	double A[3][3]; /* the matrix that is entered by user */
@@ -2971,6 +2950,7 @@ void inv(double in_3x3_matrix[3][3])
 		else
 			n = n + A[i][j] * A[i + 1][j + 1] * A[i + 2][j + 2];
 	}
+	
 	for (i = 2, j = 0; j < 3; j++)
 	{
 		if (j == 2)
@@ -3019,7 +2999,7 @@ void inv(double in_3x3_matrix[3][3])
 			result_matrix[i][j] = C[i][j] * x; /* EXTERN VALUE!!!  */
 		}
 	}
-}
+} // end inv function
 
 double body_rebounce(double rx, double ry, double rz,
 					 double nx, double ny, double nz, double e, double lat)
@@ -3041,18 +3021,13 @@ double body_rebounce(double rx, double ry, double rz,
 	axis[1] = vector0[2] * vector1[0] - vector0[0] * vector1[2]; // y component
 	axis[2] = vector0[0] * vector1[1] - vector0[1] * vector1[0]; // z component
 
-	// try this simplified way... . Well.. let's evoid bad work in a little game... .
-
 	// let's do the hit resolution in a correct way, also becuase when it can be done, let's do it: good collision simulation for sigle ridig-body make good landings.
 
 	vvertex[0] = v[0] + w[1] * vector1[2] - w[2] * vector1[1]; // x component
 	vvertex[1] = v[1] + w[2] * vector1[0] - w[0] * vector1[2]; // y component
 	vvertex[2] = v[2] + w[0] * vector1[1] - w[1] * vector1[0]; // z component
 
-	vnorm = nx * vvertex[0] + ny * vvertex[1] + nz * vvertex[2]; // comment later... .
-
-	//...
-
+	vnorm = nx * vvertex[0] + ny * vvertex[1] + nz * vvertex[2];
 	if (vnorm < 0)
 	{ // safecheck of right collision... it never will certainly rebounce *towards* the very terrain from which it is rebouncing.
 		vector0[0] = rx;
@@ -3115,7 +3090,7 @@ double body_rebounce(double rx, double ry, double rz,
 	}
 
 	return jel;
-}
+} // end body_rebounce function
 
 void make_inertia_tensor(int n_vertexs)
 {
@@ -3175,9 +3150,8 @@ void make_inertia_tensor(int n_vertexs)
 		{
 		}
 	}
-}
+} // end make_inertia_tensor function
 
-/*=================================AS FUNCTION NAME SAYS===================================*/
 void load_textures_wOpenGL()
 {
 	static int texture_generated = 0; /* at first call of this function, a 32x32 texture sample will be generated */
@@ -3296,10 +3270,8 @@ void load_textures_wOpenGL()
 			}
 		}
 	}
-}
-/*===================================END TEXTURE LOAD FUNCTION 1=================*/
+} // end load_textures_wOpenGL function
 
-/*=================================AS FUNCTION NAME SAYS===================================*/
 void load_textures96x96_SEMITRANSPARENT_wOpenGL()
 {
 	static int texture_generated = 0; /* at first call of this function, a 32x32 texture sample will be generated */
@@ -3427,8 +3399,7 @@ void load_textures96x96_SEMITRANSPARENT_wOpenGL()
 			}
 		}
 	}
-}
-/*===================================END TEXTURE LOAD FUNCTION 1=================*/
+} // end load_textures96x96_SEMITRANSPARENT_wOpenGL function
 
 /*===loads and fill in hmap, colmap, and the image indicating where to give bulk filling textures, and where to visualizare colmap's colo, wher elet instead texture with it's original colors */
 int load_hmap_from_bitmap(char *filename)
@@ -3476,7 +3447,7 @@ int load_hmap_from_bitmap(char *filename)
 	SDL_FreeSurface(image);
 
 	return isz;
-}
+} // end load_hmap_from_bitmap function
 
 // load texture ID map from a bitmap deviced by the edito (or with a graphics editor program, but that would be RATHER UNPRACTICAL... )
 int load_maptex_from_bitmap(char *filename)
@@ -3528,8 +3499,7 @@ int load_maptex_from_bitmap(char *filename)
 	}
 
 	return 1;
-}
-//-----------end of func definition-----------------
+} // end load_maptex_from_bitmap function
 
 /*===============|leggi file e controlla quanti numeri ci sono:  |====================*/
 /* N.B.: numeri separati da spazi o da a-capo. Con virgole o altro si blocca. */
@@ -3548,7 +3518,7 @@ long int check_vector_elements(char filename[])
 
 	fclose(InFilePtr); /* safe file closure. */
 	return i;
-}
+} // end check_vector_elements function
 
 /*=======================| Read in numeric vector form file |==========
 only space-separated or newline-separated numbers!! else goes error ====*/
@@ -3565,9 +3535,8 @@ void read_vector(char filename[], float dest_string[], long int maxsize)
 	}
 	fclose(FilePtr); /* safe file closure. */
 	printf("\nFILE FOUND & READ IN. LENGHT LIMIT WAS FIXED TO: %li . \n", maxsize);
-} //end of ReadInFile()  function.
+} // end read_vector function
 
-//========================FUNCTOIN DEFINITION START=========================
 void import_airplane_polyheron(void)
 {
 	// read in poly definition from file
@@ -3618,8 +3587,7 @@ void import_airplane_polyheron(void)
 			col_tris[j][i] = auxxv[j * 3 + i];
 		}
 	}
-}
-//==============END FUNCTION DEFINITION==========================
+} // end import_airplane_polyheron function
 
 // IF WANT TO UNDERSTAND ALL COLOR ANMD PIXEL INFO IN SDL, LOOK HERE: http://sdl.beuc.net/sdl.wiki/Pixel_Access
 // SUPERSAFE TOOK IT FROM PROFESSIONAL SITE:
@@ -3653,4 +3621,4 @@ Uint32 getpixel(SDL_Surface *surface, int x, int y)
 	default:
 		return 0; /* shouldn't happen, but avoids warnings */
 	}
-}
+} // end getpixel function
