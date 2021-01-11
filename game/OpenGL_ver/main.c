@@ -157,7 +157,7 @@ float x = 0.0, y = 0.0, z = 0.0;
 
 // coordinates of airplane in game... external view is just needed here to make this game 
 // show accidental crashes due to overflow of the float 
-datatype variables after going far more than 4300 Km from Origin */
+// datatype variables after going far more than 4300 Km from Origin 
 float xp = 200.0, yp = 200.0, zp = 400.0; 
 
 float P[3], Q[3], R[3];	   // versori dei 3 assi della telecamera virtuale 
@@ -572,7 +572,9 @@ int logo[8][128] = {
 // # End global variable declarations                                                                                 #
 // ####################################################################################################################
 
+// ####################################################################################################################
 // the C  main() function  
+// ####################################################################################################################
 int main()
 {
 	float turnch = 0.0; // used for smooth  turning of virtual camera 
@@ -1931,6 +1933,9 @@ int main()
 	return 0;
 } // end main function
 
+// ####################################################################################################################
+// Function xclearpixboard
+// ####################################################################################################################
 void xclearpixboard(int xlimit, int ylimit)
 {
 	int i, j;
@@ -1953,8 +1958,10 @@ void xclearpixboard(int xlimit, int ylimit)
 	glViewport(0, 0, xlimit, ylimit);
 } // end xclearpixboard function
 
-/*THE SDL graphics function: ALL SDL DRAW COMMANDS HERE... */
-/*===============================|SDL CODE BLOCK 3|==================================*/
+// ####################################################################################################################
+// THE SDL graphics function: ALL SDL DRAW COMMANDS HERE... 
+// ===============================|SDL CODE BLOCK 3|==================================
+// ####################################################################################################################
 void sdldisplay(int sw, int sh)
 {
 	int i, j;
@@ -1962,8 +1969,10 @@ void sdldisplay(int sw, int sh)
 	SDL_GL_SwapWindow(window);
 } // end sdldisplay function
 
-/*a timer function to pause to regulate FPS is a good utility to have...*/
-/* define function waitdt_sec(double): */
+// ####################################################################################################################
+// a timer function to pause to regulate FPS is a good utility to have...
+// define function waitdt_sec(double): 
+// ####################################################################################################################
 int waitdt_ms(double tt_ms)
 {
 	/* declare variables used specifically to measure time and a normal double */
@@ -1981,8 +1990,10 @@ int waitdt_ms(double tt_ms)
 	return 1;
 } // end waitdt_ms() function 
 
-/* NOT USED IN OPENGL VERSION  */
-/* interpolate 2 points graphically */
+// ####################################################################################################################
+// NOT USED IN OPENGL VERSION 
+// interpolate 2 points graphically 
+// ####################################################################################################################
 void xaddline(int x1, int y1,
 			  int x2, int y2, float color[3], /* change this to int color[3] */
 			  int xlimit, int ylimit)
@@ -2084,7 +2095,9 @@ void xaddline(int x1, int y1,
 	}
 } // end xaddline function
 
-/* add 1 pixel to output image but in a failsafe manner: no accidental segfaults. */
+// ####################################################################################################################
+// add 1 pixel to output image but in a failsafe manner: no accidental segfaults. 
+// ####################################################################################################################
 void xadd1pix(int x, int y, float color[3],
 			  int xlimit, int ylimit)
 {
@@ -2096,8 +2109,10 @@ void xadd1pix(int x, int y, float color[3],
 	}
 } // end xadd1pix function
 
-/*now we define the function which, given 1 point in 3D, calculates where it ends up on the
-virtual camera pointing toward positive z-s and passes them to the failsafe pixel drawing function. */
+// ####################################################################################################################
+// now we define the function which, given 1 point in 3D, calculates where it ends up on the
+// virtual camera pointing toward positive z-s and passes them to the failsafe pixel drawing function. 
+// ####################################################################################################################
 void xaddpoint_persp(float x1, float y1, float z1, float color[3],
 					 int pbwidth, int pbheight)
 {
@@ -2111,8 +2126,10 @@ void xaddpoint_persp(float x1, float y1, float z1, float color[3],
 	glFlush();
 } // end xaddpoint_persp function
 
-/*now we define the function which, given 2 points in 3D, calculates where they end up on the
-virtual camera pointing toward positive z-s and passes them to the 2D line drawing function. */
+// ####################################################################################################################
+// now we define the function which, given 2 points in 3D, calculates where they end up on the
+// virtual camera pointing toward positive z-s and passes them to the 2D line drawing function. 
+// ####################################################################################################################
 void xaddline_persp(float x1, float y1, float z1, float x2, float y2, float z2, float color[3],
 					int pbwidth, int pbheight)
 {
@@ -2126,7 +2143,9 @@ void xaddline_persp(float x1, float y1, float z1, float x2, float y2, float z2, 
 	glFlush();
 } // end xaddline_persp function
 
-/* --------OK---point frantumation sequence function (a special effect)----- */
+// ####################################################################################################################
+// point frantumation sequence function (a special effect)
+// ####################################################################################################################
 void addsmoke_wsim(double x0, double y0, double z0, double dft, int option /*add new explosion or just process those already started */)
 {
 #define NPS 800
@@ -2313,8 +2332,10 @@ void addsmoke_wsim(double x0, double y0, double z0, double dft, int option /*add
 	glEnable(GL_DEPTH_TEST);
 } // end addsmoke_wsim function
 
-/* GLI EFFETTI SPECIALI di base NEI GAMES */
-/* -----------point frantumation sequence function (a special effect)----- */
+// ####################################################################################################################
+// GLI EFFETTI SPECIALI di base NEI GAMES 
+// point frantumation sequence function (a special effect)
+// ####################################################################################################################
 void addfrantumation_wsim(float x0, float y0, float z0, double dft, int option /*add new explosion or just process those already started */)
 {
 #define NP 100
@@ -2561,6 +2582,9 @@ void projectile_launch(float xpr, float ypr, float zpr,
 	}
 } // end projectile_launch function
 
+// ####################################################################################################################
+// Function say_terrain_height
+// ####################################################################################################################
 double say_terrain_height(struct subterrain *ite, double x, double z /* this will be set... */)
 {
 	double apl, bpl, cpl, dpl, Xtri, Ytri, Ztri, dist_fp1, dist_fp2, Xf, Zf;
@@ -2674,7 +2698,9 @@ double say_terrain_height(struct subterrain *ite, double x, double z /* this wil
 	return y;
 } // end say_terrain_height function
 
-/*====================================== draw a filled trinagle to pixel matrix ==================================*/
+// ####################################################################################################################
+// Function xaddftriang draws a filled triangle to pixel matrix 
+// ####################################################################################################################
 void xaddftriang(int x1, int y1,
 				 int x2, int y2,
 				 int x3, int y3,
@@ -2702,8 +2728,10 @@ void xaddftriang(int x1, int y1,
 	}
 } // end xaddftriang function
 
-/*now we define the function which, given 2 points in 3D, calculates where they end up on the
-virtual camera pointing toward positive z-s and passes them to the 2D line drawing function. */
+// ####################################################################################################################
+// now we define the function which, given 2 points in 3D, calculates where they end up on the
+// virtual camera pointing toward positive z-s and passes them to the 2D line drawing function. 
+// ####################################################################################################################
 void xaddftriang_persp(float x1, float y1, float z1,
 					   float x2, float y2, float z2,
 					   float x3, float y3, float z3,
@@ -2723,6 +2751,9 @@ void xaddftriang_persp(float x1, float y1, float z1,
 	/* this causes deformation and it is both gemetrically and visually WRONG, but the deformations are minimal, and it is just a trick to avoid bad looking scenaries, like pieces missing from the car just because in an internal visualisation some triangles have a vertex behind the obserzer ( z < 0 ) */
 } // end xaddftriang_persp function
 
+// ####################################################################################################################
+// Function GLaddftriang_perspTEXTURED
+// ####################################################################################################################
 void GLaddftriang_perspTEXTURED(float x1, float y1, float z1,
 								float x2, float y2, float z2,
 								float x3, float y3, float z3,
@@ -2748,6 +2779,9 @@ void GLaddftriang_perspTEXTURED(float x1, float y1, float z1,
 	glDisable(GL_TEXTURE_2D);
 } // end GLaddftriang_perspTEXTURED function
 
+// ####################################################################################################################
+// Function xaddftriang_perspTEXTURED_pp
+// ####################################################################################################################
 void xaddftriang_perspTEXTURED_pp(float x1, float y1, float z1,
 								  float x2, float y2, float z2,
 								  float x3, float y3, float z3,
@@ -2923,7 +2957,9 @@ struct mystruct
 	int color_index;
 };
 
-/*=========| Interchange *px and *py  STRUCT |==========*/
+// ####################################################################################################################
+// Interchange *px and *py  STRUCT 
+// ####################################################################################################################
 void swap(struct mystruct *px, struct mystruct *py)
 {
 	/*we clone a structure of the kind needed, it will be used as a temorary store. */
@@ -2933,9 +2969,11 @@ void swap(struct mystruct *px, struct mystruct *py)
 	*py = temp;
 } // end function swap
 
-/*========================| Shell Sort STRUCT |============================ 
-shellsort: sort v[0]...v[n-1] into increasing order, with respect to some elment of the struct: 
-calls swap(). */
+// ####################################################################################################################
+// Shell Sort STRUCT 
+// shellsort: sort v[0]...v[n-1] into increasing order, with respect to some elment of the struct.
+// Calls swap(). 
+// ####################################################################################################################
 void shellsort_struct(struct mystruct *v, int n)
 {
 	int gap, i, j;
@@ -2951,6 +2989,9 @@ void shellsort_struct(struct mystruct *v, int n)
 	}
 } // end shellsort_struct function
 
+// ####################################################################################################################
+// Function mat3x3_mult multiplies two 3x3 matrices and places the result in global variable result_matrix.
+// ####################################################################################################################
 void mat3x3_mult(double mat1[3][3], double mat2[3][3])
 {
 	double sum;
@@ -2970,7 +3011,9 @@ void mat3x3_mult(double mat1[3][3], double mat2[3][3])
 	}
 } // end mat3x3_mult function
 
-/* INVERSE OF 3x3 MATRIC (USED FOR OBTAINING THE INVERSE OF THE INERTIA TENSOR):---*/
+// ####################################################################################################################
+// INVERSE OF 3x3 MATRIC (USED FOR OBTAINING THE INVERSE OF THE INERTIA TENSOR)
+// ####################################################################################################################
 void inv(double in_3x3_matrix[3][3])
 {
 	double A[3][3]; /* the matrix that is entered by user */
@@ -3051,6 +3094,9 @@ void inv(double in_3x3_matrix[3][3])
 	}
 } // end inv function
 
+// ####################################################################################################################
+// Function body_rebounce
+// ####################################################################################################################
 double body_rebounce(double rx, double ry, double rz,
 					 double nx, double ny, double nz, double e, double lat)
 {
@@ -3142,6 +3188,9 @@ double body_rebounce(double rx, double ry, double rz,
 	return jel;
 } // end body_rebounce function
 
+// ####################################################################################################################
+// Function make_inertia_tensor
+// ####################################################################################################################
 void make_inertia_tensor(int n_vertexs)
 {
 //be very careful to assign storage space correctly!!!! ohterwise it brigs to 0 all elements!!!
@@ -3202,6 +3251,9 @@ void make_inertia_tensor(int n_vertexs)
 	}
 } // end make_inertia_tensor function
 
+// ####################################################################################################################
+// Function load_textures_wOpenGL
+// ####################################################################################################################
 void load_textures_wOpenGL()
 {
 	static int texture_generated = 0; /* at first call of this function, a 32x32 texture sample will be generated */
@@ -3322,6 +3374,9 @@ void load_textures_wOpenGL()
 	}
 } // end load_textures_wOpenGL function
 
+// ####################################################################################################################
+// Function load_textures96x96_SEMITRANSPARENT_wOpenGL
+// ####################################################################################################################
 void load_textures96x96_SEMITRANSPARENT_wOpenGL()
 {
 	static int texture_generated = 0; /* at first call of this function, a 32x32 texture sample will be generated */
@@ -3451,7 +3506,10 @@ void load_textures96x96_SEMITRANSPARENT_wOpenGL()
 	}
 } // end load_textures96x96_SEMITRANSPARENT_wOpenGL function
 
-/*===loads and fill in hmap, colmap, and the image indicating where to give bulk filling textures, and where to visualizare colmap's colo, wher elet instead texture with it's original colors */
+// ####################################################################################################################
+// loads and fill in hmap, colmap, and the image indicating where to give bulk filling textures, and 
+// where to visualizare colmap's colo, wher elet instead texture with it's original colors 
+// ####################################################################################################################
 int load_hmap_from_bitmap(char *filename)
 {
 	int i, j, isz;
@@ -3499,7 +3557,10 @@ int load_hmap_from_bitmap(char *filename)
 	return isz;
 } // end load_hmap_from_bitmap function
 
-// load texture ID map from a bitmap deviced by the edito (or with a graphics editor program, but that would be RATHER UNPRACTICAL... )
+// ####################################################################################################################
+// load texture ID map from a bitmap deviced by the edito (or with a graphics editor program, but 
+// that would be RATHER UNPRACTICAL... )
+// ####################################################################################################################
 int load_maptex_from_bitmap(char *filename)
 {
 	Uint8 red, green, blue;
@@ -3551,8 +3612,10 @@ int load_maptex_from_bitmap(char *filename)
 	return 1;
 } // end load_maptex_from_bitmap function
 
-/*===============|leggi file e controlla quanti numeri ci sono:  |====================*/
-/* N.B.: numeri separati da spazi o da a-capo. Con virgole o altro si blocca. */
+// ####################################################################################################################
+// leggi file e controlla quanti numeri ci sono: 
+// N.B.: numeri separati da spazi o da a-capo. Con virgole o altro si blocca. 
+// ####################################################################################################################
 long int check_vector_elements(char filename[])
 {
 	FILE *InFilePtr; /* pointer to input file */
@@ -3587,6 +3650,9 @@ void read_vector(char filename[], float dest_string[], long int maxsize)
 	printf("\nFILE FOUND & READ IN. LENGHT LIMIT WAS FIXED TO: %li . \n", maxsize);
 } // end read_vector function
 
+// ####################################################################################################################
+// Function import_airplane_polyheron
+// ####################################################################################################################
 void import_airplane_polyheron(void)
 {
 	// read in poly definition from file
@@ -3639,8 +3705,10 @@ void import_airplane_polyheron(void)
 	}
 } // end import_airplane_polyheron function
 
+// ####################################################################################################################
 // IF WANT TO UNDERSTAND ALL COLOR ANMD PIXEL INFO IN SDL, LOOK HERE: http://sdl.beuc.net/sdl.wiki/Pixel_Access
-// SUPERSAFE TOOK IT FROM PROFESSIONAL SITE:
+// SUPERSAFE TOOK IT FROM PROFESSIONAL SITE
+// ####################################################################################################################
 Uint32 getpixel(SDL_Surface *surface, int x, int y)
 {
 	int bpp = surface->format->BytesPerPixel;
