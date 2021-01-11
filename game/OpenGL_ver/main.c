@@ -31,7 +31,6 @@ int low_graphics = 1 ;
 // SUPERSAFE TOOK IT FROM PROFESSIONAL SITE: used for bitmap conversion to RGB value matrix (usual stuff)
 Uint32 getpixel( SDL_Surface *surface, int x, int y ) ;
 
-
 float pixmatrix[ HEIGHT ][ WIDTH ][3] ;
 
 /* this is the prototype of the function which will draw the pixel. */
@@ -102,10 +101,6 @@ void xaddline_persp( float x1, float y1, float z1, float x2, float y2, float z2,
 double best_dt_ms = 10.0 ;
 				  
 int waitdt_ms( double  tt_ms ) ;
-				  
-
-
-
 
 int view = 1 ; // start w external viwìew
 
@@ -137,7 +132,6 @@ float  scol[TERRAIN_SIZE][TERRAIN_SIZE][3] ;
 int map_texture_indexes[TERRAIN_SIZE][TERRAIN_SIZE] ;
 float auxnormal[3] ;
 } ;
-/*========================================================================*/
 
 struct subterrain  terrain1 ;
  
@@ -460,7 +454,6 @@ float col_tris[NTRIS][3] = {
 
  int nvertexes = 100 ; // default value
  int ntris = 33 ;      // default value
- /*=============================================*/
  
 /*==quatities used FOR SIMULATION / REALISTIC MOTION AND REBOUNCE FROM GROUND===*/
 float v[3] = { 0.0, 0.0, 0.0 } ; /* (needs initial value!) */
@@ -489,7 +482,6 @@ double It_now[3][3] = {{ 100.0,   0.0, 0.0   },
 		       {   0.0,   0.0, 100.0 } }  ; /*  it's updated accord to orientation*/
 
 /* (DON'T CARE; info: Google --> "moment of inertia tensor" ) */
-/*-----------------------------------------------------*/
 /*---influesces from outside: FORCE vectors----*/
 float Fcm[3] = { 0.0, 0.0, 0.0 }  ; /*  total foce on center-of-mass "CM" */
 double torque_tot[3] = { 0.0 , 0.0 , 0.0 } ; /*  total torque-force on rigid body*/ 
@@ -542,7 +534,6 @@ void  mat3x3_mult( double mat1[3][3] , double mat2[3][3] ) ;
 /* INVERSE OF 3x3 MATRIC (USED FOR OBTAINING THE INVERSE OF THE INERTIA TENSOR): */
 void  inv( double in_3x3_matrix[3][3] ) ;
 
-/*-----------------------------------------------------------*/
 double body_rebounce(   double rx, double ry , double rz,
 			double nx, double ny , double nz, double e, double lat ) ;
 
@@ -645,7 +636,6 @@ float color[4] = { 0.0, 0.0, 0.0, 1.0 } ;
         exit(2);
     }
     SDL_UpdateWindowSurface(window);
-/*=====================================================================*/
 
 glEnable(GL_DEPTH_TEST); // activate hidden_surface_removal in OpenGL.
 glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -673,7 +663,6 @@ punti[i][0] =  tmp[i][0] ;
 punti[i][1] =  tmp[i][1] ;
 punti[i][2] =  tmp[i][2] ;
 }
-/*---------------------------------------------------*/
 
 	for(i = 0 ; i < NDOTS ; i++ ){
 	px[i] = 0 ;
@@ -1245,13 +1234,10 @@ R[1] = Rp[1]*( cos(theta)*sin(fi)) +Pp[1]*(sin(theta)*sin(fi))    +Qp[1]*cos(fi)
 R[2] = Rp[2]*( cos(theta)*sin(fi)) +Pp[2]*(sin(theta)*sin(fi))    +Qp[2]*cos(fi) ;
 
 // OK OK OK OK
-
 /* FAILSAFE: OK always */
-
 }
 
 /* moving plane's CM */
-
 	if( aboard == 1 ){
 	x = xp + RR*R[0] ; 
 	y = yp + RR*R[1] ;
@@ -1300,7 +1286,6 @@ xaddline_persp(   0.0 - 1.0, 0.0 - 1.0, 2.0  ,
 		  0.0 - 1.0, 0.0 - 1.0, 2.0 + 1.0,color, WIDTH, HEIGHT );			  
 
 		  // GAME LOGO
-	  
 glColor3f( 1.0, 1.0 , 1.0 );
 
 glPointSize(2) ;
@@ -1370,7 +1355,6 @@ lv = 6 ;
 for( xi = Xi- lv ; xi < Xi+ lv  ; xi = xi + 1 ){
 	for( yi = Yi - lv ; yi < Yi + lv  ; yi = yi + 1 ){
 /* TRIANGOLO 1 */
-		
 	Xo[0] = GPunit*xi ;
 	Yo[0] = GPunit*yi ;
 	Zo[0] = 0.0 ; 
@@ -1444,7 +1428,6 @@ for( xi = Xi- lv ; xi < Xi+ lv  ; xi = xi + 1 ){
 		}
 	}
 }
-/*--------------------------------------------------------------*/
 
 //trees
 glEnable(GL_TEXTURE_2D);       
@@ -1573,7 +1556,6 @@ projectile_launch( 10, 10, 10, 20, 10, -0.1, h, 0 ) ; /* idem */
 
 /*==================|SDL CODE BLOCK 4|=============================*/
 sdldisplay( WIDTH, HEIGHT ) ; 
-/*=================================================================*/
   if(cycles%10 == 0 ){
   printf("GAME TIME [sec] =  %f \n", cycles*h  );
   printf("GOING ON...game cycle %i : plane position: x = %f, y = %f, z = %f \n theta = %3.2f, fi = %f3.2\n",cycles, x, y,z, theta, fi );
@@ -1746,20 +1728,17 @@ while(SDL_PollEvent(&event)){  /* Loop until there are no events left on the que
     exit(1) ; /* /*standard C command to terminate program execution */         
     } /* end of extra case handling part */            
 } /*end of continual event-check loop. */
-/*=============================================================================================*/  
 }
 
 printf("check graphics Window!\n");
 /* close graphics Window to avoid abnormal terminations. */    
 SDL_Quit() ;           
-/*=======================================================*/        
     
 getchar();  
 
 return 0;
 } /* end of program: end of C  main() funciton */
 
-//================================================
 void xclearpixboard( int xlimit, int ylimit ){
 int i, j;
 GLdouble fW, fH;
@@ -1790,7 +1769,6 @@ void sdldisplay( int sw, int sh )
 
 SDL_GL_SwapWindow(window);
 }
-/*===================================================================================*/
 
 /*a timer function to pause to regulate FPS is a good utility to have...*/
 /* define function waitdt_sec(double): */
@@ -2323,9 +2301,7 @@ life[i]++ ; // works for lifecycle and explosion cycle too.
 	}
 }
 
-/*========================|  ... |======================================*/
 double say_terrain_height( struct subterrain *ite, double x, double z  /* this will be set... */ ) {
-  
 double apl, bpl, cpl, dpl, Xtri, Ytri, Ztri, dist_fp1, dist_fp2, Xf,Zf;
 int Xi, Yi, col ;
 double y ;
@@ -2355,8 +2331,6 @@ dist_fp2 = sqrt( pow( Xf-(Xi+1),2 )  + pow( Zf-(Yi+1),2 ) ) ;
      else{    
      col = 1 ;
      }
-
-/*-----------*/
 
 // ===THIS IS TRIANLGE 1 , BUT WE MUST ALSO IMPLEMENT THAT IT SEES IF TRI_1 OR TRI_2
 //vect1.component-by component.
@@ -2400,8 +2374,6 @@ Ztri = (double) Yi*ite[0].GPunit ;
 //now finally calculate dpl , the 'd' of the   ax + by + cz + d = 0   plane equation. 
 dpl = -apl*Xtri - bpl*Ytri - cpl*Ztri ;
 
-/*-----------------------------------------------*/
-
 /* now set heigt and that's it. */
 y = -( //is negative!chenck equation members always!!
 	                                                       (apl*x + //(ax +
@@ -2432,7 +2404,6 @@ ite[0].auxnormal[2] = s_nloc[1] ;
 
 return y ;
 }
-/*===================================================================*/
 
 /*====================================== draw a filled trinagle to pixel matrix ==================================*/
 void xaddftriang( int x1, int y1, 
@@ -2457,7 +2428,6 @@ if(color[2] > 1.0 ){
 color[2] = 1.0 ;
 }
 } 
-/*========================================================================================================*/
 
 /*now we define the function which, given 2 points in 3D, calculates where they end up on the
 virtual camera pointing toward positive z-s and passes them to the 2D line drawing function. */
@@ -2692,7 +2662,6 @@ struct mystruct temp ;
    *px = *py ;
    *py = temp ;
 }
-/*====================================================*/
 
 /*========================| Shell Sort STRUCT |============================ 
 shellsort: sort v[0]...v[n-1] into increasing order, with respect to some elment of the struct: 
@@ -2707,9 +2676,7 @@ void shellsort_struct( struct mystruct *v, int n){
      }
   }
 }
-/*================================================================*/
 
-/*---------------------------------------------------------------*/
 void  mat3x3_mult( double mat1[3][3] , double mat2[3][3] ) {
 double sum;
 int im, jm, k ;
@@ -2725,7 +2692,6 @@ int im, jm, k ;
          }
     }
 }
-/*-------------------------------------------------------------*/
 
 /*INVERSE OF 3x3 MATRIC (USED FOR OBTAINING THE INVERSE OF THE INERTIA TENSOR):
 INVERSE OF 3x3 MATRIC (USED FOR OBTAINING THE INVERSE OF THE INERTIA TENSOR):
@@ -2797,7 +2763,6 @@ void  inv( double in_3x3_matrix[3][3] ){
           }
      }
 } 
-/*------------------------------------------------*/
 
 double body_rebounce( double rx, double ry , double rz,
 		      double nx, double ny , double nz, double e, double lat ){
@@ -2892,7 +2857,6 @@ printf("COLLISION BEING RESOLVED ....\n\n");
 
 return jel ;
 }
-//=============================================================================================================
 
 void  make_inertia_tensor( int n_vertexs   ){
 //be very careful to assign storage space correctly!!!! ohterwise it brigs to 0 all elements!!!  
@@ -3017,7 +2981,7 @@ SDL_Delay(5);
 	txt1[j][i][2] = (GLubyte) blue  ;
 	}
    }
-/*----------------------------------------------------------*/
+
 //Release the surface
 SDL_FreeSurface(image);
 
@@ -3140,7 +3104,7 @@ printf("pixel : [%d,%d,%d ,alpha_value: %d]\n",red,green,blue, alpha );
 }
 	}
    }
-/*----------------------------------------------------------*/
+
 //Release the surface
 SDL_FreeSurface(image);
 
@@ -3221,12 +3185,9 @@ SDL_FreeSurface(image);
 
 return isz ;
 }
-/*================================================================*/
 
 // load texture ID map from a bitmap deviced by the edito (or with a graphics editor program, but that would be RATHER UNPRACTICAL... )
 int load_maptex_from_bitmap( char *filename ){
-/*-----------------------------------------------------------*/
-
 Uint8  red, green, blue ;
 Uint32 color_to_convert ;	
 SDL_Surface *sdl_image ;
@@ -3258,7 +3219,7 @@ sdl_image = SDL_LoadBMP( filename ) ;
 		}
 		printf("\n" ) ;
 	}
-/*----------------------------------------------------------*/
+
 	//Release the surface
 	SDL_FreeSurface(sdl_image);
 	}
@@ -3287,7 +3248,6 @@ float test;
    fclose(InFilePtr) ; /* safe file closure. */
 return i ;
 }
-/*===================================================================================*/
 
 /*=======================| Read in numeric vector form file |==========
 only space-separated or newline-separated numbers!! else goes error ====*/
@@ -3303,7 +3263,6 @@ void read_vector( char filename[] , float dest_string[], long int maxsize ){
    fclose(FilePtr) ; /* safe file closure. */
    printf("\nFILE FOUND & READ IN. LENGHT LIMIT WAS FIXED TO: %li . \n", maxsize ) ;     
 }  //end of ReadInFile()  function. 
-/*====================================================================================*/
 
 //========================FUNCTOIN DEFINITION START=========================
 void import_airplane_polyheron( void ){
