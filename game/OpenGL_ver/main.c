@@ -2,8 +2,8 @@
 #include <math.h>
 #include <time.h>
 
-/* include SDL library's header and declare external 5 spec variables */
-/*=====================|SDL CODE BLOCK 1| =====================================*/
+// include SDL library's header and declare external 5 spec variables 
+//=====================|SDL CODE BLOCK 1| =====================================
 #define GL_GLEXT_PROTOTYPES
 // include SDL library's header
 #include <SDL2/SDL.h>
@@ -13,7 +13,7 @@
 #include <GL/gl.h>
 #include <GL/glcorearb.h>
 
-/*===the structure representing relevant quantities concerning game's terrain====*/
+//===the structure representing relevant quantities concerning game's terrain====
 #define TERRAIN_SIZE 300
 struct subterrain
 {
@@ -32,22 +32,21 @@ struct subterrain
 // SUPERSAFE TOOK IT FROM PROFESSIONAL SITE: used for bitmap conversion to RGB value matrix (usual stuff)
 Uint32 getpixel(SDL_Surface *surface, int x, int y);
 
-
-/* this is the prototype of the function which will draw the pixel. */
+// this is the prototype of the function which will draw the pixel.
 void sdldisplay(int sw, int sh);
 
 void xclearpixboard(int xlimit, int ylimit);
 
-/* add 1 pixel to output image but in a failsafe manner: no accidental segfaults. */
+// add 1 pixel to output image but in a failsafe manner: no accidental segfaults. 
 void xadd1pix(int x, int y, float color[3],
 			  int xlimit, int ylimit);
 
-/* interpolate 2 points graphically */
+// interpolate 2 points graphically 
 void xaddline(int x1, int y1,
-			  int x2, int y2, float color[3], /* change this to int color[3] */
+			  int x2, int y2, float color[3], // change this to int color[3] 
 			  int xlimit, int ylimit);
 
-/*====================================== draw a filled trinagle to pixel matrix ==================================*/
+//====================================== draw a filled trinagle to pixel matrix ==================================
 void xaddftriang(int x1, int y1,
 				 int x2, int y2,
 				 int x3, int y3,
@@ -55,15 +54,15 @@ void xaddftriang(int x1, int y1,
 				 int step,
 				 int xlimit, int ylimit);
 
-/*now we define the function which, given 2 points in 3D, calculates where they end up on the
-virtual camera pointing toward positive z-s and passes them to the 2D line drawing function. */
+// now we define the function which, given 2 points in 3D, calculates where they end up on the
+// virtual camera pointing toward positive z-s and passes them to the 2D line drawing function. 
 void xaddftriang_persp(float x1, float y1, float z1,
 					   float x2, float y2, float z2,
 					   float x3, float y3, float z3,
 					   int step,
 					   float color[3], int pbwidth, int pbheight);
 
-/* textured triangles, drawn with NO APPOX... it's EXCACT */
+// textured triangles, drawn with NO APPOX... it's EXCACT 
 void xaddftriang_perspTEXTURED_pp(float x1, float y1, float z1,
 								  float x2, float y2, float z2,
 								  float x3, float y3, float z3,
@@ -93,21 +92,26 @@ void xaddpoint_persp(float x1, float y1, float z1, float color[3],
 void xaddline_persp(float x1, float y1, float z1, float x2, float y2, float z2, float color[3],
 					int pbwidth, int pbheight);
 
-/* basic SPECIAL EFFECTS IN VIDEOGAMES... */
-void addfrantumation_wsim(float x0, float y0, float z0, double dft, int option /*add new explosion or just process those already started */);
+// basic SPECIAL EFFECTS IN VIDEOGAMES... 
+// add new explosion or just process those already started 
+void addfrantumation_wsim(float x0, float y0, float z0, double dft, int option);
 
-void addsmoke_wsim(double x0, double y0, double z0, double dft, int option /*add new explosion or just process those already started */);
+// add new explosion or just process those already started 
+void addsmoke_wsim(double x0, double y0, double z0, double dft, int option);
 
 void projectile_launch(float x, float y, float z, float vx, float vy, float vz, double dft, int do_add);
 
 // misc for import 3D models.
 long int check_vector_elements(char filename[]);
 void read_vector(char filename[], float dest_string[], long int maxsize);
-void import_airplane_polyheron(void); // polyherdron definition importing from simple text file containing list of coordinate triplets. does seme for face definition and colors and texture orderting if needed.
+
+// polyherdron definition importing from simple text file containing list of coordinate triplets. 
+// does seme for face definition and colors and texture orderting if needed.
+void import_airplane_polyheron(void); 
 
 int waitdt_ms(double tt_ms);
 
-double say_terrain_height(struct subterrain *ite, double x, double z /* this will be set... */);
+double say_terrain_height(struct subterrain *ite, double x, double z);
 
 // #                                                                                                                  #
 // # End function prototypes                                                                                          #
@@ -122,7 +126,7 @@ double say_terrain_height(struct subterrain *ite, double x, double z /* this wil
 #define HEIGHT 320
 #define COLDEPTH 16
 SDL_Surface *screen;
-SDL_Event event;		   /* for real-time interactivity functions provided by SDL library */
+SDL_Event event;		   // for real-time interactivity functions provided by SDL library 
 SDL_Window *window = NULL; // New for SDL 2
 SDL_GLContext context;	   // New for SDL2
 const GLdouble pi = 3.1415926535897932384626433832795;
@@ -148,24 +152,30 @@ float z_cockpit_view = 0.6;
 int aboard = 1;
 float x_pilot, y_pilot, z_pilot;
 
-float x = 0.0, y = 0.0, z = 0.0;		  /* AUTOSET by general graphics procedure!! posizione telecamera vituale */
-float xp = 200.0, yp = 200.0, zp = 400.0; /* coordinates of airplane in game... external view is just needed here to make this game show accidental crashes due to overflow of the float 
-datatype variables after going far more than 4300 Km from Origin */
+// AUTOSET by general graphics procedure!! posizione telecamera vituale 
+float x = 0.0, y = 0.0, z = 0.0;		  
 
-float P[3], Q[3], R[3];	   /* versori dei 3 assi della telecamera virtuale */
-float Pa[3], Qa[3], Ra[3]; /* versori dei 3 assi del sistema di riferimento rispetto cui sono dati i vertici dello aeroplano */
+// coordinates of airplane in game... external view is just needed here to make this game 
+// show accidental crashes due to overflow of the float 
+datatype variables after going far more than 4300 Km from Origin */
+float xp = 200.0, yp = 200.0, zp = 400.0; 
+
+float P[3], Q[3], R[3];	   // versori dei 3 assi della telecamera virtuale 
+float Pa[3], Qa[3], Ra[3]; // versori dei 3 assi del sistema di riferimento rispetto cui sono dati i vertici dello aeroplano 
 
 struct subterrain terrain1;
 
-
-// misc
 #define NTRIS 610
 
-int texid[NTRIS]; // USED ONLY TO STORE ID NUMBER TO REALL... NTRIS is a WORST-CASE CONSIDERATON IN WHICH EACH TRIANGULAR FACE HAS A DIFFRENT TEXTURE. IT IS FILLED AT TEXTURE LOAD-IN AT FIRST CALL TO GLaddpoly......
+// USED ONLY TO STORE ID NUMBER TO REALL... NTRIS is a WORST-CASE CONSIDERATON IN WHICH 
+// EACH TRIANGULAR FACE HAS A DIFFRENT TEXTURE. IT IS FILLED AT TEXTURE LOAD-IN AT FIRST CALL TO GLaddpoly......
+int texid[NTRIS]; 
+
+// which of pre-loaded textures to appl on triangular face? they can ba also random-generated of course... .
 int face_texid[NTRIS] = {
 	-1, -1, -1, -1, -1, -1,
 	-1, -1, -1, -1, -1, -1,
-	11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11}; // which of pre-loaded textures to appl on triangular face? they can ba also random-generated of course... .
+	11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11}; 
 
 int face_texord[NTRIS][3] = {
 	{0, 1, 2},
@@ -180,36 +190,45 @@ int face_texord[NTRIS][3] = {
 	{0, 2, 3},
 	{1, 2, 3},
 	{1, 2, 3}};
-/* texture abcd side order riplet... tells how texture iage is treched ontriangular face...
-so:
 
-c_____d(1,1)
-|     |
-|     |
-|     | 
-|_____|
-a(0,0) b(1,0)
+// texture abcd side order riplet... tells how texture iage is treched ontriangular face...
+// so:
+// 
+// c_____d(1,1)
+// |     |
+// |     |
+// |     | 
+// |_____|
+// a(0,0) b(1,0)
+// 
+// c(0,1) yes.
+// see definition below of "texcoord_x[0-3]" and "texcoord_y[0-3]" 
 
-c(0,1) yes.
-see definition below of "texcoord_x[0-3]" and "texcoord_y[0-3]" */
-
-/* tis nevr changes... it's a fixed convention... of cource ocan changeit inthe source cnde here and recomple for havinga different flavour of editor */
-/*==vertexes of tex square:===a=b=c=d===========*/
+// tis nevr changes... it's a fixed convention... of cource ocan changeit inthe 
+// source cnde here and recomple for havinga different flavour of editor 
+// ==vertexes of tex square:===a=b=c=d===========
 const int texcoord_x[4] = {0, 1, 0, 1}; //...x
 const int texcoord_y[4] = {0, 0, 1, 1}; //...y
 
 #define NTREES 10000
 
-/* 4 data define a tree: x, y,z coordinates of where its convetional geometric center is... that was enough obvious ; the other is a parameter saying how much the 96x96 or 128x128 (or more) 'slice' images must be magnified 
-with restpct to the standar 1 unit-per-side case. the 5-th parameter says which type of tree... chosen from a pre-defined set... this means, in our case, the Id of the texture used to do the 2 'slices'.
-NOTE: this is only a basic support for trees of course... . the most extreme 
-realism would be achieved by requiring a complete polyhedral definition for each type of tree... after all, this way trees would be polyherda as any generic polyhedra with also semitransparent faces for the 'slices' where desired. */
+// 4 data define a tree: x, y,z coordinates of where its convetional geometric center is... 
+// that was enough obvious ; the other is a parameter saying how much the 96x96 or 128x128 (or more) 
+// 'slice' images must be magnified with restpct to the standar 1 unit-per-side case. 
+// the 5-th parameter says which type of tree... chosen from a pre-defined set... this means, 
+// in our case, the Id of the texture used to do the 2 'slices'.
+// NOTE: this is only a basic support for trees of course... . the most extreme 
+// realism would be achieved by requiring a complete polyhedral definition for each type of tree... 
+// after all, this way trees would be polyherda as any generic polyhedra with also semitransparent 
+// faces for the 'slices' where desired. 
 float trees[NTREES][5];
 int tree_texture_ID_bounds[2]; // texture_ID -related thing
 
 float treeR1 = 0.5;
 
-// auxiloiary for giving right texture coordinates... the right way of 'splattering' the quadrangular texture image / color-matrix onto the some triangles into which all 3Dobjects in the simplest ase are divided.
+// auxiloiary for giving right texture coordinates... the right way of 'splattering' the 
+// quadrangular texture image / color-matrix onto the some triangles into which all 3Dobjects 
+// in the simplest ase are divided.
 float texcoords_gnd_tri1[3][2] = {
 	{0.0, 0.0},
 	{1.0, 0.0},
@@ -223,8 +242,8 @@ float texcoords_gnd_tri2[3][2] = {
 #define NLINES 20
 #define NVERTEXES 200
 
-/* ============AEREO: DEFINIZIONE DEI VERTICI ================*/
-float punti[NVERTEXES][3] = {/* scatola */
+// AEREO: DEFINIZIONE DEI VERTICI 
+float punti[NVERTEXES][3] = {// scatola 
 							 {74, 76, -57},
 							 {74, 76, 57},
 							 {74, 76, 262},
@@ -326,8 +345,9 @@ float punti[NVERTEXES][3] = {/* scatola */
 							 {-120, -140, -80},
 							 {-120, -140, 80}};
 
-int estremi[NLINES][2] = {/* chi sono i 2 punti estremi delle linee da disegnare? 
-NOTA: estremi[ i-esima linea][quale punto e' l'estremo ] */
+// chi sono i 2 punti estremi delle linee da disegnare? 
+// NOTA: estremi[ i-esima linea][quale punto e' l'estremo ] 
+int estremi[NLINES][2] = {
 						  {0, 1},
 						  {1, 2},
 						  {0, 3},
@@ -353,8 +373,9 @@ NOTA: estremi[ i-esima linea][quale punto e' l'estremo ] */
 						  {14, 15},
 						  {12, 15}};
 
-int tris[NTRIS][3] = {/* chi sono i 2 punti estremi delle linee da disegnare? 
-NOTA: estremi[ i-esima linea][quale punto e' l'estremo ] */
+// chi sono i 2 punti estremi delle linee da disegnare? 
+// NOTA: estremi[ i-esima linea][quale punto e' l'estremo ] 
+int tris[NTRIS][3] = {
 					  {0, 4, 5},
 					  {1, 2, 3},
 					  {1, 3, 4},
@@ -417,7 +438,7 @@ NOTA: estremi[ i-esima linea][quale punto e' l'estremo ] */
 					  {20, 25, 26},
 					  {25, 26, 4}};
 
-/* ovvio a cosa serve... */
+// ovvio a cosa serve... 
 float col_tris[NTRIS][3] = {
 	{0.9, 0.9, 0.3},
 	{0.9, 0.9, 0.3},
@@ -452,52 +473,52 @@ float col_tris[NTRIS][3] = {
 int nvertexes = 100; // default value
 int ntris = 33;		 // default value
 
-/*==quatities used FOR SIMULATION / REALISTIC MOTION AND REBOUNCE FROM GROUND===*/
-float v[3] = {0.0, 0.0, 0.0}; /* (needs initial value!) */
+// quatities used FOR SIMULATION / REALISTIC MOTION AND REBOUNCE FROM GROUND
+float v[3] = {0.0, 0.0, 0.0}; // (needs initial value!) 
 float p[3];
 
 double Rm[3][3] = {{1.0, 0.0, 0.0},
 				   {0.0, 1.0, 0.0},
 				   {0.0, 0.0, 1.0}};
-/*orientation (angular): needs inital value(IDENTITY MATRIX!!!) */
+// orientation (angular): needs inital value(IDENTITY MATRIX!!!)
 
 double w[3] = {0.0, 0.0, 0.0};
 double L[3] = {0.0, 0.0, 0.0};
 
-/*----constants which characterize dynamically the body----*/
-float MASS = 1000.0; /* total mass                (linear motion) */
+// constants which characterize dynamically the body
+float MASS = 1000.0; // total mass (linear motion) 
 double It_init[3][3] = {{100.0, 0.0, 0.0},
 						{0.0, 200.0, 0.0},
 						{0.0, 0.0, 110.0}};
-/* sort of "rotational mass" (angular motion) */
+// sort of "rotational mass" (angular motion) 
 
-/* we build also the inverse matrix of R_3x3 matrix */
+// we build also the inverse matrix of R_3x3 matrix 
 double It_initINV[3][3];
 
+// it's updated accord to orientation
 double It_now[3][3] = {{100.0, 0.0, 0.0},
 					   {0.0, 100.0, 0.0},
-					   {0.0, 0.0, 100.0}}; /*  it's updated accord to orientation*/
+					   {0.0, 0.0, 100.0}}; 
 
-/* (DON'T CARE; info: Google --> "moment of inertia tensor" ) */
-/*---influesces from outside: FORCE vectors----*/
-float Fcm[3] = {0.0, 0.0, 0.0};			/*  total foce on center-of-mass "CM" */
-double torque_tot[3] = {0.0, 0.0, 0.0}; /*  total torque-force on rigid body*/
+// (DON'T CARE; info: Google --> "moment of inertia tensor" ) 
+// influesces from outside: FORCE vectors
+float Fcm[3] = {0.0, 0.0, 0.0};			//  total foce on center-of-mass "CM" 
+double torque_tot[3] = {0.0, 0.0, 0.0}; //  total torque-force on rigid body
 
-/*costants specific to simplest **AIRPLANE** game. */
-double k_visc = 2900.9; /* some constant deriving form viscosity of air AIR FRICTION DUE TO WING AND BACHWING TOTAL AREA... *PARP-FALL RESISTENCE* */
-double k_visc2 = 100.9; /* some constant deriving form viscosity of air **SIDE-FALL RESISTANCE**  */
-double k_visc3 = 200.9; /* some constant deriving form viscosity of air */
+// costants specific to simplest **AIRPLANE** game. 
+double k_visc = 2900.9; // some constant deriving form viscosity of air AIR FRICTION DUE TO WING AND BACHWING TOTAL AREA... *PARP-FALL RESISTENCE* 
+double k_visc2 = 100.9; // some constant deriving form viscosity of air **SIDE-FALL RESISTANCE**  
+double k_visc3 = 200.9; // some constant deriving form viscosity of air 
 
-double k_visc_rot = 2.9;	/* some constant deriving form viscosity of air around main axis... from nose to back */
-double k_visc_rot2 = 20.9;	/* some constant deriving form viscosity of air around main axis... around the axis perpendicular to wings' plane */
-double k_visc_rot3 = 290.9; /* some constant vaguely related to viscosity of air **CODINO aligment**?? */
+double k_visc_rot = 2.9;	// some constant deriving form viscosity of air around main axis... from nose to back 
+double k_visc_rot2 = 20.9;	// some constant deriving form viscosity of air around main axis... around the axis perpendicular to wings' plane 
+double k_visc_rot3 = 290.9; // some constant vaguely related to viscosity of air **CODINO aligment**?? 
 
-double k_visc_rot_STABILIZE = 110.0; /* some constant deriving form viscosity of air around main axis... around the axis passing through the wings, you know... *???* */
+double k_visc_rot_STABILIZE = 110.0; // some constant deriving form viscosity of air around main axis... around the axis passing through the wings, you know... *???* 
 
-double Pforce = 0.0; /* Force of the propeller driven by the motor... a propulsion force. */
+double Pforce = 0.0; // Force of the propeller driven by the motor... a propulsion force. 
 double vpar, vperp;	 // updated at each cycle... part of the super-siplified formulla to give forces to the body 3 in a way to make it fly a bit like a real airplane.
 
-/*------functions for physical simulation motion-------------*/
 double result_matrix[3][3], R_T[3][3], temp_mat[3][3];
 
 double Id[3][3] = {
@@ -518,22 +539,23 @@ double axis1_orig[3] = {1.0, 0.0, 0.0};
 double axis2_orig[3] = {0.0, 1.0, 0.0};
 double axis3_orig[3] = {0.0, 0.0, 1.0};
 
-double axis_1[3], axis_2[3], axis_3[3]; // according to present orientation: 3 principal axes of inertia... or anyway.
+// according to present orientation: 3 principal axes of inertia... or anyway.
+double axis_1[3], axis_2[3], axis_3[3]; 
 
-//auxiliaries:
+// auxiliaries:
 double SD[3][3], SD2[3][3], u1, u2, u3, w_abs, dAng;
 
-/* multiplication of 2  matrixes 3x3, in size */
+// multiplication of 2  matrixes 3x3, in size 
 void mat3x3_mult(double mat1[3][3], double mat2[3][3]);
 
-/* INVERSE OF 3x3 MATRIC (USED FOR OBTAINING THE INVERSE OF THE INERTIA TENSOR): */
+// INVERSE OF 3x3 MATRIC (USED FOR OBTAINING THE INVERSE OF THE INERTIA TENSOR): 
 void inv(double in_3x3_matrix[3][3]);
 
 double body_rebounce(double rx, double ry, double rz,
 					 double nx, double ny, double nz, double e, double lat);
 
 void make_inertia_tensor(int n_vertexs); // very useful....
-/* ==END OF IMULATION physical QUANTITIES DECLARATIONS======================== */
+// ==END OF IMULATION physical QUANTITIES DECLARATIONS========================
 
 int logo[8][128] = {
 	{1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
@@ -550,17 +572,17 @@ int logo[8][128] = {
 // # End global variable declarations                                                                                 #
 // ####################################################################################################################
 
-/* the C  main() function  */
+// the C  main() function  
 int main()
 {
-	float turnch = 0.0; /* used for smooth  turning of virtual camera */
-	float turncv = 0.0; /* used for smooth  turning if virtual camera */
+	float turnch = 0.0; // used for smooth  turning of virtual camera 
+	float turncv = 0.0; // used for smooth  turning if virtual camera 
 	int plane_up = 0;
 	int plane_down = 0;
 	int plane_inclleft = 0;
 	int plane_inclright = 0;
-	/* ALL non-SDL PROGRAM CODE HERE, OPERATE HERE:.... */
-	/* AUCILIARY INTEGERL VARIABLES some coordinates of some point which may be drawn... */
+	// ALL non-SDL PROGRAM CODE HERE, OPERATE HERE:.... 
+	// AUCILIARY INTEGERL VARIABLES some coordinates of some point which may be drawn... 
 	int i = 0;
 	int j = 0;
 	int k = 0;
@@ -575,23 +597,30 @@ int main()
 	float varR = 10.0;
 	float RR = 20.0;
 
-	float theta = 4.2, fi = 1.2, psi = 0.0 /* per ora non lo usiamo */; /* 3 angoli CHE INDICANO LA ORIENTAZIONE del sistema di riferimento della telecaera virtuale, per dire */
-	float thp = 0.2, fip = 0.2, psip = 0.0 /* per ora non lo usiamo */; /* 3 angoli CHE INDICANO LA ORIENTAZIONE del sistema di riferimento dello aeroplano di questo game  */
-	float th_add = 0.1, fi_add = 0.1, psi_add = 0.0;					/* FOR INTERNAL VIEW!!! COCKPIT VIEW */
+	// per ora non lo usiamo 
+	// 3 angoli CHE INDICANO LA ORIENTAZIONE del sistema di riferimento della telecaera virtuale, per dire 
+	float theta = 4.2, fi = 1.2, psi = 0.0; 
+
+	// per ora non lo usiamo 
+	// 3 angoli CHE INDICANO LA ORIENTAZIONE del sistema di riferimento dello aeroplano di questo game 
+	float thp = 0.2, fip = 0.2, psip = 0.0; 
+
+	// FOR INTERNAL VIEW!!! COCKPIT VIEW 
+	float th_add = 0.1, fi_add = 0.1, psi_add = 0.0; 
 
 	int cycles;
 
-	float h = 0.01; // uno step di simulazione che da' un risultato non troppo disastroso.
-	/* a matrix of 1s and 0s to */
+	// uno step di simulazione che da' un risultato non troppo disastroso.
+	float h = 0.01; 
 
 	double x1, y1, z1;
 
 	double g = -9.81; // POSITIVE +++++ ASSUMED!!
 
 	float color[4] = {0.0, 0.0, 0.0, 1.0};
-	/* code to start SDL graphics system: */
-	/*==========================|SDL CODE BLOCK 2|=========================*/
-	/* Initialize SDL */
+	// code to start SDL graphics system: 
+	//==========================|SDL CODE BLOCK 2|=========================
+	// Initialize SDL 
 
 	if (SDL_Init(SDL_INIT_VIDEO) != 0)
 	{
@@ -605,7 +634,7 @@ int main()
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 
-	/* Initialize the screen / window */
+	// Initialize the screen / window 
 	window = SDL_CreateWindow("FlightCraft_3D (GL) - by Simon Hasur",
 							  SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
 							  WIDTH, HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
@@ -627,7 +656,6 @@ int main()
 
 	screen = SDL_GetWindowSurface(window);
 	printf("Set global screen variable by calling SDL_GetWindowSurface\n");
-	/* SDL_SWSURFACE */
 
 	if (!screen)
 	{
@@ -642,7 +670,8 @@ int main()
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_BLEND);
 
-	/* SET SOME GL OPTIONS FOR LEAST PRECISION, SINCE THIS IS NOT A GRAPHICS PROGRAM... WE NEED COMPUTER POWER FOR PHYSICS CALCS MORE */
+	// SET SOME GL OPTIONS FOR LEAST PRECISION, SINCE THIS IS NOT A GRAPHICS PROGRAM... 
+	// WE NEED COMPUTER POWER FOR PHYSICS CALCS MORE 
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST); // Fastest - less expensive - Perspective Calculations
 	glHint(GL_POLYGON_SMOOTH_HINT, GL_FASTEST);			// Fastest - less expensive - Perspective Calculations
 
@@ -650,7 +679,7 @@ int main()
 
 	// if there is an external polyhedron definition for better-defined airplanes, let's use it.
 
-	//============================"INITIALISATION" PROCEDURE STARTS HERE=============
+	// ============================"INITIALISATION" PROCEDURE STARTS HERE=============
 	float tmp[NVERTEXES][3];
 	for (i = 0; i < NVERTEXES; i++)
 	{
@@ -677,7 +706,7 @@ int main()
 
 	xclearpixboard(WIDTH, HEIGHT);
 
-	/* GAME TERRAIN INITIAL VALUES.... */
+	// GAME TERRAIN INITIAL VALUES.... 
 	terrain1.GPunit = 50.0; // BE CAREFUL!!! says how many meters per side, IF SEEN FROM ABOVE... BECAUSE INCLINED SIDES OBAY sqrt(x^2 + z^2) but this is referred to the case when it's seen **FROM ABOVE**
 	terrain1.map_size = 300;
 
@@ -687,7 +716,7 @@ int main()
 	printf("TIME number used to generate random environment: %li\n\n", (long int)time(NULL));
 	waitdt_ms(1000.0);
 
-	/* generate random height samples */
+	// generate random height samples 
 	for (j = 0; j < TERRAIN_SIZE; j++)
 	{
 		for (i = 0; i < TERRAIN_SIZE; i++)
@@ -705,7 +734,7 @@ int main()
 
 	for (kux = 0; kux < 10; kux++)
 	{
-		/* more natural shape... */
+		// more natural shape... 
 		for (k = 0; k < 600; k++)
 		{
 			int x, y, s_x, s_y, siz;
@@ -731,15 +760,15 @@ int main()
 		} // vyvle with k
 	}	  //cycle with kux
 
-	/* put plane, lenghly airports at random positions, with random size */
+	// put plane, lenghly airports at random positions, with random size 
 	for (k = 0; k < 50; k++)
 	{ // be careful... this is no rescaled
 		int x, y, airport_x, airport_y;
 		j = (int)TERRAIN_SIZE * ((float)rand() / (float)RAND_MAX);
 		i = (int)TERRAIN_SIZE * ((float)rand() / (float)RAND_MAX);
 
-		//x= 200 meters + 20*some  [meters]
-		//y= 200 meters + 100*some  [meters]
+		// x= 200 meters + 20*some  [meters]
+		// y= 200 meters + 100*some [meters]
 		airport_x = (200 + (int)20 * ((float)rand() / (float)RAND_MAX)) / terrain1.GPunit;
 		airport_y = (200 + (int)500 * ((float)rand() / (float)RAND_MAX)) / terrain1.GPunit;
 
@@ -755,11 +784,11 @@ int main()
 			}
 		}
 	}
-	/*--------------END OF RANDOM TERRAN GENERATON-----------------*/
+	// --------------END OF RANDOM TERRAN GENERATON-----------------
 
 	terrain1.map_size = load_hmap_from_bitmap("terrain_data/hmap_300x300.bmp");
 
-	/* airplane random colors */
+	// airplane random colors 
 	for (i = 18; i < NTRIS; i++)
 	{
 		col_tris[i][0] = (float)0.3 * rand() / (float)RAND_MAX;
@@ -767,12 +796,17 @@ int main()
 		col_tris[i][2] = (float)0.9 * rand() / (float)RAND_MAX;
 	}
 
-	load_textures_wOpenGL();						// load textures in
+	// load textures in
+	load_textures_wOpenGL(); 
 	tree_texture_ID_bounds[0] = textures_available; // at what ID do tree textures begin (and end also...)
 
-	load_textures96x96_SEMITRANSPARENT_wOpenGL(); // idem but with "bitmap" image files with alpha value for transparency information on each pixel... this is mainly used ofr drawing trees in a quick, nie and simple way.
+	// idem but with "bitmap" image files with alpha value for transparency information on each pixel... 
+	// this is mainly used ofr drawing trees in a quick, nie and simple way.
+	load_textures96x96_SEMITRANSPARENT_wOpenGL(); 
 
-	load_maptex_from_bitmap("terrain_data/maptex_300x300.bmp"); // this comes after, because so during loading we can check if no texture index superior to the number of available textures is inserted... .
+	// this comes after, because so during loading we can check if no texture index superior to the number 
+	// of available textures is inserted... .
+	load_maptex_from_bitmap("terrain_data/maptex_300x300.bmp"); 
 
 	int tree_group_n = 30;
 	// trees' position and defult parameters for trees.
@@ -826,19 +860,19 @@ int main()
 
 	make_inertia_tensor(NVERTEXES);
 
-	/*-----momentum p (linear quantity)--*/
+	//-----momentum p (linear quantity)--
 	p[0] = MASS * v[0];
 	p[1] = MASS * v[1];
 	p[2] = MASS * v[2];
 
-	/* angular momentum (angular/ rotational quantity ) */
+	// angular momentum (angular/ rotational quantity ) 
 	L[0] = It_now[0][0] * w[0] + It_now[0][1] * w[1] + It_now[0][2] * w[2];
 	L[1] = It_now[1][0] * w[0] + It_now[1][1] * w[1] + It_now[1][2] * w[2];
 	L[2] = It_now[2][0] * w[0] + It_now[2][1] * w[1] + It_now[2][2] * w[2];
 
-	inv(It_init); /* fine: it puts the inverse into the "result_matrix" global variable. */
+	inv(It_init); // fine: it puts the inverse into the "result_matrix" global variable. 
 
-	/* we copy it into "R_INV"... */
+	// we copy it into "R_INV"... 
 	for (j = 0; j < 3; j++)
 	{
 		for (i = 0; i < 3; i++)
@@ -847,7 +881,7 @@ int main()
 		}
 	}
 
-	/* reset forces to 0.0 */
+	// reset forces to 0.0 
 	for (i = 0; i < 3; i++)
 	{
 		Fcm[i] = 0.0;
@@ -865,7 +899,7 @@ int main()
 	}
 
 	printf("TRYING TO IMPORT VERTEX LIST OF 3D MODEL\n");
-	FILE *FilePtr; /* pointer to input file */
+	FILE *FilePtr; // pointer to input file 
 
 	FilePtr = fopen("input/vertexes.txt", "r");
 	if (FilePtr < 0)
@@ -881,15 +915,15 @@ int main()
 
 	while (cycles < 50000)
 	{
-		/* -------- moving camera position and airplane intractive control -------- */
+		// -------- moving camera position and airplane intractive control -------- 
 		if (turncv == 1.0 || turncv == -1.0)
 		{							 // vertical cam displacement
-			fi = fi - turncv * 0.02; /*rotate camera's reference system's fi angle*/
+			fi = fi - turncv * 0.02; // rotate camera's reference system's fi angle
 			fi_add = fi_add - turncv * 0.01;
 		}
 		if (turnch == 1.0 || turnch == -1.0)
 		{
-			theta = theta + turnch * 0.02; /* totate camera's rweference system's theta angle */
+			theta = theta + turnch * 0.02; // totate camera's rweference system's theta angle 
 			th_add = th_add + turnch * 0.01;
 		}
 		if (plane_up == 1)
@@ -917,9 +951,9 @@ int main()
 			torque_tot[2] += 2621.0 * axis_1[2];
 		}
 
-		/*===========PHYSICS PROCEDURE=============*/
-		/* SEMBRA TUTTO OK */
-		/*now calculate axes in their new 'orientation', using the orientation matrix.*/
+		// ===========PHYSICS PROCEDURE=============
+		// SEMBRA TUTTO OK 
+		// now calculate axes in their new 'orientation', using the orientation matrix.
 
 		//R:
 		axis_1[0] = Rm[0][0] * axis1_orig[0] +
@@ -970,12 +1004,14 @@ int main()
 		Ra[0] = axis_3[0];
 		Ra[1] = axis_3[1];
 		Ra[2] = axis_3[2];
-		/*=======END OF AXES REORIENTATION DONE============*/
+		// =======END OF AXES REORIENTATION DONE============
 
-		/*===Calulate total Fcm and total torque, starting from external forces applied to vertices of using some 'magic' formula===*/
-		/*--NOTE: g is already done below... so it's no bother----forces  of ultrasimple flight model:-- */
+		// Calulate total Fcm and total torque, starting from external forces applied to vertices 
+		// of using some 'magic' formula
+		// NOTE: g is already done below... so it's no bother----forces  of ultrasimple flight model
 
-		//***********NOT needed for dynamics, it' only in this game: some approx of force on CM and torque due to a rudimental plane aerodynamical forces' consideration*******
+		// NOT needed for dynamics, it' only in this game: some approx of force on CM 
+		// and torque due to a rudimental plane aerodynamical forces' consideration
 		float vpar;
 		float vlat;
 
@@ -989,11 +1025,11 @@ int main()
 
 		vpar = axis_1[0] * v[0] + axis_1[1] * v[1] + axis_1[2] * v[2];
 
-		rot1 = axis_1[0] * w[0] + axis_1[1] * w[1] + axis_1[2] * w[2]; //how much it rotates around axis 1 (nose--> back)
+		rot1 = axis_1[0] * w[0] + axis_1[1] * w[1] + axis_1[2] * w[2]; // how much it rotates around axis 1 (nose--> back)
 
-		rot2 = axis_2[0] * w[0] + axis_2[1] * w[1] + axis_2[2] * w[2]; //how much it rotates around axis 2 (perp to wings)
+		rot2 = axis_2[0] * w[0] + axis_2[1] * w[1] + axis_2[2] * w[2]; // how much it rotates around axis 2 (perp to wings)
 
-		rot3 = axis_3[0] * w[0] + axis_3[1] * w[1] + axis_3[2] * w[2]; //how much it rotates around axis 3 (parallel to wings)
+		rot3 = axis_3[0] * w[0] + axis_3[1] * w[1] + axis_3[2] * w[2]; // how much it rotates around axis 3 (parallel to wings)
 		// effect (IN A VERY RUDIMENTAL CONCEPTION OF AERODYNAMICS, NOT SCIENTIFIC AT ALL) of air friction on the motion of Center of Mass directly.
 
 		Fcm[0] += -k_visc * vperp * axis_2[0] - k_visc2 * vlat * axis_3[0] - k_visc3 * vpar * axis_1[0] + Pforce * axis_1[0];
@@ -1010,21 +1046,21 @@ int main()
 
 		double boh = axis_3[0] * v[0] + axis_3[1] * v[1] + axis_3[2] * v[2];
 
-		//effetto coda verticale: decente...
+		// effetto coda verticale: decente...
 		torque_tot[0] += -k_visc_rot3 * (boh)*axis_2[0];
 		torque_tot[1] += -k_visc_rot3 * (boh)*axis_2[1];
 		torque_tot[2] += -k_visc_rot3 * (boh)*axis_2[2];
 
-		/*=======tota Fcm and toal torque DONE=============*/
+		// =======tota Fcm and toal torque DONE=============
 
-		/*===UPDATE VELOCITY, LINEAR AND ANGULAR TOO===*/
-		/*-----momentum p (linear quantity)--*/
+		// ===UPDATE VELOCITY, LINEAR AND ANGULAR TOO===
+		// momentum p (linear quantity)
 		p[0] = MASS * v[0];
 		p[1] = MASS * v[1];
 		p[2] = MASS * v[2];
 
 		p[0] = p[0] + Fcm[0] * h;
-		p[1] = p[1] + Fcm[1] * h; /* we model gravity as a force given by: g*MASS, downward */
+		p[1] = p[1] + Fcm[1] * h; // we model gravity as a force given by: g*MASS, downward 
 		p[2] = p[2] + Fcm[2] * h + g * MASS * h;
 
 		v[0] = p[0] / MASS;
@@ -1044,19 +1080,19 @@ int main()
 
 		// angular momentum (angular/ rotational quantity )
 
-		/* reset forces to 0.0 */
+		// reset forces to 0.0 
 		for (i = 0; i < 3; i++)
 		{
 			Fcm[i] = 0.0;
 			torque_tot[i] = 0.0;
 		}
 
-		/*==UPDATE POSITION AND ORIENTTION ==*/
+		// UPDATE POSITION AND ORIENTTION 
 		xp = xp + v[0] * h;
 		yp = yp + v[1] * h;
 		zp = zp + v[2] * h;
 
-		/* update orientation */
+		// update orientation 
 		w_abs = sqrt(w[0] * w[0] + w[1] * w[1] + w[2] * w[2]);
 
 		if (w_abs > 0.0000001)
@@ -1076,7 +1112,7 @@ int main()
 			dAng = 0.0;
 		}
 
-		/* explicitly writing the Skew(w_vector) ... and also D_vector's square */
+		// explicitly writing the Skew(w_vector) ... and also D_vector's square 
 		SD[0][0] = 0.0;
 		SD[0][1] = -u3;
 		SD[0][2] = u2;
@@ -1087,8 +1123,8 @@ int main()
 		SD[2][1] = u1;
 		SD[2][2] = 0.0;
 
-		mat3x3_mult(SD, SD); /* ok it does the product and resulting matrix is put 
-in the "result_matrix" global variable. */
+		// ok it does the product and resulting matrix is put in the "result_matrix" global variable. 
+		mat3x3_mult(SD, SD); 
 
 		for (j = 0; j < 3; j++)
 		{
@@ -1106,8 +1142,8 @@ in the "result_matrix" global variable. */
 			}
 		}
 
-		mat3x3_mult(dR, Rm); /* ok it does the product and resulting matrix is put 
-in the "result_matrix" global variable. */
+		// ok it does the product and resulting matrix is put in the "result_matrix" global variable. 
+		mat3x3_mult(dR, Rm); 
 
 		for (j = 0; j < 3; j++)
 		{
@@ -1117,8 +1153,8 @@ in the "result_matrix" global variable. */
 			}
 		}
 
-		/*===update inertia tensor according to new orientation: It_now = R*It_init*transpose(R) ==== */
-		/* we build the transpose matrix of R_3x3 matrix, just here */
+		// update inertia tensor according to new orientation: It_now = R*It_init*transpose(R) 
+		// we build the transpose matrix of R_3x3 matrix, just here 
 		for (i = 0; i < 3; i++)
 		{
 			for (j = 0; j < 3; j++)
@@ -1127,7 +1163,7 @@ in the "result_matrix" global variable. */
 			}
 		}
 
-		/* we perform the 2 matrix poroducts */
+		// we perform the 2 matrix poroducts 
 		mat3x3_mult(Rm, It_init);
 
 		for (j = 0; j < 3; j++)
@@ -1141,7 +1177,7 @@ in the "result_matrix" global variable. */
 
 		mat3x3_mult(temp_mat, R_T);
 
-		/* and put result into "It_now" */
+		// and put result into "It_now" 
 		for (j = 0; j < 3; j++)
 		{
 			for (i = 0; i < 3; i++)
@@ -1150,8 +1186,8 @@ in the "result_matrix" global variable. */
 			}
 		}
 
-		/* its inverse too, since it's needed: */
-		/* we perform the 2 matrix poroducts */
+		// its inverse too, since it's needed: 
+		// we perform the 2 matrix poroducts 
 		mat3x3_mult(Rm, It_initINV);
 
 		for (j = 0; j < 3; j++)
@@ -1164,7 +1200,7 @@ in the "result_matrix" global variable. */
 		}
 		mat3x3_mult(temp_mat, R_T);
 
-		/* we copy it into "inv_It_now"... */
+		// we copy it into "inv_It_now"... 
 		for (j = 0; j < 3; j++)
 		{
 			for (i = 0; i < 3; i++)
@@ -1173,32 +1209,33 @@ in the "result_matrix" global variable. */
 			}
 		}
 
-		/*=================DONE UPDATE OF ORIENTATION MATRIX and intertia tensor=================*/
-		/*====END PHYSICALLY SIMULATED UPDATE OF  AIRPLANE POS AND ROTATION, ORIENTAION=====*/
+		//=================DONE UPDATE OF ORIENTATION MATRIX and intertia tensor=================
+		//====END PHYSICALLY SIMULATED UPDATE OF  AIRPLANE POS AND ROTATION, ORIENTAION=====
 
 		// DETECTING AND RESOLVING COLLISION WITH GROUND
 		// simplified 'collision' with ground. well... just to illustrate the concept, it's quite bad as solution.
 		for (i = 0; i < NVERTEXES; i++)
 		{					   // AIRPLANE...
-			double xw, yw, zw; /* coordinates of plane's vertexes in the "Game World"'s reference frame. Very simple, look code below */
+			// coordinates of plane's vertexes in the "Game World"'s reference frame. Very simple, look code below 
+			double xw, yw, zw; 
 			xw = punti[i][0] * axis_1[0] + punti[i][1] * axis_2[0] + punti[i][2] * axis_3[0];
 			yw = punti[i][0] * axis_1[1] + punti[i][1] * axis_2[1] + punti[i][2] * axis_3[1];
 			zw = punti[i][0] * axis_1[2] + punti[i][1] * axis_2[2] + punti[i][2] * axis_3[2];
 
 			double he_id = say_terrain_height(&terrain1, xp + xw, yp + yw);
 			if (zp + zw < he_id)
-			{ /* just as any vertex of airplane touches ground and tries to go below */
+			{ // just as any vertex of airplane touches ground and tries to go below 
 				body_rebounce(xw, yw, zw, terrain1.auxnormal[0], terrain1.auxnormal[1], terrain1.auxnormal[2], 0.06, 0);
 				printf("TOUCH GND \n");
 				zp = zp + (he_id - zp - zw);
-				/*check is normvel < 0 and eventually calculated and assigns new velocities and so.*/
+				// check is normvel < 0 and eventually calculated and assigns new velocities and so.
 			}
 		}
 
-		/*---------------representation and graphics perocedure--------------*/
+		// representation and graphics perocedure
 		xclearpixboard(WIDTH, HEIGHT); // CANCELLA SCHERMATA/ LAVAGNA.
 
-		/*------------------ scenario inquadrature 3D---------------------------------- */
+		//------------------ scenario inquadrature 3D---------------------------------- 
 		if (view == 1)
 		{
 			P[0] = -sin(theta);
@@ -1214,7 +1251,9 @@ in the "result_matrix" global variable. */
 			R[2] = cos(fi);
 		}
 		else if (view == 2)
-		{				   // i know this negative index stuff is awkward but in the prototype stage it was good to have 1 and -1. now just extend this to support more views.
+		{
+			// i know this negative index stuff is awkward but in the prototype stage 
+			// it was good to have 1 and -1. now just extend this to support more views.
 			P[0] = -Pa[0]; // had to be mirrored sorry
 			P[1] = -Pa[1];
 			P[2] = -Pa[2];
@@ -1271,7 +1310,7 @@ in the "result_matrix" global variable. */
 			R[2] = Rp[2] * (cos(theta) * sin(fi)) + Pp[2] * (sin(theta) * sin(fi)) + Qp[2] * cos(fi);
 		}
 
-		/* moving plane's CM */
+		// moving plane's CM 
 		if (aboard == 1)
 		{
 			x = xp + RR * R[0];
@@ -1293,21 +1332,22 @@ in the "result_matrix" global variable. */
 			z = say_terrain_height(&terrain1, x_pilot, y_pilot) + 1.75;
 		}
 
-		float x1, y1, z1, x2, y2, z2; /* LE COORDINATE DEI PUNTI DELLA PISTA, NEL SISTEMA DI RIFERIMENTO DEL PARACADUTISTA  */
+		// LE COORDINATE DEI PUNTI DELLA PISTA, NEL SISTEMA DI RIFERIMENTO DEL PARACADUTISTA 
+		float x1, y1, z1, x2, y2, z2; 
 
 		if (low_graphics == 0)
 		{
 			addsmoke_wsim(xp, yp, zp, h, 2); // DEACTIVATED TO TEST
 		}
 
-		/* test asse perpendiclare allo 'schermo' grafica 3D: */
-		/* let's avoid stupid mistakes... check if all basic things work */
+		// test asse perpendiclare allo 'schermo' grafica 3D: 
+		// let's avoid stupid mistakes... check if all basic things work 
 		color[0] = 1.0;
 		color[1] = 0.0;
 		color[2] = 0.0;
-		/* IMPORTANT NOTE: 2 meters far from camera virtual 'lens' along it perpendiculat ro it towards screen,
-; axes are each 1 meter long. use in an intelligent way the measures... in theese cases, 
-go use uni-lenght references.it's obvious choice but saying it is not bad. */
+		// IMPORTANT NOTE: 2 meters far from camera virtual 'lens' along it perpendiculat ro it 
+		// towards screen, axes are each 1 meter long. use in an intelligent way the measures... 
+		// in theese cases, go use uni-lenght references.it's obvious choice but saying it is not bad.
 
 		// xc
 		xaddline_persp(0.0 - 1.0, 0.0 - 1.0, 2.0,
@@ -1340,14 +1380,14 @@ go use uni-lenght references.it's obvious choice but saying it is not bad. */
 				if (logo[7 - j][i] > 0)
 				{
 					glBegin(GL_POINTS);
-					glVertex3f(0.012 * i + 0.14, 0.012 * j - 1, -2.0);
+						glVertex3f(0.012 * i + 0.14, 0.012 * j - 1, -2.0);
 					glEnd();
 				}
 			}
 		}
 
-		/* 3 ASSI DELLO SPAZIO CARTESIANO... COSI' SI CAPISCE DOVE STANNO LE COSE */
-		/* TRIANGOLO 1 */
+		// 3 ASSI DELLO SPAZIO CARTESIANO... COSI' SI CAPISCE DOVE STANNO LE COSE 
+		// TRIANGOLO 1 
 		float Xo[5], Yo[5], Zo[5], x_c[5], y_c[5], z_c[5];
 		float GPunit;
 		int xi, yi, Xi, Yi;
@@ -1370,7 +1410,7 @@ go use uni-lenght references.it's obvious choice but saying it is not bad. */
 		Yo[2] = yp + 10 * Ra[1];
 		Zo[2] = zp + 10 * Ra[2];
 
-		/* calcola lecoordinate di questi 3 punti nel sistema P-Q-R  */
+		// calcola lecoordinate di questi 3 punti nel sistema P-Q-R 
 		for (i = 0; i < 4; i++)
 		{
 			x_c[i] = P[0] * (Xo[i] - x) + P[1] * (Yo[i] - y) + P[2] * (Zo[i] - z);
@@ -1387,10 +1427,10 @@ go use uni-lenght references.it's obvious choice but saying it is not bad. */
 			xaddline_persp(x_c[i], y_c[i], -z_c[i], x_c[3], y_c[3], -z_c[3], color, WIDTH, HEIGHT);
 		}
 
-		/*=== DISEGNA IL TERRENO IN MODO ALGORITMICO, UNA GRIGILIA RETTANGOLARE COME AL SOLITO,
-'REDERING' WIREFRAME O A TRINGOLI RIPIENI */
+		// DISEGNA IL TERRENO IN MODO ALGORITMICO, UNA GRIGILIA RETTANGOLARE COME AL SOLITO,
+		// 'REDERING' WIREFRAME O A TRINGOLI RIPIENI 
 
-		/* draw only near triangles, in order to avoid overloading graphics computational heavyness */
+		// draw only near triangles, in order to avoid overloading graphics computational heavyness 
 		int lv = 6;
 
 		Xi = floor(xp / (terrain1.GPunit));
@@ -1407,7 +1447,7 @@ go use uni-lenght references.it's obvious choice but saying it is not bad. */
 		{
 			for (yi = Yi - lv; yi < Yi + lv; yi = yi + 1)
 			{
-				/* TRIANGOLO 1 */
+				// TRIANGOLO 1 
 				Xo[0] = GPunit * xi;
 				Yo[0] = GPunit * yi;
 				Zo[0] = 0.0;
@@ -1424,36 +1464,38 @@ go use uni-lenght references.it's obvious choice but saying it is not bad. */
 				Yo[3] = GPunit * (yi + 1);
 				Zo[3] = 0.0;
 
-				/* default color : */
+				// default color :
 				color[0] = 0.4;
 				color[1] = 0.4;
 				color[2] = 0.4;
 
-				/* failsafe variable preset */
+				// failsafe variable preset 
 				Xo[4] = 1;
 				Yo[4] = 1;
 				Zo[4] = 1;
 
 				if (Xi + lv < terrain1.map_size && Yi + lv < terrain1.map_size)
-				{													 /* escamotage for a 0-terrain outside sampled limit. but sampled within, good */
-					Zo[0] = GPunit * terrain1.shmap[xi][yi];		 /* the hight sample */
-					Zo[1] = GPunit * terrain1.shmap[xi + 1][yi];	 /* the hight sample */
-					Zo[2] = GPunit * terrain1.shmap[xi][yi + 1];	 /* the hight sample */
-					Zo[3] = GPunit * terrain1.shmap[xi + 1][yi + 1]; /* the hight sample */
+				{
+					// escamotage for a 0-terrain outside sampled limit. but sampled within, good 
+					Zo[0] = GPunit * terrain1.shmap[xi][yi];		 // the hight sample 
+					Zo[1] = GPunit * terrain1.shmap[xi + 1][yi];	 // the hight sample 
+					Zo[2] = GPunit * terrain1.shmap[xi][yi + 1];	 // the hight sample 
+					Zo[3] = GPunit * terrain1.shmap[xi + 1][yi + 1]; // the hight sample 
 
 					color[0] = terrain1.scol[xi][yi][0];
 					color[1] = terrain1.scol[xi][yi][1];
 					color[2] = terrain1.scol[xi][yi][2];
 
-					/* now prepare a freshly calculated normal vector and then we draw it. it's fundamental that normals are ok for rebounce */
-					say_terrain_height(&terrain1, Xo[0] + 0.01, Yo[0] + 0.01); /* check what is the local normal */
+					// now prepare a freshly calculated normal vector and then we draw it. 
+					// it's fundamental that normals are ok for rebounce 
+					say_terrain_height(&terrain1, Xo[0] + 0.01, Yo[0] + 0.01); // check what is the local normal 
 
 					Xo[4] = Xo[0] + 20.0 * terrain1.auxnormal[0];
 					Yo[4] = Yo[0] + 20.0 * terrain1.auxnormal[1];
-					Zo[4] = Zo[0] + 20.0 * terrain1.auxnormal[2]; /* the hight sample */
+					Zo[4] = Zo[0] + 20.0 * terrain1.auxnormal[2]; // the hight sample 
 				}
 
-				/* calcola lecoordinate di questi 3 punti nel sistema P-Q-R del paracadutista/pilota */
+				// calcola lecoordinate di questi 3 punti nel sistema P-Q-R del paracadutista/pilota 
 				for (i = 0; i < 5; i++)
 				{
 					x_c[i] = P[0] * (Xo[i] - x) + P[1] * (Yo[i] - y) + P[2] * (Zo[i] - z);
@@ -1474,7 +1516,7 @@ go use uni-lenght references.it's obvious choice but saying it is not bad. */
 											   color, WIDTH, HEIGHT);
 
 					// TRIANGOLO 2 (change color a little bit)
-					color[1] = color[1] + 0.1; /* draw with slightly different color... */
+					color[1] = color[1] + 0.1; // draw with slightly different color... 
 
 					GLaddftriang_perspTEXTURED(x_c[1], y_c[1], z_c[1],
 											   x_c[2], y_c[2], z_c[2],
@@ -1497,9 +1539,14 @@ go use uni-lenght references.it's obvious choice but saying it is not bad. */
 			yctree = trees[k][1]; // y of conventinal geometric center
 
 			if ((xctree < x + 1000.0 && xctree > x - 1000.0) && (yctree < y + 1000.0 && yctree > y - 1000.0))
-			{						  // draw only trees not too far away
-				zctree = trees[k][2]; // z of conventinal geometric center. this was pre-calculated so that trees stay nicely ON the terrain surface.
-				sctree = trees[k][3]; // magnification value: how much to magnify original (1_unit x 1_unit) square?.
+			{
+				// draw only trees not too far away
+				// z of conventinal geometric center. this was pre-calculated so that trees 
+				// stay nicely ON the terrain surface.
+				zctree = trees[k][2]; 
+
+				// magnification value: how much to magnify original (1_unit x 1_unit) square?.
+				sctree = trees[k][3]; 
 
 				Xo[0] = xctree - sctree * 0.9;
 				Yo[0] = yctree;
@@ -1523,7 +1570,7 @@ go use uni-lenght references.it's obvious choice but saying it is not bad. */
 
 				glBindTexture(GL_TEXTURE_2D, texid[(int)trees[k][4]]);
 
-				/* calcola lecoordinate di questi 3 punti nel sistema P-Q-R del paracadutista/pilota */
+				// calcola lecoordinate di questi 3 punti nel sistema P-Q-R del paracadutista/pilota 
 				for (i = 0; i < 5; i++)
 				{
 					x_c[i] = P[0] * (Xo[i] - x) + P[1] * (Yo[i] - y) + P[2] * (Zo[i] - z);
@@ -1560,7 +1607,7 @@ go use uni-lenght references.it's obvious choice but saying it is not bad. */
 				Zo[3] = zctree - treeR1;
 
 				// again this to obtain coordintes in the virtual camera's reference frame.
-				/* calcola lecoordinate di questi 3 punti nel sistema P-Q-R del paracadutista/pilota */
+				// calcola lecoordinate di questi 3 punti nel sistema P-Q-R del paracadutista/pilota 
 				for (i = 0; i < 5; i++)
 				{
 					x_c[i] = P[0] * (Xo[i] - x) + P[1] * (Yo[i] - y) + P[2] * (Zo[i] - z);
@@ -1585,12 +1632,12 @@ go use uni-lenght references.it's obvious choice but saying it is not bad. */
 
 		if (low_graphics == 0)
 		{
-			addsmoke_wsim(1, 2, 3, h, 0); /* we must make special effect sequences go on. */
+			addsmoke_wsim(1, 2, 3, h, 0); // we must make special effect sequences go on. 
 		}
 
 		float x1a, y1a, z1a, x2a, y2a, z2a, x3a, y3a, z3a, x3, y3, z3;
 
-		/* DISEGNA SOLO LO AEREO... GRAFICA VETTORIALE BELLO SEMPLICE...*/
+		// DISEGNA SOLO LO AEREO... GRAFICA VETTORIALE BELLO SEMPLICE...
 		color[0] = 1.0;
 		color[1] = 1.0;
 		color[2] = 1.0;
@@ -1609,17 +1656,17 @@ go use uni-lenght references.it's obvious choice but saying it is not bad. */
 			y3a = Pa[1] * punti[tris[i][2]][0] + Qa[1] * punti[tris[i][2]][1] + Ra[1] * punti[tris[i][2]][2];
 			z3a = Pa[2] * punti[tris[i][2]][0] + Qa[2] * punti[tris[i][2]][1] + Ra[2] * punti[tris[i][2]][2];
 
-			/* estremo 1 */
+			// estremo 1 
 			x1 = P[0] * (x1a + xp - x) + P[1] * (y1a + yp - y) + P[2] * (z1a + zp - z);
 			y1 = Q[0] * (x1a + xp - x) + Q[1] * (y1a + yp - y) + Q[2] * (z1a + zp - z);
 			z1 = R[0] * (x1a + xp - x) + R[1] * (y1a + yp - y) + R[2] * (z1a + zp - z);
 
-			/* estremo 2 */
+			// estremo 2 
 			x2 = P[0] * (x2a + xp - x) + P[1] * (y2a + yp - y) + P[2] * (z2a + zp - z);
 			y2 = Q[0] * (x2a + xp - x) + Q[1] * (y2a + yp - y) + Q[2] * (z2a + zp - z);
 			z2 = R[0] * (x2a + xp - x) + R[1] * (y2a + yp - y) + R[2] * (z2a + zp - z);
 
-			/* vertex 3 */
+			// vertex 3 
 			x3 = P[0] * (x3a + xp - x) + P[1] * (y3a + yp - y) + P[2] * (z3a + zp - z);
 			y3 = Q[0] * (x3a + xp - x) + Q[1] * (y3a + yp - y) + Q[2] * (z3a + zp - z);
 			z3 = R[0] * (x3a + xp - x) + R[1] * (y3a + yp - y) + R[2] * (z3a + zp - z);
@@ -1644,13 +1691,13 @@ go use uni-lenght references.it's obvious choice but saying it is not bad. */
 
 		if (low_graphics == 0)
 		{
-			addfrantumation_wsim(x1, y1, z1, h, 0);			   /* we must make special effect sequences go on. */
-			projectile_launch(10, 10, 10, 20, 10, -0.1, h, 0); /* idem */
+			addfrantumation_wsim(x1, y1, z1, h, 0);			   // we must make special effect sequences go on. 
+			projectile_launch(10, 10, 10, 20, 10, -0.1, h, 0); // idem 
 		}
 
-		/* call function which displays the matrix of pixels in a true graphics window  */
+		// call function which displays the matrix of pixels in a true graphics window 
 
-		/*==================|SDL CODE BLOCK 4|=============================*/
+		// ==================|SDL CODE BLOCK 4|=============================
 		sdldisplay(WIDTH, HEIGHT);
 		if (cycles % 10 == 0)
 		{
@@ -1672,31 +1719,33 @@ go use uni-lenght references.it's obvious choice but saying it is not bad. */
 
 		/*===============================|SDL's real-time interactivity|=============================*/
 		while (SDL_PollEvent(&event))
-		{ /* Loop until there are no events left on the queue */
+		{ 
+			// Loop until there are no events left on the queue 
 			if (event.type == SDL_KEYDOWN)
-			{ /* condition: keypress event detected */
+			{ 
+				// condition: keypress event detected 
 				if (event.key.keysym.sym == SDLK_ESCAPE)
 				{
 					printf("ESC KEY PRESSED: PROGRAM TERMINATED\n");
 					SDL_Quit();
-					exit(1); /*standard C command to terminate program execution */
+					exit(1); 
 				}
 
 				if (event.key.keysym.sym == SDLK_c)
 				{
-					turnch = -1.0; /* exmplanation... */
+					turnch = -1.0; 
 				}
 				if (event.key.keysym.sym == SDLK_v)
 				{
-					turnch = 1.0; /* idem */
+					turnch = 1.0; 
 				}
 				if (event.key.keysym.sym == SDLK_r)
 				{
-					turncv = 1.0; /* idem */
+					turncv = 1.0; 
 				}
 				if (event.key.keysym.sym == SDLK_f)
 				{
-					turncv = -1.0; /* idem */
+					turncv = -1.0; 
 				}
 				if (event.key.keysym.sym == SDLK_9)
 				{
@@ -1750,7 +1799,7 @@ go use uni-lenght references.it's obvious choice but saying it is not bad. */
 				}
 				if (event.key.keysym.sym == SDLK_i)
 				{
-					FILE *FilePtr; /* pointer to input file */
+					FILE *FilePtr; // pointer to input file 
 
 					printf("TRYING TO IMPORT VERTEX LIST OF 3D MODEL\n");
 
@@ -1771,11 +1820,11 @@ go use uni-lenght references.it's obvious choice but saying it is not bad. */
 				}
 				if (event.key.keysym.sym == SDLK_m)
 				{
-					low_graphics = 1; /* LOW GRAPHICS MODE for slow computers */
+					low_graphics = 1; // LOW GRAPHICS MODE for slow computers 
 				}
 				if (event.key.keysym.sym == SDLK_o)
 				{
-					view = view + 1; //change view
+					view = view + 1; // change view
 					if (view == 5)
 					{
 						view = 1; // restore to view 1 (normal external)
@@ -1799,7 +1848,7 @@ go use uni-lenght references.it's obvious choice but saying it is not bad. */
 				}
 				if (event.key.keysym.sym == SDLK_s)
 				{
-					//velocity of Plane's CM + velocity of projectile... rotation ignored.
+					// velocity of Plane's CM + velocity of projectile... rotation ignored.
 					projectile_launch(xp, yp, zp, v[0] + 100.0 * Pa[0], v[1] + 100.0 * Pa[1], v[2] + 100.0 * Pa[2], h, 1);
 				}
 				if (event.key.keysym.sym == SDLK_UP || event.key.keysym.sym == SDLK_w)
@@ -1823,25 +1872,26 @@ go use uni-lenght references.it's obvious choice but saying it is not bad. */
 					// test
 					plane_inclright = 1;
 				}
-			} /* end condition of if-keypress-is-detected */
+			} // end condition of if-keypress-is-detected 
 
 			if (event.type == SDL_KEYUP)
-			{ /* condition: key-RELEASE event detected */
+			{ 
+				// condition: key-RELEASE event detected 
 				if (event.key.keysym.sym == SDLK_c)
 				{
-					turnch = 0.0; /* exmplanation... */
+					turnch = 0.0; 
 				}
 				if (event.key.keysym.sym == SDLK_v)
 				{
-					turnch = 0.0; /* idem */
+					turnch = 0.0; 
 				}
 				if (event.key.keysym.sym == SDLK_r)
 				{
-					turncv = 0.0; /* idem */
+					turncv = 0.0; 
 				}
 				if (event.key.keysym.sym == SDLK_f)
 				{
-					turncv = 0.0; /* idem */
+					turncv = 0.0; 
 				}
 				if (event.key.keysym.sym == SDLK_DOWN || event.key.keysym.sym == SDLK_z)
 				{
@@ -1861,19 +1911,19 @@ go use uni-lenght references.it's obvious choice but saying it is not bad. */
 				}
 			}
 
-			/* extra case: if graphic window is closed, terminate program */
+			// extra case: if graphic window is closed, terminate program 
 			if (event.type == SDL_QUIT)
-			{ /* Handle a KEYDOWN event */
+			{ 
 				printf("GRAPHICS WINDOW CLOSED: PROGRAM TERMINATED\n");
 				SDL_Quit();
 
 				exit(1); 
-			}			 /* end of extra case handling part */
-		}				 /*end of continual event-check loop. */
+			} // end of extra case handling part 
+		} // end of continual event-check loop. 
 	}
 
 	printf("check graphics Window!\n");
-	/* close graphics Window to avoid abnormal terminations. */
+	// close graphics Window to avoid abnormal terminations.
 	SDL_Quit();
 
 	getchar();
@@ -2950,7 +3000,7 @@ void inv(double in_3x3_matrix[3][3])
 		else
 			n = n + A[i][j] * A[i + 1][j + 1] * A[i + 2][j + 2];
 	}
-	
+
 	for (i = 2, j = 0; j < 3; j++)
 	{
 		if (j == 2)
