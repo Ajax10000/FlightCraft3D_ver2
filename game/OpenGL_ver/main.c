@@ -13,7 +13,7 @@
 #include <GL/gl.h>
 #include <GL/glcorearb.h>
 
-//===the structure representing relevant quantities concerning game's terrain====
+// the structure representing relevant quantities concerning game's terrain
 #define TERRAIN_SIZE 300
 struct subterrain
 {
@@ -46,6 +46,8 @@ void xaddline(int x1, int y1,
 			  int x2, int y2, float color[3], // change this to int color[3] 
 			  int xlimit, int ylimit);
 
+// Function xaddftriang is defined but not called. 
+// Also, it does not actually draw a filled triangle. It doesn't draw anything.
 // draw a filled triangle to pixel matrix 
 void xaddftriang(int x1, int y1,
 				 int x2, int y2,
@@ -126,7 +128,9 @@ void make_inertia_tensor(int n_vertexs);
 
 void initSDL(void);
 void initOpenGL(void);
+void initPoints(void);
 void initAirplaneColors(void);
+void initTrees(void);
 void drawLogo(void);
 
 // #                                                                                                                  #
@@ -147,17 +151,25 @@ SDL_Window *window = NULL; // New for SDL 2
 SDL_GLContext context;	   // New for SDL2
 const GLdouble pi = 3.1415926535897932384626433832795;
 
+// low_graphics is used only in function main.
 int low_graphics = 1;
 
+// pixmatrix is populated in functions xaddline and xadd1pix
 float pixmatrix[HEIGHT][WIDTH][3];
 
+// best_dt_ms is defined but not used
 double best_dt_ms = 10.0;
 
+// texture_ids is defined but not used
 int texture_ids[100];
 
 // textures_available indicates how many textures are loaded or randomly-generated
+// Set in function load_textures_wOpenGL and load_textures96x96_SEMITRANSPARENT_wOpenGL.
+// Used (read) in functions main, load_textures96x96_SEMITRANSPARENT_wOpenGL, and load_maptex_from_bitmap.
 int textures_available = 0; 
 
+// MAG is used in function xclearpixboard.
+// MAG can be increased by 10 by the user at runtime by clicking on the 't' key.
 float MAG = 60.0;
 
 int view = 1; // start w external viwìew
@@ -191,12 +203,14 @@ struct subterrain terrain1;
 // each triangular face has a different texture. It is filled at texture load-in at first call to GLaddpoly
 int texid[NTRIS]; 
 
+// face_texid is defined but not used
 // which of pre-loaded textures to apply on triangular face? they can also be randomly-generated of course
 int face_texid[NTRIS] = {
 	-1, -1, -1, -1, -1, -1,
 	-1, -1, -1, -1, -1, -1,
 	11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11}; 
 
+// face_texord is defined but not used
 int face_texord[NTRIS][3] = {
 	{0, 1, 2},
 	{0, 1, 2},
@@ -236,14 +250,16 @@ const int texcoord_y[4] = {0, 0, 1, 1}; //...y
 // x, y,z coordinates of where its convetional geometric center is;
 // the other is a parameter saying how much the 96x96 or 128x128 (or more) 
 // 'slice' images must be magnified with respect to the standard 1 unit-per-side case. 
-// the 5-th parameter says which type of tree... chosen from a pre-defined set... this means, 
-// in our case, the Id of the texture used to do the 2 'slices'.
+// the 5-th parameter says which type of tree, chosen from a pre-defined set. This means, 
+// in our case, the id of the texture used to do the 2 'slices'.
 //
 // NOTE: this is only a basic support for trees of course. The most extreme 
 // realism would be achieved by requiring a complete polyhedral definition for each type of tree.
 // After all, this way trees would be polyherda as any generic polyhedra with also semitransparent 
 // faces for the 'slices' where desired. 
-float trees[NTREES][5];
+//
+// Set in function main. Drawn in function main.
+float gloTrees[NTREES][5];
 int tree_texture_ID_bounds[2]; // texture_ID -related thing
 
 float treeR1 = 0.5;
@@ -267,109 +283,112 @@ float texcoords_gnd_tri2[3][2] = {
 #define NVERTEXES 200
 
 // AEREO: DEFINIZIONE DEI VERTICI 
-float punti[NVERTEXES][3] = {// scatola 
-	{74, 76, -57},
-	{74, 76, 57},
-	{74, 76, 262},
-	{-74, 76, 262},
-	{-74, 76, 57},
-	{-74, 76, -57},
-	{-74, 76, -262},
-	{74, 76, 262},
-	{74, 76, -549},
-	{-44, 76, -549},
-	{74, 76, 549},
-	{-44, 76, 549},
-	{244, -1, 50},
-	{244, -1, -50},
-	{-354, 10, 12},
-	{-354, 10, -12},
-	{-370, 10, -165},
-	{-434, 10, -165},
-	{-434, 10, 0},
-	{-434, 10, 165},
-	{-370, 10, 165},
-	{244, -75, 50},
-	{244, -75, -50},
-	{74, 10, -80},
-	{74, 10, 50},
-	{-74, 40, 50},
-	{-74, 40, -50},
-	{-377, 25, 0},
-	{-159, 10, 0},
-	{-445, 108, 0},
-	{90, -135, -134},
-	{-220, -135, -30},
-	{-220, -135, 30},
-	{90, -135, 134},
-	{17, 75, 50},
-	{74, 76, -262},
-	{17, 10, -40},
-	{17, -10, 40},
-	{-17, 20, -40},
-	{-17, 20, 40},
-	{-17, -40, -60},
-	{-17, -20, 40},
-	{-445, 5, 0},
-	{-445, 5, 0},
-	{65, -50, -40},
-	{65, -50, 40},
-	{65, 10, -40},
-	{-156, 10, 0},
-	{35, 20, -40},
-	{35, 20, 40},
-	{-35, 20, 89},
-	{-35, 0, 89},
-	{10, 70, -50},
-	{56, 71, -40},
-	{56, 71, -79},
-	{10, 70, 50},
-	{16, -50, -40},
-	{16, -50, -40},
-	{17, 20, -40},
-	{0, 5, -40},
-	{17, 20, -40},
-	{17, 20, -40},
-	{-10, 20, -40},
-	{-35, 20, -40},
-	{-35, 20, -40},
-	{120, 75, -40},
-	{120, 75, -40},
-	{0, 75, -40},
-	{-15, -50, -40},
-	{-15, -50, -40},
-	{-15, -20, 6},
-	{56, 73, 40},
-	{-30, 20, -40},
-	{-30, 20, -40},
-	{-35, 20, 39},
-	{-35, 0, 39},
-	{-110, -50, -90},
-	{14, -50, -80},
-	{14, -50, 80},
-	{-110, -50, -4},
-	{16, -50, 0},
-	{16, -50, 0},
-	{18, 20, 0},
-	{6, 75, 5},
-	{80, -20, 0},
-	{80, -20, 0},
-	{-100, 20, 0},
-	{-20, 50, 7},
-	{-10, 50, 0},
-	{120, -75, 40},
-	{120, -75, -40},
-	{0, 75, -8},
-	{-165, -50, -0},
-	{-165, -50, 7},
-	{-155, -20, -0},
-	{-100, 20, 8},
-	{10, 70, -6},
-	{-35, 20, 8},
-	{-120, -140, -80},
-	{-120, -140, 80}
+// Used in functions main and make_inertia_tensor.
+// Set in function import_airplane_polyheron.
+float gloPunti[NVERTEXES][3] = {// scatola 
+	{  74,   76,  -57},
+	{  74,   76,   57},
+	{  74,   76,  262},
+	{ -74,   76,  262},
+	{ -74,   76,   57},
+	{ -74,   76,  -57},
+	{ -74,   76, -262},
+	{  74,   76,  262},
+	{  74,   76, -549},
+	{ -44,   76, -549},
+	{  74,   76,  549},
+	{ -44,   76,  549},
+	{ 244,   -1,   50},
+	{ 244,   -1,  -50},
+	{-354,   10,   12},
+	{-354,   10,  -12},
+	{-370,   10, -165},
+	{-434,   10, -165},
+	{-434,   10,    0},
+	{-434,   10,  165},
+	{-370,   10,  165},
+	{ 244,  -75,   50},
+	{ 244,  -75,  -50},
+	{  74,   10,  -80},
+	{  74,   10,   50},
+	{ -74,   40,   50},
+	{ -74,   40,  -50},
+	{-377,   25,    0},
+	{-159,   10,    0},
+	{-445,  108,    0},
+	{  90, -135, -134},
+	{-220, -135,  -30},
+	{-220, -135,   30},
+	{  90, -135,  134},
+	{  17,   75,   50},
+	{  74,   76, -262},
+	{  17,   10,  -40},
+	{  17,  -10,   40},
+	{ -17,   20,  -40},
+	{ -17,   20,   40},
+	{ -17,  -40,  -60},
+	{ -17,  -20,   40},
+	{-445,    5,    0},
+	{-445,    5,    0},
+	{  65,  -50,  -40},
+	{  65,  -50,   40},
+	{  65,   10,  -40},
+	{-156,   10,    0},
+	{  35,   20,  -40},
+	{  35,   20,   40},
+	{ -35,   20,   89},
+	{ -35,    0,   89},
+	{  10,   70,  -50},
+	{  56,   71,  -40},
+	{  56,   71,  -79},
+	{  10,   70,   50},
+	{  16,  -50,  -40},
+	{  16,  -50,  -40},
+	{  17,   20,  -40},
+	{   0,    5,  -40},
+	{  17,   20,  -40},
+	{  17,   20,  -40},
+	{ -10,   20,  -40},
+	{ -35,   20,  -40},
+	{ -35,   20,  -40},
+	{ 120,   75,  -40},
+	{ 120,   75,  -40},
+	{   0,   75,  -40},
+	{ -15,  -50,  -40},
+	{ -15,  -50,  -40},
+	{ -15,  -20,    6},
+	{  56,   73,   40},
+	{ -30,   20,  -40},
+	{ -30,   20,  -40},
+	{ -35,   20,   39},
+	{ -35,    0,   39},
+	{-110,  -50,  -90},
+	{  14,  -50,  -80},
+	{  14,  -50,   80},
+	{-110,  -50,   -4},
+	{  16,  -50,    0},
+	{  16,  -50,    0},
+	{  18,   20,    0},
+	{   6,   75,    5},
+	{  80,  -20,    0},
+	{  80,  -20,    0},
+	{-100,   20,    0},
+	{ -20,   50,    7},
+	{ -10,   50,    0},
+	{ 120,  -75,   40},
+	{ 120,  -75,  -40},
+	{   0,   75,   -8},
+	{-165,  -50,   -0},
+	{-165,  -50,    7},
+	{-155,  -20,   -0},
+	{-100,   20,    8},
+	{  10,   70,   -6},
+	{ -35,   20,    8},
+	{-120, -140,  -80},
+	{-120, -140,   80}
 };
 
+// Global variable estremi is defined but not used
 // chi sono i 2 punti estremi delle linee da disegnare? 
 // NOTA: estremi[ i-esima linea][quale punto e' l'estremo ] 
 int estremi[NLINES][2] = {
@@ -607,7 +626,8 @@ double SD[3][3], SD2[3][3], u1, u2, u3, w_abs, dAng;
 
 // ==END OF SIMULATION physical QUANTITIES DECLARATIONS========================
 
-int logo[8][128] = {
+// Drawn in function drawLogo
+int gloLogo[8][128] = {
 	{1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 	{1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 	{1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0},
@@ -679,20 +699,7 @@ int main()
 	// if there is an external polyhedron definition for better-defined airplanes, let's use it.
 
 	// ============================"INITIALISATION" PROCEDURE STARTS HERE=============
-	float tmp[NVERTEXES][3];
-	for (i = 0; i < NVERTEXES; i++)
-	{
-		tmp[i][0] = 0.01 * punti[i][0]; // from centimeters to meters (x/100)
-		tmp[i][1] = 0.01 * punti[i][1];
-		tmp[i][2] = 0.01 * punti[i][2];
-	}
-
-	for (i = 0; i < NVERTEXES; i++)
-	{
-		punti[i][0] = tmp[i][0];
-		punti[i][1] = tmp[i][1];
-		punti[i][2] = tmp[i][2];
-	}
+	initPoints();
 
 	for (i = 0; i < NDOTS; i++)
 	{
@@ -805,50 +812,7 @@ int main()
 	// of available textures is inserted... .
 	load_maptex_from_bitmap("terrain_data/maptex_300x300.bmp"); 
 
-	int tree_group_n = 30;
-	// trees' position and default parameters for trees.
-	for (k = 0; k < NTREES - tree_group_n; k = k + tree_group_n)
-	{
-		// random x and y coordinates within a rectangular area
-		trees[k][0] = 5000 * ((double)-0 * RAND_MAX / 2 + rand()) / ((double)RAND_MAX);
-		trees[k][1] = 5000 * ((double)-0 * RAND_MAX / 2 + rand()) / ((double)RAND_MAX);
-		trees[k][2] = say_terrain_height(&terrain1, trees[k][0], trees[k][1]);
-
-		trees[k][4] = floor(2.0 * ((double)rand()) / ((double)RAND_MAX));
-
-		if (trees[k][4] == 0)
-		{
-			trees[k][4] = tree_texture_ID_bounds[0];
-			trees[k][3] = 3;
-		}
-		else if (trees[k][4] == 1)
-		{
-			trees[k][4] = tree_texture_ID_bounds[0] + 2;
-			trees[k][3] = 1;
-		}
-
-		for (j = 1; j < 1 + tree_group_n; j++)
-		{
-			// MACCHIA attorno ad un punto / STRAIN around a point...
-			trees[k + j][0] = trees[k][0] + 100 * ((double)-0 * RAND_MAX / 2 + rand()) / ((double)RAND_MAX);
-			trees[k + j][1] = trees[k][1] + 100 * ((double)-0 * RAND_MAX / 2 + rand()) / ((double)RAND_MAX);
-			trees[k + j][2] = say_terrain_height(&terrain1, trees[k + j][0], trees[k + j][1]);
-
-			trees[k + j][4] = floor(2.0 * ((double)rand()) / ((double)RAND_MAX));
-
-			if (trees[k + j][4] == 0.0)
-			{
-				trees[k + j][4] = tree_texture_ID_bounds[0]; // texture ID number
-				trees[k + j][3] = 3;
-			}
-			else if (trees[k + j][4] == 1.0)
-			{
-				trees[k + j][4] = tree_texture_ID_bounds[0] + 2;
-				trees[k + j][3] = 1; // texture id number
-			}
-		}
-	}
-	//trees ok.
+	initTrees();
 
 	if (low_graphics == 0)
 	{
@@ -1216,9 +1180,9 @@ int main()
 			// AIRPLANE...
 			// coordinates of plane's vertices in the "Game World"'s reference frame.
 			double xw, yw, zw; 
-			xw = punti[i][0] * axis_1[0] + punti[i][1] * axis_2[0] + punti[i][2] * axis_3[0];
-			yw = punti[i][0] * axis_1[1] + punti[i][1] * axis_2[1] + punti[i][2] * axis_3[1];
-			zw = punti[i][0] * axis_1[2] + punti[i][1] * axis_2[2] + punti[i][2] * axis_3[2];
+			xw = gloPunti[i][0] * axis_1[0] + gloPunti[i][1] * axis_2[0] + gloPunti[i][2] * axis_3[0];
+			yw = gloPunti[i][0] * axis_1[1] + gloPunti[i][1] * axis_2[1] + gloPunti[i][2] * axis_3[1];
+			zw = gloPunti[i][0] * axis_1[2] + gloPunti[i][1] * axis_2[2] + gloPunti[i][2] * axis_3[2];
 
 			double he_id = say_terrain_height(&terrain1, xp + xw, yp + yw);
 			if (zp + zw < he_id)
@@ -1521,18 +1485,18 @@ int main()
 		{
 			float xctree, yctree, zctree, sctree;
 
-			xctree = trees[k][0]; // x of conventinal geometric center
-			yctree = trees[k][1]; // y of conventinal geometric center
+			xctree = gloTrees[k][0]; // x of conventinal geometric center
+			yctree = gloTrees[k][1]; // y of conventinal geometric center
 
 			if ((xctree < x + 1000.0 && xctree > x - 1000.0) && (yctree < y + 1000.0 && yctree > y - 1000.0))
 			{
 				// draw only trees that are not too far away
 				// z of conventinal geometric center. this was pre-calculated so that trees 
 				// stay nicely on the terrain surface.
-				zctree = trees[k][2]; 
+				zctree = gloTrees[k][2]; 
 
 				// magnification value: how much to magnify original (1_unit x 1_unit) square?.
-				sctree = trees[k][3]; 
+				sctree = gloTrees[k][3]; 
 
 				Xo[0] = xctree - sctree * 0.9;
 				Yo[0] = yctree;
@@ -1554,7 +1518,7 @@ int main()
 				Yo[4] = yctree;
 				Zo[4] = zctree + 2.0;
 
-				glBindTexture(GL_TEXTURE_2D, texid[(int)trees[k][4]]);
+				glBindTexture(GL_TEXTURE_2D, texid[(int)gloTrees[k][4]]);
 
 				// calcola lecoordinate di questi 3 punti nel sistema P-Q-R del paracadutista/pilota 
 				for (i = 0; i < 5; i++)
@@ -1630,17 +1594,17 @@ int main()
 
 		for (i = 0; i < ntris; i++)
 		{ // AIRPLANE...
-			x1a = Pa[0] * punti[tris[i][0]][0] + Qa[0] * punti[tris[i][0]][1] + Ra[0] * punti[tris[i][0]][2];
-			y1a = Pa[1] * punti[tris[i][0]][0] + Qa[1] * punti[tris[i][0]][1] + Ra[1] * punti[tris[i][0]][2];
-			z1a = Pa[2] * punti[tris[i][0]][0] + Qa[2] * punti[tris[i][0]][1] + Ra[2] * punti[tris[i][0]][2];
+			x1a = Pa[0] * gloPunti[tris[i][0]][0] + Qa[0] * gloPunti[tris[i][0]][1] + Ra[0] * gloPunti[tris[i][0]][2];
+			y1a = Pa[1] * gloPunti[tris[i][0]][0] + Qa[1] * gloPunti[tris[i][0]][1] + Ra[1] * gloPunti[tris[i][0]][2];
+			z1a = Pa[2] * gloPunti[tris[i][0]][0] + Qa[2] * gloPunti[tris[i][0]][1] + Ra[2] * gloPunti[tris[i][0]][2];
 
-			x2a = Pa[0] * punti[tris[i][1]][0] + Qa[0] * punti[tris[i][1]][1] + Ra[0] * punti[tris[i][1]][2];
-			y2a = Pa[1] * punti[tris[i][1]][0] + Qa[1] * punti[tris[i][1]][1] + Ra[1] * punti[tris[i][1]][2];
-			z2a = Pa[2] * punti[tris[i][1]][0] + Qa[2] * punti[tris[i][1]][1] + Ra[2] * punti[tris[i][1]][2];
+			x2a = Pa[0] * gloPunti[tris[i][1]][0] + Qa[0] * gloPunti[tris[i][1]][1] + Ra[0] * gloPunti[tris[i][1]][2];
+			y2a = Pa[1] * gloPunti[tris[i][1]][0] + Qa[1] * gloPunti[tris[i][1]][1] + Ra[1] * gloPunti[tris[i][1]][2];
+			z2a = Pa[2] * gloPunti[tris[i][1]][0] + Qa[2] * gloPunti[tris[i][1]][1] + Ra[2] * gloPunti[tris[i][1]][2];
 
-			x3a = Pa[0] * punti[tris[i][2]][0] + Qa[0] * punti[tris[i][2]][1] + Ra[0] * punti[tris[i][2]][2];
-			y3a = Pa[1] * punti[tris[i][2]][0] + Qa[1] * punti[tris[i][2]][1] + Ra[1] * punti[tris[i][2]][2];
-			z3a = Pa[2] * punti[tris[i][2]][0] + Qa[2] * punti[tris[i][2]][1] + Ra[2] * punti[tris[i][2]][2];
+			x3a = Pa[0] * gloPunti[tris[i][2]][0] + Qa[0] * gloPunti[tris[i][2]][1] + Ra[0] * gloPunti[tris[i][2]][2];
+			y3a = Pa[1] * gloPunti[tris[i][2]][0] + Qa[1] * gloPunti[tris[i][2]][1] + Ra[1] * gloPunti[tris[i][2]][2];
+			z3a = Pa[2] * gloPunti[tris[i][2]][0] + Qa[2] * gloPunti[tris[i][2]][1] + Ra[2] * gloPunti[tris[i][2]][2];
 
 			// estremo 1 
 			x1 = P[0] * (x1a + xp - x) + P[1] * (y1a + yp - y) + P[2] * (z1a + zp - z);
@@ -1686,8 +1650,11 @@ int main()
 
 		// ==================|SDL CODE BLOCK 4|=============================
 		sdldisplay(WIDTH, HEIGHT);
+
+		// Every ten cycles ...
 		if (cycles % 10 == 0)
 		{
+			// Display status/debugging information
 			printf("GAME TIME [sec] =  %f \n", cycles * h);
 			printf("GOING ON...game cycle %i : plane position: x = %f, y = %f, z = %f \n theta = %3.2f, fi = %f3.2\n", cycles, x, y, z, theta, fi);
 			printf("Xi =  %i , Yi = %i \n", Xi, Yi);
@@ -1701,6 +1668,7 @@ int main()
 				printf("\n");
 			}
 		}
+
 		SDL_Delay(10);
 		cycles++;
 
@@ -2004,6 +1972,29 @@ void initOpenGL()
 } // end initOpenGL function
 
 // ####################################################################################################################
+// Function initPoints
+// ####################################################################################################################
+void initPoints()
+{
+	int i;
+
+	float tmp[NVERTEXES][3];
+	for (i = 0; i < NVERTEXES; i++)
+	{
+		tmp[i][0] = 0.01 * gloPunti[i][0]; // from centimeters to meters (x/100)
+		tmp[i][1] = 0.01 * gloPunti[i][1];
+		tmp[i][2] = 0.01 * gloPunti[i][2];
+	}
+
+	for (i = 0; i < NVERTEXES; i++)
+	{
+		gloPunti[i][0] = tmp[i][0];
+		gloPunti[i][1] = tmp[i][1];
+		gloPunti[i][2] = tmp[i][2];
+	} 
+} // end initPoints function
+
+// ####################################################################################################################
 // Function initAirplaneColors
 // ####################################################################################################################
 void initAirplaneColors()
@@ -2021,6 +2012,59 @@ void initAirplaneColors()
 } // end initAirplaneColors function
 
 // ####################################################################################################################
+// Function initTrees
+// ####################################################################################################################
+void initTrees()
+{
+	int j, k;
+	int tree_group_n = 30;
+
+	// trees' position and default parameters for trees.
+	for (k = 0; k < NTREES - tree_group_n; k = k + tree_group_n)
+	{
+		// random x and y coordinates within a rectangular area
+		gloTrees[k][0] = 5000 * ((double)-0 * RAND_MAX / 2 + rand()) / ((double)RAND_MAX);
+		gloTrees[k][1] = 5000 * ((double)-0 * RAND_MAX / 2 + rand()) / ((double)RAND_MAX);
+		gloTrees[k][2] = say_terrain_height(&terrain1, gloTrees[k][0], gloTrees[k][1]);
+
+		gloTrees[k][4] = floor(2.0 * ((double)rand()) / ((double)RAND_MAX));
+
+		if (gloTrees[k][4] == 0)
+		{
+			gloTrees[k][4] = tree_texture_ID_bounds[0];
+			gloTrees[k][3] = 3;
+		}
+		else if (gloTrees[k][4] == 1)
+		{
+			gloTrees[k][4] = tree_texture_ID_bounds[0] + 2;
+			gloTrees[k][3] = 1;
+		}
+
+		for (j = 1; j < 1 + tree_group_n; j++)
+		{
+			// MACCHIA attorno ad un punto / STRAIN around a point...
+			gloTrees[k + j][0] = gloTrees[k][0] + 100 * ((double)-0 * RAND_MAX / 2 + rand()) / ((double)RAND_MAX);
+			gloTrees[k + j][1] = gloTrees[k][1] + 100 * ((double)-0 * RAND_MAX / 2 + rand()) / ((double)RAND_MAX);
+			gloTrees[k + j][2] = say_terrain_height(&terrain1, gloTrees[k + j][0], gloTrees[k + j][1]);
+
+			gloTrees[k + j][4] = floor(2.0 * ((double)rand()) / ((double)RAND_MAX));
+
+			if (gloTrees[k + j][4] == 0.0)
+			{
+				gloTrees[k + j][4] = tree_texture_ID_bounds[0]; // texture iD number
+				gloTrees[k + j][3] = 3;
+			}
+			else if (gloTrees[k + j][4] == 1.0)
+			{
+				gloTrees[k + j][4] = tree_texture_ID_bounds[0] + 2;
+				gloTrees[k + j][3] = 1; // texture id number
+			}
+		}
+	}
+	//trees ok.
+} // end initTrees function
+
+// ####################################################################################################################
 // Functio drawLogo
 // ####################################################################################################################
 void drawLogo()
@@ -2034,7 +2078,7 @@ void drawLogo()
 	{
 		for (i = 0; i < 120; i++)
 		{
-			if (logo[7 - j][i] > 0)
+			if (gloLogo[7 - j][i] > 0)
 			{
 				glBegin(GL_POINTS);
 					glVertex3f(0.012 * i + 0.14, 0.012 * j - 1, -2.0);
@@ -3342,14 +3386,14 @@ void make_inertia_tensor(int n_vertexs)
 	for (i = 0; i < n_vertexs; i++)
 	{
 		// those 'principal moments of inertia'...
-		Ixxe[i] = std_vxmass * (pow(punti[i][1], 2) + pow(punti[i][2], 2)); // y2 + z2
-		Iyye[i] = std_vxmass * (pow(punti[i][0], 2) + pow(punti[i][2], 2)); // x2 + z2
-		Izze[i] = std_vxmass * (pow(punti[i][0], 2) + pow(punti[i][1], 2)); // x2 + y2
+		Ixxe[i] = std_vxmass * (pow(gloPunti[i][1], 2) + pow(gloPunti[i][2], 2)); // y2 + z2
+		Iyye[i] = std_vxmass * (pow(gloPunti[i][0], 2) + pow(gloPunti[i][2], 2)); // x2 + z2
+		Izze[i] = std_vxmass * (pow(gloPunti[i][0], 2) + pow(gloPunti[i][1], 2)); // x2 + y2
 
 		// those 'products of inertia'...
-		Ixye[i] = std_vxmass * (punti[i][0] * punti[i][1]); // xy
-		Ixze[i] = std_vxmass * (punti[i][0] * punti[i][2]); // xz
-		Iyze[i] = std_vxmass * (punti[i][1] * punti[i][2]); // yz
+		Ixye[i] = std_vxmass * (gloPunti[i][0] * gloPunti[i][1]); // xy
+		Ixze[i] = std_vxmass * (gloPunti[i][0] * gloPunti[i][2]); // xz
+		Iyze[i] = std_vxmass * (gloPunti[i][1] * gloPunti[i][2]); // yz
 	}
 
 	// sum up
@@ -3807,7 +3851,7 @@ void import_airplane_polyheron(void)
 	{
 		for (i = 0; i < 3; i++)
 		{
-			punti[j][i] = 2.4 * auxxv[j * 3 + i];
+			gloPunti[j][i] = 2.4 * auxxv[j * 3 + i];
 		}
 	}
 	nvertexes = nelem / 3;
