@@ -466,35 +466,38 @@ int tris[NTRIS][3] = {
 };
 
 // ovvio a cosa serve... 
+// col_tris holds the airplane's colors
+// Initialized with random colors in initAirplaneColors
+// Loaded with data from file input/facecolor.txt in function import_airplane_polyheron
 float col_tris[NTRIS][3] = {
+	{0.9, 0.9, 0.3}, // 0
 	{0.9, 0.9, 0.3},
-	{0.9, 0.9, 0.3},
 
+	{0.7, 0.5, 0.3}, // 2
 	{0.7, 0.5, 0.3},
-	{0.7, 0.5, 0.3},
 
+	{0.3, 0.3, 0.3}, // 4
 	{0.3, 0.3, 0.3},
-	{0.3, 0.3, 0.3},
 
+	{0.3, 0.8, 0.9}, // 6
 	{0.3, 0.8, 0.9},
-	{0.3, 0.8, 0.9},
 
-	{0.3, 0.4, 0.3},
+	{0.3, 0.4, 0.3}, // 8
 	{0.3, 0.4, 0.3},
 
+	{0.4, 0.2, 0.3}, // 10
 	{0.4, 0.2, 0.3},
-	{0.4, 0.2, 0.3},
 
+	{0.6, 0.6, 0.6}, // 12
 	{0.6, 0.6, 0.6},
-	{0.6, 0.6, 0.6},
 
+	{0.3, 0.6, 0.9}, // 14
 	{0.3, 0.6, 0.9},
-	{0.3, 0.6, 0.9},
 
-	{0.3, 0.4, 0.3},
+	{0.3, 0.4, 0.3}, // 16
 	{0.3, 0.4, 0.3},
 
-	{0.7, 0.4, 0.3},
+	{0.7, 0.4, 0.3}, // 18
 	{0.4, 0.4, 0.3}
 };
 
@@ -1654,6 +1657,7 @@ int main()
 			y3 = Q[0] * (x3a + xp - x) + Q[1] * (y3a + yp - y) + Q[2] * (z3a + zp - z);
 			z3 = R[0] * (x3a + xp - x) + R[1] * (y3a + yp - y) + R[2] * (z3a + zp - z);
 
+			// col_tris holds the airplane's colors
 			color[0] = col_tris[i][0];
 			color[1] = col_tris[i][1];
 			color[2] = col_tris[i][2];
@@ -2006,6 +2010,7 @@ void initAirplaneColors()
 {
 	int i;
 
+	// Note that when defined, col_tris is defined with 20 elements, indexed from 0 to 19
 	// airplane random colors 
 	for (i = 18; i < NTRIS; i++)
 	{
