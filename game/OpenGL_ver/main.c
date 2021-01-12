@@ -1719,7 +1719,7 @@ int main()
 		SDL_Delay(10);
 		cycles++;
 
-		/*===============================|SDL's real-time interactivity|=============================*/
+		//===============================|SDL's real-time interactivity|=============================
 		while (SDL_PollEvent(&event))
 		{ 
 			// Loop until there are no events left on the queue 
@@ -1946,7 +1946,7 @@ void xclearpixboard(int xlimit, int ylimit)
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 
-	/* reset all values to 0 */
+	// reset all values to 0 
 	glClearColor(0.4, 0.4, 0.8, 0.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -1975,15 +1975,15 @@ void sdldisplay(int sw, int sh)
 // ####################################################################################################################
 int waitdt_ms(double tt_ms)
 {
-	/* declare variables used specifically to measure time and a normal double */
+	// declare variables used specifically to measure time and a normal double 
 	clock_t time1, time2;
 	double dt_ms = 0;
 
-	/* set the variables according to the time-measurement process */
-	time1 = clock(); /*REQUEST PROCESSOR TIME, OR LOCAL TIME, NO PROBLEM WHICH.*/
+	// set the variables according to the time-measurement process 
+	time1 = clock(); // REQUEST PROCESSOR TIME, OR LOCAL TIME, NO PROBLEM WHICH.
 
 	while (dt_ms < tt_ms)
-	{ /* WAIT: holds the program execution here until tt_sec passers. */
+	{ // WAIT: holds the program execution here until tt_sec passers. 
 		time2 = clock();
 		dt_ms = (time2 - time1) / (CLOCKS_PER_SEC / 1000.0);
 	}
@@ -1995,7 +1995,7 @@ int waitdt_ms(double tt_ms)
 // interpolate 2 points graphically 
 // ####################################################################################################################
 void xaddline(int x1, int y1,
-			  int x2, int y2, float color[3], /* change this to int color[3] */
+			  int x2, int y2, float color[3], // change this to int color[3] 
 			  int xlimit, int ylimit)
 {
 
@@ -2003,7 +2003,7 @@ void xaddline(int x1, int y1,
 	int i, j, yh, temp, yh_aux;
 
 	if (fabs(x2 - x1) > 0)
-	{ /* IF LINE IS NON-VERTICAL: avoid divide-by-zero case!! */
+	{ // IF LINE IS NON-VERTICAL: avoid divide-by-zero case!! 
 		fx1 = (float)x1;
 		fx2 = (float)x2;
 
@@ -2011,9 +2011,9 @@ void xaddline(int x1, int y1,
 		fy2 = (float)y2;
 
 		m = (fy2 - fy1) / (fx2 - fx1);
-		/* case x2 > x1 : augment from x1 to come to x2... */
+		// case x2 > x1 : augment from x1 to come to x2... 
 		if (x1 > x2)
-		{ /* interchange them... */
+		{ // interchange them... 
 			temp = x2;
 			x2 = x1;
 			x1 = temp;
@@ -2025,15 +2025,16 @@ void xaddline(int x1, int y1,
 			yh = (int)(m * fi - m * fx1 + fy1);
 
 			if ((i >= 0 && i < xlimit) && (yh >= 0 && yh < ylimit))
-			{ /* limits! */
+			{ // limits! 
 				pixmatrix[yh][i][0] = color[0];
 				pixmatrix[yh][i][1] = color[1];
 				pixmatrix[yh][i][2] = color[2];
-				/* this will have 3 components, thanks to hi color-res of SDL */
+				// this will have 3 components, thanks to hi color-res of SDL 
 
-				/* these points are good for cases -1.0 < m < 1.0 but are part of the super-filling for cases of m outside ( -1.0, 1.0 ) range. */
+				// these points are good for cases -1.0 < m < 1.0 but are part of the 
+				// super-filling for cases of m outside ( -1.0, 1.0 ) range. 
 
-				/* nice continuous lines for cases of m outside ( -1.0, 1.0 ) range. look code it's easy to figure out how it works. */
+				// nice continuous lines for cases of m outside ( -1.0, 1.0 ) range. 
 
 				if ((m > 1.0))
 				{
@@ -2067,13 +2068,13 @@ void xaddline(int x1, int y1,
 		}
 	}
 	else
-	{ /* IF LINE IS VERTICAL */
+	{ // IF LINE IS VERTICAL 
 		if (y1 < y2)
-		{ /* case y1 < y2 : augment from y1 to come to y2... */
+		{ // case y1 < y2 : augment from y1 to come to y2... 
 			for (yh = y1; yh < y2; yh++)
 			{
 				if ((x1 >= 0 && x1 < xlimit) && (yh >= 0 && yh < ylimit))
-				{ /* limits! */
+				{ // limits! 
 					pixmatrix[yh][x1][0] = color[0];
 					pixmatrix[yh][x1][1] = color[1];
 					pixmatrix[yh][x1][2] = color[2];
@@ -2081,11 +2082,11 @@ void xaddline(int x1, int y1,
 			}
 		}
 		else
-		{ /* case y2 < y1 : augment from y1 to come to y2... */
+		{ // case y2 < y1 : augment from y1 to come to y2... 
 			for (yh = y2; yh < y1; yh++)
 			{
 				if ((x1 >= 0 && x1 < xlimit) && (yh >= 0 && yh < ylimit))
-				{ /* limits! */
+				{ // limits! 
 					pixmatrix[yh][x1][0] = color[0];
 					pixmatrix[yh][x1][1] = color[1];
 					pixmatrix[yh][x1][2] = color[2];
@@ -2145,12 +2146,16 @@ void xaddline_persp(float x1, float y1, float z1, float x2, float y2, float z2, 
 
 // ####################################################################################################################
 // point frantumation sequence function (a special effect)
+// add new explosion or just process those already started
 // ####################################################################################################################
-void addsmoke_wsim(double x0, double y0, double z0, double dft, int option /*add new explosion or just process those already started */)
+void addsmoke_wsim(double x0, double y0, double z0, double dft, int option)
 {
 #define NPS 800
 #define NAUTSM 44
-	static int count[NAUTSM], LT = 900 /*sequence lifetime*/, visc = 3.9 /* coefficine of viscous force */, MAXN /*STATIC */, N_as = 1;
+	static int count[NAUTSM], LT = 900; // sequence lifetime
+	// coefficine of viscous force 
+	static int visc = 3.9; // why is visc given the value 3.9 when it is defined as an int?
+	static int MAXN , N_as = 1;
 	static double xc, yc, zc, radius[NAUTSM][NPS], Vix = 0.0, Viy = 0.0, Viz = 2.0;
 	int i, j, k;
 	static double xm[NAUTSM][NPS], ym[NAUTSM][NPS], zm[NAUTSM][NPS], vx[NAUTSM][NPS], vy[NAUTSM][NPS], vz[NAUTSM][NPS];
@@ -2159,32 +2164,33 @@ void addsmoke_wsim(double x0, double y0, double z0, double dft, int option /*add
 
 	glDisable(GL_DEPTH_TEST);
 	if (option == 1 && N_as < NAUTSM)
-	{ /* FIRST PLACE RESERVED TO AUTOSMOKE... POINTLIKE EVAPORATING SMOKE */
+	{ // FIRST PLACE RESERVED TO AUTOSMOKE... POINTLIKE EVAPORATING SMOKE 
 		count[N_as] = LT;
 		xc = (float)x0;
 		yc = (float)y0;
 		zc = (float)z0;
 
 		auxc = 0;
-		/* careful.. total MUST EQUAL MP contant, otherwise segfault will happen. */
+		// careful.. total MUST EQUAL MP contant, otherwise segfault will happen. 
 		for (i = -2; i < 3; i++)
 		{ // SO: -1, 0 , 1
 			for (j = -2; j < 3; j++)
 			{
 				for (k = -2; k < 3; k++)
 				{
-
-					xm[N_as][auxc] = xc + 0.1 * auxc * (double)rand() / (double)RAND_MAX; // do (LT-count) because 'count' variable starts froma LT, say, 30. just be coherent with yourself and it works.
+					// do (LT-count) because 'count' variable starts froma LT, say, 30. 
+					xm[N_as][auxc] = xc + 0.1 * auxc * (double)rand() / (double)RAND_MAX; 
 					ym[N_as][auxc] = yc + 0.1 * auxc * (double)rand() / (double)RAND_MAX;
 					zm[N_as][auxc] = zc + 0.1 * auxc * (double)rand() / (double)RAND_MAX;
 
-					vx[N_as][auxc] = Vix * i; // do (LT-count) because 'count' variable starts froma LT, say, 30. just be coherent with yourself and it works.
+					vx[N_as][auxc] = Vix * i; 
 					vy[N_as][auxc] = Viy * j;
 					vz[N_as][auxc] = Viz * k;
 
 					radius[N_as][auxc] = 0.01;
 
-					colors[N_as][auxc][0] = 0.6 + (float)0.2 * rand() / (float)RAND_MAX; /* a base gray plus a little random */
+					// a base gray plus a little random 
+					colors[N_as][auxc][0] = 0.6 + (float)0.2 * rand() / (float)RAND_MAX; 
 					colors[N_as][auxc][1] = 0.6 + (float)0.2 * rand() / (float)RAND_MAX;
 					colors[N_as][auxc][2] = 0.6 + (float)0.2 * rand() / (float)RAND_MAX;
 
@@ -2204,12 +2210,12 @@ void addsmoke_wsim(double x0, double y0, double z0, double dft, int option /*add
 		MAXN = auxc;
 		auxc = 0; // put it back to zero!!! see option 2 to undersan why!
 
-		N_as++; /* we augment it... FIRST SLOT IS USED FOR DYNAMICALLY DRAGGED SMOKE SEQ*/
+		N_as++; // we augment it... FIRST SLOT IS USED FOR DYNAMICALLY DRAGGED SMOKE SEQ
 	}
 
 	if (option == 2)
 	{
-		/* "ACCUMULO" PER COSIDDIRE LE POSIZIONI NEL BLOCCO DI NUMERI float px,py e pz,CHE ABBIAMO CREATO APPOSTA   */
+		// "ACCUMULO" PER COSIDDIRE LE POSIZIONI NEL BLOCCO DI NUMERI float px,py e pz,CHE ABBIAMO CREATO APPOSTA 
 		for (i = MAXN - 1; i > 0; i--)
 		{
 			xm[0][i] = xm[0][i - 1];
@@ -2223,48 +2229,53 @@ void addsmoke_wsim(double x0, double y0, double z0, double dft, int option /*add
 			radius[0][i] = radius[0][i - 1];
 		}
 
-		xm[0][0] = x0; /* nella primissima casella mettiamo la posizione di "ADESSO" */
+		// nella primissima casella mettiamo la posizione di "ADESSO" 
+		xm[0][0] = x0; 
 		ym[0][0] = y0;
 		zm[0][0] = z0;
 
 		radius[0][i] = 0.01;
 
-		colors[0][i][0] = 1.0; /* a base gray plus a little random */
+		// a base gray plus a little random 
+		colors[0][i][0] = 1.0; 
 		colors[0][i][1] = 1.0;
 		colors[0][i][2] = 1.0;
-		/*==FATTO==*/
 	}
 
 	for (j = 0; j < N_as; j++)
 	{
 		if (count[j] > 0)
-		{ /* CHECK EXTENSION process stuff and decrease count only as long as it's above 0 yet */
-			/*this anyway*/
-			/* all combination of 1 and 0, see why... JUST A BASIC TRICK, this is NOT A PROFI SPECIAL EFFECT...*/
+		{ 
+			// CHECK EXTENSION process stuff and decrease count only as long as it's above 0 yet
+			// all combination of 1 and 0, see why... JUST A BASIC TRICK, this is NOT A PROFI SPECIAL EFFECT
 			float F_pullup = 3.0;
 
-			/* update positions and draw, at the seme time... */
-			for (i = 0; i < LT - count[j] /*!!!!!*/ && i < MAXN - 1; i++)
-			{																	  /* start 'simulating' progressively more of the total particles... 
-	  so smoke will seem to be fed from it's start point... */
-				float rand_F = 300.0 * ((double)0.3 * rand() / (double)RAND_MAX); /* it makes dissolution */
+			// update positions and draw, at the seme time... 
+			for (i = 0; i < LT - count[j] && i < MAXN - 1; i++)
+			{
+				// start 'simulating' progressively more of the total particles
+				// so smoke will seem to be fed from it's start point
+				float rand_F = 300.0 * ((double)0.3 * rand() / (double)RAND_MAX); // it makes dissolution 
 
 				radius[j][i] = radius[j][i] + 13.8 * ((double)rand() / (double)RAND_MAX) * dft;
 
-				xm[j][i] = xm[j][i] + vx[j][i] * dft; // do (LT-count) because 'count' variable starts froma LT, say, 30. just be coherent with yourself and it works.
+				// do (LT-count) because 'count' variable starts froma LT, say, 30. 
+				xm[j][i] = xm[j][i] + vx[j][i] * dft; 
 				ym[j][i] = ym[j][i] + vy[j][i] * dft;
 				zm[j][i] = zm[j][i] + vz[j][i] * dft;
 
-				vx[j][i] = vx[j][i] - visc * vx[j][i] * dft + rand_F * dft;						   /* inertial... */
-				vy[j][i] = vy[j][i] - visc * vy[j][i] * dft + rand_F * dft;						   /* inertial... */
-				vz[j][i] = vz[j][i] - visc * vz[j][i] * dft + 0.1 * rand_F * dft + F_pullup * dft; /* NOT accelerated by classical gravity because it would not be belivable... its like a Brownian motion... */
+				vx[j][i] = vx[j][i] - visc * vx[j][i] * dft + rand_F * dft;	// inertial... 
+				vy[j][i] = vy[j][i] - visc * vy[j][i] * dft + rand_F * dft;	// inertial... 
+
+				// NOT accelerated by classical gravity because it would not be belivable... its like a Brownian motion 
+				vz[j][i] = vz[j][i] - visc * vz[j][i] * dft + 0.1 * rand_F * dft + F_pullup * dft; 
 
 				if (zm[j][i] < say_terrain_height(&terrain1, xm[j][i], ym[j][i]))
 				{
 					double je;
 					je = terrain1.auxnormal[0] * vx[j][i] + terrain1.auxnormal[1] * vy[j][i] + terrain1.auxnormal[2] * vz[j][i];
 
-					vx[j][i] = vx[j][i] - (1.0 + 0.95) * je * terrain1.auxnormal[0] / 1.0; // OK.
+					vx[j][i] = vx[j][i] - (1.0 + 0.95) * je * terrain1.auxnormal[0] / 1.0; 
 					vy[j][i] = vy[j][i] - (1.0 + 0.95) * je * terrain1.auxnormal[1] / 1.0;
 					vz[j][i] = vz[j][i] - (1.0 + 0.95) * je * terrain1.auxnormal[2] / 1.0;
 				}
@@ -2273,7 +2284,7 @@ void addsmoke_wsim(double x0, double y0, double z0, double dft, int option /*add
 				yt = Q[0] * (xm[j][i] - x) + Q[1] * (ym[j][i] - y) + Q[2] * (zm[j][i] - z);
 				zt = R[0] * (xm[j][i] - x) + R[1] * (ym[j][i] - y) + R[2] * (zm[j][i] - z);
 
-				/* better with OpenGL graphics as long as this. or a better organized 3D drawind routine. */
+				// better with OpenGL graphics as long as this. or a better organized 3D drawind routine.
 				xt2 = P[0] * (xm[j][i] + radius[j][i] - x) + P[1] * (ym[j][i] + radius[j][i] - y) + P[2] * (zm[j][i] - z);
 				yt2 = Q[0] * (xm[j][i] + radius[j][i] - x) + Q[1] * (ym[j][i] + radius[j][i] - y) + Q[2] * (zm[j][i] - z);
 				zt2 = R[0] * (xm[j][i] + radius[j][i] - x) + R[1] * (ym[j][i] + radius[j][i] - y) + R[2] * (zm[j][i] - z);
@@ -2299,7 +2310,7 @@ void addsmoke_wsim(double x0, double y0, double z0, double dft, int option /*add
 		{
 			count[j]--;
 		}
-		else if (/*j != 0 && */ count[j] == 0)
+		else if (count[j] == 0) // j != 0 && 
 		{
 			for (k = j; k < N_as; k++)
 			{
@@ -2325,9 +2336,12 @@ void addsmoke_wsim(double x0, double y0, double z0, double dft, int option /*add
 					count[k] = 0;
 				}
 			}
-			N_as--; // reduce total num of smoke sequences in scene but 'delete' the ended slot too bu meking shrink into it all previous ones.
-		}			// else block
-	}				// NAUTSM count
+
+			// reduce total num of smoke sequences in scene but 'delete' the ended 
+			// slot too bu meking shrink into it all previous ones.
+			N_as--; 
+		} // else block
+	} // NAUTSM count
 
 	glEnable(GL_DEPTH_TEST);
 } // end addsmoke_wsim function
@@ -2335,11 +2349,12 @@ void addsmoke_wsim(double x0, double y0, double z0, double dft, int option /*add
 // ####################################################################################################################
 // GLI EFFETTI SPECIALI di base NEI GAMES 
 // point frantumation sequence function (a special effect)
+// add new explosion or just process those already started
 // ####################################################################################################################
-void addfrantumation_wsim(float x0, float y0, float z0, double dft, int option /*add new explosion or just process those already started */)
+void addfrantumation_wsim(float x0, float y0, float z0, double dft, int option)
 {
 #define NP 100
-	static int count = 0, LT = 400 /*sequence lifetime*/;
+	static int count = 0, LT = 400; // sequence lifetime
 	static float xc, yc, zc, radius = 4.2, color[4], colors[NP][3], Vix = 4.0, Viy = 4.0, Viz = 20.3, visc = 0.95;
 	int i, j, k, auxc;
 	static float xm[NP], ym[NP], zm[NP], vx[NP], vy[NP], vz[NP];
@@ -2359,11 +2374,11 @@ void addfrantumation_wsim(float x0, float y0, float z0, double dft, int option /
 			{
 				for (k = -1; k < 2; k++)
 				{
-					xm[auxc] = xc + 1.0 * (double)rand() / (double)RAND_MAX; // do (LT-count) because 'count' variable starts froma LT, say, 30. just be coherent with yourself and it works.
+					xm[auxc] = xc + 1.0 * (double)rand() / (double)RAND_MAX; 
 					ym[auxc] = yc + 1.0 * (double)rand() / (double)RAND_MAX;
 					zm[auxc] = zc + 1.0 * (double)rand() / (double)RAND_MAX;
 
-					vx[auxc] = Vix * i + 4.2 * (double)rand() / (double)RAND_MAX; // do (LT-count) because 'count' variable starts froma LT, say, 30. just be coherent with yourself and it works.
+					vx[auxc] = Vix * i + 4.2 * (double)rand() / (double)RAND_MAX; 
 					vy[auxc] = Viy * j + 4.2 * (double)rand() / (double)RAND_MAX;
 					vz[auxc] = Viz * k + 4.2 * (double)rand() / (double)RAND_MAX;
 
@@ -2378,12 +2393,13 @@ void addfrantumation_wsim(float x0, float y0, float z0, double dft, int option /
 	}
 
 	if (count > 0)
-	{ /* process stuff and decrease count only as long as it's above 0 yet */
+	{ 
+		// process stuff and decrease count only as long as it's above 0 yet 
 		printf("DRAWING FRANTUMATION SEQUENCE...\n");
-		double visca = 0; /* copy */
-		/* all combination of 1 and 0, see why... JUST A BASIC TRICK, this is NOT A PROFI SPECIAL EFFECT...*/
+		double visca = 0; // copy 
+		// all combination of 1 and 0, see why... JUST A BASIC TRICK, this is NOT A PROFI SPECIAL EFFECT
 
-		/* update positions and draw, at the seme time... */
+		// update positions and draw, at the seme time
 		for (i = 0; i < 27; i++)
 		{ // SO: -1, 0 , 1
 			if (zm[i] < say_terrain_height(&terrain1, xm[i], ym[i]))
@@ -2394,26 +2410,26 @@ void addfrantumation_wsim(float x0, float y0, float z0, double dft, int option /
 				if (je < 0.0)
 				{
 					visca = visc;
-					vx[i] = vx[i] - (1.0 + 0.8) * je * terrain1.auxnormal[0] / 1.0; // OK.
+					vx[i] = vx[i] - (1.0 + 0.8) * je * terrain1.auxnormal[0] / 1.0; 
 					vy[i] = vy[i] - (1.0 + 0.8) * je * terrain1.auxnormal[1] / 1.0;
 					vz[i] = vz[i] - (1.0 + 0.8) * je * terrain1.auxnormal[2] / 1.0;
 					printf(">>>>>>>>>IMPACT \n");
 				}
 			}
 
-			xm[i] = xm[i] + vx[i] * dft; // do (LT-count) because 'count' variable starts froma LT, say, 30. just be coherent with yourself and it works.
+			xm[i] = xm[i] + vx[i] * dft; 
 			ym[i] = ym[i] + vy[i] * dft;
 			zm[i] = zm[i] + vz[i] * dft;
 
-			vx[i] = vx[i] - visca * vx[i] * dft + 0.0 * dft;  /* inertial... */
-			vy[i] = vy[i] - visca * vy[i] * dft + 0.0 * dft;  /* inertial... */
-			vz[i] = vz[i] - visca * vz[i] * dft - 9.81 * dft; /* accelerated by classical gravity */
+			vx[i] = vx[i] - visca * vx[i] * dft + 0.0 * dft;  // inertial...
+			vy[i] = vy[i] - visca * vy[i] * dft + 0.0 * dft;  // inertial...
+			vz[i] = vz[i] - visca * vz[i] * dft - 9.81 * dft; // accelerated by classical gravity 
 
 			xt = P[0] * (xm[i] - x) + P[1] * (ym[i] - y) + P[2] * (zm[i] - z);
 			yt = Q[0] * (xm[i] - x) + Q[1] * (ym[i] - y) + Q[2] * (zm[i] - z);
 			zt = R[0] * (xm[i] - x) + R[1] * (ym[i] - y) + R[2] * (zm[i] - z);
 
-			/* better with OpenGL graphics as long as this. or a better organized 3D drawind routine. */
+			// better with OpenGL graphics as long as this. or a better organized 3D drawind routine.
 			xt2 = P[0] * (xm[i] + radius - x) + P[1] * (ym[i] - y) + P[2] * (zm[i] - z);
 			yt2 = Q[0] * (xm[i] + radius - x) + Q[1] * (ym[i] - y) + Q[2] * (zm[i] - z);
 			zt2 = R[0] * (xm[i] + radius - x) + R[1] * (ym[i] - y) + R[2] * (zm[i] - z);
@@ -2422,7 +2438,7 @@ void addfrantumation_wsim(float x0, float y0, float z0, double dft, int option /
 			yt3 = Q[0] * (xm[i] - x) + Q[1] * (ym[i] + 1.2 * radius - y) + Q[2] * (zm[i] + radius - z);
 			zt3 = R[0] * (xm[i] - x) + R[1] * (ym[i] + 1.2 * radius - y) + R[2] * (zm[i] + radius - z);
 
-			xaddpoint_persp(xt, yt, -zt, color, WIDTH, HEIGHT); /* draw points in 3D scnario Z NEGATIVE!!!!!! */
+			xaddpoint_persp(xt, yt, -zt, color, WIDTH, HEIGHT); // draw points in 3D scnario Z NEGATIVE!!!!!! 
 
 			color[0] = colors[i][0];
 			color[1] = colors[i][1];
@@ -2438,6 +2454,9 @@ void addfrantumation_wsim(float x0, float y0, float z0, double dft, int option /
 	}
 } // end addfrantumation_wsim function
 
+// ####################################################################################################################
+// Function projectile_launch
+// ####################################################################################################################
 void projectile_launch(float xpr, float ypr, float zpr, 
 					   float vx, float vy, float vz, 
 					   double dft, int do_add)
@@ -2446,7 +2465,7 @@ void projectile_launch(float xpr, float ypr, float zpr,
 	static float poss[100][3];
 	static float vels[100][3];
 	float color[3] = {1.0, 0.0, 1.0};
-	float th_sph; /* theta or sperical coordinated, used for a spherical 'explosion' */
+	float th_sph; // theta or sperical coordinated, used for a spherical 'explosion' 
 	static int life[100];
 	float xm, ym, zm, xt, yt, zt;
 	float x1, y1, z1, x2, y2, z2;
@@ -2469,24 +2488,24 @@ void projectile_launch(float xpr, float ypr, float zpr,
 	if (life[0] > 0)
 	{
 	}
-	/* draw projectiles */
+
+	// draw projectiles
 	for (i = 0; i < n; i++)
 	{
 		if (life[i] > 0)
 		{
-
-			xm = poss[i][0]; // do (LT-count) because 'count' variable starts froma LT, say, 30. just be coherent with yourself and it works.
+			xm = poss[i][0]; 
 			ym = poss[i][1];
 			zm = poss[i][2];
 
-			/* "x is an extern variable!!! be careful!!" */
+			// "x is an extern variable!!! be careful!!" 
 			xt = P[0] * (xm - x) + P[1] * (ym - y) + P[2] * (zm - z);
 			yt = Q[0] * (xm - x) + Q[1] * (ym - y) + Q[2] * (zm - z);
 			zt = R[0] * (xm - x) + R[1] * (ym - y) + R[2] * (zm - z);
 
-			xaddpoint_persp(xt, yt, -zt, color, WIDTH, HEIGHT); /* draw points in 3D scnario Z NEGATIVE!!!!!! */
+			xaddpoint_persp(xt, yt, -zt, color, WIDTH, HEIGHT); // draw points in 3D scnario Z NEGATIVE!!!!!! 
 
-			/* "x is an extern variable!!! be careful!!" */
+			// "x is an extern variable!!! be careful!!" 
 			x1 = P[0] * (-x) + P[1] * (ym - y) + P[2] * (zm - z);
 			y1 = Q[0] * (-x) + Q[1] * (ym - y) + Q[2] * (zm - z);
 			z1 = R[0] * (-x) + R[1] * (ym - y) + R[2] * (zm - z);
@@ -2508,7 +2527,7 @@ void projectile_launch(float xpr, float ypr, float zpr,
 
 			vels[i][0] = vels[i][0] + 0.0;
 			vels[i][1] = vels[i][1] + 0.0;
-			vels[i][2] = vels[i][2] - 9.81 * dft; /* classical gravity */
+			vels[i][2] = vels[i][2] - 9.81 * dft; // classical gravity 
 
 			if (poss[i][2] < say_terrain_height(&terrain1, poss[i][0], poss[i][1]))
 			{
@@ -2521,7 +2540,7 @@ void projectile_launch(float xpr, float ypr, float zpr,
 					vels[i][0] = vels[i][0] - (1.0 + 0.1) * je * terrain1.auxnormal[0] / 1.0; 
 					vels[i][1] = vels[i][1] - (1.0 + 0.1) * je * terrain1.auxnormal[1] / 1.0;
 					vels[i][2] = vels[i][2] - (1.0 + 0.1) * je * terrain1.auxnormal[2] / 1.0;
-					life[i] = 0; /* put its lifetime near the end.... so soon explosion cycle will start  */
+					life[i] = 0; // put its lifetime near the end.... so soon explosion cycle will start 
 
 					terrain1.shmap[(int)(poss[i][0] / terrain1.GPunit)][(int)(poss[i][1] / terrain1.GPunit)] = terrain1.shmap[(int)(poss[i][0] / terrain1.GPunit)][(int)(poss[i][1] / terrain1.GPunit)] - 0.02;
 					terrain1.scol[(int)(poss[i][0] / terrain1.GPunit)][(int)(poss[i][1] / terrain1.GPunit)][1] = 0.8 * terrain1.scol[(int)(poss[i][0] / terrain1.GPunit)][(int)(poss[i][1] / terrain1.GPunit)][1];
@@ -2541,7 +2560,7 @@ void projectile_launch(float xpr, float ypr, float zpr,
 
 				for (fi_sph = 0; fi_sph < 6.3; fi_sph = fi_sph + 0.3)
 				{
-					xm = poss[i][0] + 0.1 * radius * cos(th_sph) * sin(fi_sph); // do (LT-count) because 'count' variable starts froma LT, say, 30. just be coherent with yourself and it works.
+					xm = poss[i][0] + 0.1 * radius * cos(th_sph) * sin(fi_sph); 
 					ym = poss[i][1] + 0.1 * radius * sin(th_sph) * sin(fi_sph);
 					zm = poss[i][2] + 0.1 * radius * cos(fi_sph);
 
@@ -2552,7 +2571,7 @@ void projectile_launch(float xpr, float ypr, float zpr,
 					color[0] = 1.0;
 					color[1] = 0.6;
 					color[2] = 0.1;
-					xaddpoint_persp(xt, yt, -zt, color, WIDTH, HEIGHT); /* draw points in 3D scnario Z NEGATIVE!!!!!! */
+					xaddpoint_persp(xt, yt, -zt, color, WIDTH, HEIGHT); // draw points in 3D scnario Z NEGATIVE!!!!!! 
 				}
 			}
 		}
@@ -2585,7 +2604,7 @@ void projectile_launch(float xpr, float ypr, float zpr,
 // ####################################################################################################################
 // Function say_terrain_height
 // ####################################################################################################################
-double say_terrain_height(struct subterrain *ite, double x, double z /* this will be set... */)
+double say_terrain_height(struct subterrain *ite, double x, double z)
 {
 	double apl, bpl, cpl, dpl, Xtri, Ytri, Ztri, dist_fp1, dist_fp2, Xf, Zf;
 	int Xi, Yi, col;
@@ -2599,13 +2618,13 @@ double say_terrain_height(struct subterrain *ite, double x, double z /* this wil
 	Xf = x / ite[0].GPunit;
 	Zf = z / ite[0].GPunit;
 
-	/*a cautional correction to avoi SegmentationFault: SECURE. */
+	// a cautional correction to avoi SegmentationFault: SECURE.
 	if (Xi < 0 || Xi > ite[0].map_size)
-	{ /* if it accidentally becomes negative, put it zero but nuder that there is no terrain!! */
+	{ // if it accidentally becomes negative, put it zero but nuder that there is no terrain!! 
 		Xi = 0;
 	}
 	if (Yi < 0 || Yi > ite[0].map_size)
-	{ /* if it accidentally becomes negative, put it zero but nuder that there is no terrain!! */
+	{ // if it accidentally becomes negative, put it zero but nuder that there is no terrain!! 
 		Yi = 0;
 	}
 
@@ -2644,20 +2663,21 @@ double say_terrain_height(struct subterrain *ite, double x, double z /* this wil
 		vector1[2] = -1.0;
 	}
 
-	/* we do directly the cross product */
+	// we do directly the cross product 
 	s_nloc[0] = vector0[1] * vector1[2] - vector0[2] * vector1[1]; // IMPLEMENT IT WARNING
 	s_nloc[1] = vector0[2] * vector1[0] - vector0[0] * vector1[2]; //              WARNING
 	s_nloc[2] = vector0[0] * vector1[1] - vector0[1] * vector1[0]; //              WARNING
 
-	/*------------calculate apl, bpl and cpl on the fly---------------------- */
-	/* use cross_product method. */
+	// ------------calculate apl, bpl and cpl on the fly---------------------- 
+	// use cross_product method. 
 	//put equation parameters.
 	apl = s_nloc[0];
 	bpl = s_nloc[1];
 	cpl = s_nloc[2];
 	dpl = 0; //this is still to calculate... it's not = 1  usually.
 
-	/* now be VERY careful because one SHOULD use a point which is common to bot TRI 1 (col == 0 ) and TRI 2: Xi,Yi IS NOT such a point.... so: */
+	// now be VERY careful because one SHOULD use a point which is common to bot 
+	// TRI 1 (col == 0 ) and TRI 2: Xi,Yi IS NOT such a point
 	Xtri = (double)(Xi + 1) * ite[0].GPunit;
 	Ytri = (double)ite[0].GPunit * ite[0].shmap[Xi + 1][Yi];
 	Ztri = (double)Yi * ite[0].GPunit;
@@ -2665,7 +2685,7 @@ double say_terrain_height(struct subterrain *ite, double x, double z /* this wil
 	//now finally calculate dpl , the 'd' of the   ax + by + cz + d = 0   plane equation.
 	dpl = -apl * Xtri - bpl * Ytri - cpl * Ztri;
 
-	/* now set heigt and that's it. */
+	// now set heigt and that's it. 
 	y = -(		   //is negative!chenck equation members always!!
 		(apl * x + //(ax +
 		 cpl * z + // cx +
@@ -2673,10 +2693,10 @@ double say_terrain_height(struct subterrain *ite, double x, double z /* this wil
 		bpl // d )/b
 	);
 
-	/* additional stuff( NOT part of previous procedures) */
+	// additional stuff( NOT part of previous procedures) 
 	lenght = sqrt(pow(s_nloc[0], 2) + pow(s_nloc[1], 2) + pow(s_nloc[2], 2));
 
-	/* normalize: this vector must be unit-lenght */
+	// normalize: this vector must be unit-lenght
 	s_nloc[0] = s_nloc[0] / lenght;
 	s_nloc[1] = s_nloc[1] / lenght;
 	s_nloc[2] = s_nloc[2] / lenght;
@@ -2689,8 +2709,8 @@ double say_terrain_height(struct subterrain *ite, double x, double z /* this wil
 		s_nloc[2] = -s_nloc[2];
 	}
 
-	/* copy here... very very useful to have such an auxiliary variable */
-	/* WARNING standard notation... z points 'upwards' */
+	// copy here... very very useful to have such an auxiliary variable 
+	// WARNING standard notation... z points 'upwards' 
 	ite[0].auxnormal[0] = s_nloc[0];
 	ite[0].auxnormal[1] = s_nloc[2];
 	ite[0].auxnormal[2] = s_nloc[1];
@@ -2708,8 +2728,8 @@ void xaddftriang(int x1, int y1,
 				 int step,
 				 int xlimit, int ylimit)
 {
-	/*====== convert RGB color intensities, call the allocate/activate function provided by Xlib,
- and then call the function that puts it into use.======= */
+	// convert RGB color intensities, call the allocate/activate function provided by Xlib,
+	// and then call the function that puts it into use.
 	int color_index = 0;
 
 	if (color[0] > 1.0)
@@ -2747,8 +2767,6 @@ void xaddftriang_persp(float x1, float y1, float z1,
 	glEnd();
 
 	glFlush();
-
-	/* this causes deformation and it is both gemetrically and visually WRONG, but the deformations are minimal, and it is just a trick to avoid bad looking scenaries, like pieces missing from the car just because in an internal visualisation some triangles have a vertex behind the obserzer ( z < 0 ) */
 } // end xaddftriang_persp function
 
 // ####################################################################################################################
@@ -2789,7 +2807,7 @@ void xaddftriang_perspTEXTURED_pp(float x1, float y1, float z1,
 								  float color[3], int pbwidth, int pbheight)
 {
 	static int alternative = 0;
-	static int texture_generated = 0; /* at first call of this function, a 32x32 texture sample will be generated */
+	static int texture_generated = 0; // at first call of this function, a 32x32 texture sample will be generated 
 	float mag;
 	static float txt[32][32];
 	int j, i;
@@ -2808,7 +2826,8 @@ void xaddftriang_perspTEXTURED_pp(float x1, float y1, float z1,
 	}
 
 	if ((pow(x3 - x2, 2) + pow(y3 - y2, 2) + pow(z3 - z2, 2)) > (pow(x3 - x1, 2) + pow(y3 - y1, 2) + pow(z3 - z1, 2)) && (pow(x3 - x2, 2) + pow(y3 - y2, 2) + pow(z3 - z2, 2)) > pow(x2 - x1, 2) + pow(y2 - y1, 2) + pow(z2 - z1, 2))
-	{ //side 2 longer than the others: x2 IS the hypothenuse of a quasi-rect triagle.
+	{ 
+		//side 2 longer than the others: x2 IS the hypothenuse of a quasi-rect triagle.
 		// lave p1, p2, p3 as they are... they are ok.
 		alternative = 1; // first case: 1-2 and 1-3 are the catetes... .
 	}
@@ -2881,7 +2900,7 @@ void xaddftriang_perspTEXTURED_pp(float x1, float y1, float z1,
 
 	float v_hor[3] = {3.4, 1.2, 2.0}; // the one with greter x-component... ('more horizonal'
 	float v_ver[3] = {1.2, 2.3, 1.0}; // the one wiht greter y-component... ('more vertical' )
-									  /* first x-y couple is intact... MIDPOINT, DOWNER */
+									  // first x-y couple is intact... MIDPOINT, DOWNER 
 
 	float jff, iff, limh, limv, texres;
 	texres = step; //texture resolution
@@ -2948,8 +2967,8 @@ void xaddftriang_perspTEXTURED_pp(float x1, float y1, float z1,
 	}
 } // end xaddftriang_perspTEXTURED_pp function
 
-/* Prototype of the struct meant to be the main container of data, 
-be it single numbers, couples, tripets or heterogeneous mixes of data */
+// Prototype of the struct meant to be the main container of data, 
+// be it single numbers, couples, tripets or heterogeneous mixes of data 
 struct mystruct
 {
 	float z;
@@ -2962,7 +2981,7 @@ struct mystruct
 // ####################################################################################################################
 void swap(struct mystruct *px, struct mystruct *py)
 {
-	/*we clone a structure of the kind needed, it will be used as a temorary store. */
+	// we clone a structure of the kind needed, it will be used as a temorary store.
 	struct mystruct temp;
 	temp = *px;
 	*px = *py;
@@ -2982,8 +3001,9 @@ void shellsort_struct(struct mystruct *v, int n)
 		for (i = gap; i < n; i++)
 		{
 			for (j = i - gap; j >= 0 && (v[j].z) > (v[j + gap].z); j -= gap)
-			{							  /* sort with respect to d */
-				swap(&v[j], &v[j + gap]); /*  */
+			{
+				// sort with respect to d
+				swap(&v[j], &v[j + gap]); 
 			}
 		}
 	}
@@ -3006,7 +3026,7 @@ void mat3x3_mult(double mat1[3][3], double mat2[3][3])
 			{
 				sum = sum + mat1[im][k] * mat2[k][jm];
 			}
-			result_matrix[im][jm] = sum; /* EXTERN VALUE!!! It's an easy way to implement all this. */
+			result_matrix[im][jm] = sum; // EXTERN VALUE!!! It's an easy way to implement all this.
 		}
 	}
 } // end mat3x3_mult function
@@ -3016,12 +3036,12 @@ void mat3x3_mult(double mat1[3][3], double mat2[3][3])
 // ####################################################################################################################
 void inv(double in_3x3_matrix[3][3])
 {
-	double A[3][3]; /* the matrix that is entered by user */
-	double B[3][3]; /*the transpose of a matrix A */
-	double C[3][3]; /*the adjunct matrix of transpose of a matrix A not adjunct of A*/
-	double X[3][3]; /*the inverse*/
+	double A[3][3]; // the matrix that is entered by user 
+	double B[3][3]; // the transpose of a matrix A 
+	double C[3][3]; // the adjunct matrix of transpose of a matrix A not adjunct of A
+	double X[3][3]; // the inverse
 	int i, j;
-	double x, n = 0; /*n is the determinant of A*/
+	double x, n = 0; // n is the determinant of A
 
 	for (i = 0; i < 3; i++)
 	{
@@ -3033,7 +3053,7 @@ void inv(double in_3x3_matrix[3][3])
 		}
 	}
 
-	/*determinant of A (presumebly the inertia tensor):*/
+	// determinant of A (presumebly the inertia tensor)
 	for (i = 0, j = 0; j < 3; j++)
 	{
 		if (j == 2)
@@ -3089,7 +3109,7 @@ void inv(double in_3x3_matrix[3][3])
 		for (j = 0; j < 3; j++)
 		{
 			X[i][j] = C[i][j] * x;
-			result_matrix[i][j] = C[i][j] * x; /* EXTERN VALUE!!!  */
+			result_matrix[i][j] = C[i][j] * x; // EXTERN VALUE!!!
 		}
 	}
 } // end inv function
@@ -3125,7 +3145,9 @@ double body_rebounce(double rx, double ry, double rz,
 
 	vnorm = nx * vvertex[0] + ny * vvertex[1] + nz * vvertex[2];
 	if (vnorm < 0)
-	{ // safecheck of right collision... it never will certainly rebounce *towards* the very terrain from which it is rebouncing.
+	{ 
+		// safecheck of right collision... it never will certainly rebounce *towards* the 
+		// very terrain from which it is rebouncing.
 		vector0[0] = rx;
 		vector0[1] = ry;
 		vector0[2] = rz;
@@ -3196,27 +3218,27 @@ void make_inertia_tensor(int n_vertexs)
 //be very careful to assign storage space correctly!!!! ohterwise it brigs to 0 all elements!!!
 #define ne 1000
 	int i, j, k;
-	double Ixxe[ne], Iyye[ne], Izze[ne]; /* those  'principal moments of inertia'.... */
-	double Ixye[ne], Ixze[ne], Iyze[ne]; /* those  'products of inertia'....          */
-	double Ixx = 0, Iyy = 0, Izz = 0;	 /* the total principal moments of inertia to put into the diagonals of the 3x3 tensor matrix. */
-	double Ixy = 0, Ixz = 0, Iyz = 0;	 /* these are automatically set = 0, that's important.... */
+	double Ixxe[ne], Iyye[ne], Izze[ne]; // those  'principal moments of inertia'....
+	double Ixye[ne], Ixze[ne], Iyze[ne]; // those  'products of inertia'....
+	double Ixx = 0, Iyy = 0, Izz = 0;	 // the total principal moments of inertia to put into the diagonals of the 3x3 tensor matrix. 
+	double Ixy = 0, Ixz = 0, Iyz = 0;	 // these are automatically set = 0, that's important.... 
 	double std_vxmass = 10.0;			 // 10 Kg
 
 	//compute the elemets of the final tensor matrix:
 	for (i = 0; i < n_vertexs; i++)
 	{
-		//those 'principal moments of inertia'...:
+		//those 'principal moments of inertia'...
 		Ixxe[i] = std_vxmass * (pow(punti[i][1], 2) + pow(punti[i][2], 2)); // y2 + z2
 		Iyye[i] = std_vxmass * (pow(punti[i][0], 2) + pow(punti[i][2], 2)); // x2 + z2
 		Izze[i] = std_vxmass * (pow(punti[i][0], 2) + pow(punti[i][1], 2)); // x2 + y2
 
-		//those 'products of inertia'...:
+		//those 'products of inertia'...
 		Ixye[i] = std_vxmass * (punti[i][0] * punti[i][1]); // xy
 		Ixze[i] = std_vxmass * (punti[i][0] * punti[i][2]); // xz
 		Iyze[i] = std_vxmass * (punti[i][1] * punti[i][2]); // yz
 	}
 
-	//sum up:
+	//sum up
 	for (k = 0; k < n_vertexs; k++)
 	{
 		Ixx = Ixx + Ixxe[k];
@@ -3228,12 +3250,12 @@ void make_inertia_tensor(int n_vertexs)
 		Iyz = Iyz + Iyze[k];
 	}
 
-	//put principal moments of inertia into the diagonals of the result matrix:
+	//put principal moments of inertia into the diagonals of the result matrix
 	It_init[0][0] = Ixx;
 	It_init[1][1] = Iyy;
 	It_init[2][2] = Izz;
 
-	//put inertia products in result_matrix tensor:
+	//put inertia products in result_matrix tensor
 	It_init[0][1] = -Ixy;
 	It_init[1][0] = -Ixy;
 
@@ -3256,10 +3278,10 @@ void make_inertia_tensor(int n_vertexs)
 // ####################################################################################################################
 void load_textures_wOpenGL()
 {
-	static int texture_generated = 0; /* at first call of this function, a 32x32 texture sample will be generated */
+	static int texture_generated = 0; // at first call of this function, a 32x32 texture sample will be generated 
 
-	/*	Create texture	*/
-/* maximal vlues... IF POSSIBLE DON'T EXPLOIT MAXIMUMS. */
+	//	Create texture
+// maximal vlues... IF POSSIBLE DON'T EXPLOIT MAXIMUMS.
 #define txtWidth 128
 #define txtHeight 128
 
@@ -3317,7 +3339,7 @@ void load_textures_wOpenGL()
 				txtRES = imhe; // set TEXTURE RESOLUTION txt must be SQUARE!!!
 				SDL_Delay(5);
 
-				/*---------feed into 'the' array used for this.....---------*/
+				// feed into 'the' array used for this
 				for (j = 0; j < txtRES; j++)
 				{ // vertical
 					for (i = 0; i < txtRES; i++)
@@ -3336,7 +3358,8 @@ void load_textures_wOpenGL()
 
 				texName = texn;
 
-				//---------| TEXTURE PROCESSING |-----THIS PART MUST BE EXECUTED ONLY ONCE!!! OTHEERWISE IT SILENTLY OVERLOADS MEMORY AT EACH CALL-----------
+				//---------| TEXTURE PROCESSING |-----THIS PART MUST BE EXECUTED ONLY ONCE!!! OTHEERWISE 
+				// IT SILENTLY OVERLOADS MEMORY AT EACH CALL
 
 				glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
@@ -3348,19 +3371,19 @@ void load_textures_wOpenGL()
 
 				glBindTexture(GL_TEXTURE_2D, texid[texn - 1]); // [texn-1] because startd fron 1, be careful
 
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST /* GL_LINEAR  */); // what OpgnGL should do when texture is magnified GL_NEAREST: non-smoothed texture | GL_LINEAR: smoothed
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); // what OpgnGL should do when texture is magnified GL_NEAREST: non-smoothed texture | GL_LINEAR: smoothed
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);	// ...when texture is miniaturized because far; GL_NEAREST: non-smoothed tecture
 
 				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB4, txtRES, txtRES, 0, GL_RGB, GL_UNSIGNED_BYTE, txt1);
 				glGenerateMipmap(GL_TEXTURE_2D);
 
 				glEnable(GL_TEXTURE_2D);
-				glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, /*GL_COMBINE*/ GL_DECAL); // the GL_DECAL option draws texture as is: no color mixing thigs. GL_MODULATE lets mixing.
+				glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL); // the GL_DECAL option draws texture as is: no color mixing thigs. GL_MODULATE lets mixing.
 
 				glBindTexture(GL_TEXTURE_2D, texName);
 				//--------------------------| END OF TEXTURE LOAD PROCESSING |-------------------------------
 
-				texn++;					   // augment count... next texture
+				texn++;	// augment count... next texture
 				textures_available = texn; // at left is extern... you know... .
 			}
 			else
@@ -3379,10 +3402,10 @@ void load_textures_wOpenGL()
 // ####################################################################################################################
 void load_textures96x96_SEMITRANSPARENT_wOpenGL()
 {
-	static int texture_generated = 0; /* at first call of this function, a 32x32 texture sample will be generated */
+	static int texture_generated = 0; // at first call of this function, a 32x32 texture sample will be generated 
 
-	/*	Create texture	*/
-/* maximal vlues... IF POSSIBLE DON'T EXPLOIT MAXIMUMS. */
+	//	Create texture
+// maximal vlues... IF POSSIBLE DON'T EXPLOIT MAXIMUMS. 
 #define txtWidth2 32
 #define txtHeight2 32
 #define txtWidth3 96
@@ -3419,7 +3442,6 @@ void load_textures96x96_SEMITRANSPARENT_wOpenGL()
 		{
 			char filename[100];
 			SDL_Surface *image; //This pointer will reference our bitmap.
-
 			int bytes_per_color, imhe;
 			Uint8 red, green, blue, alpha;
 			Uint32 color_to_convert;
@@ -3442,7 +3464,7 @@ void load_textures96x96_SEMITRANSPARENT_wOpenGL()
 				printf("bitmap RES: %i\n", imhe);
 				SDL_Delay(5);
 
-				/*---------feed into 'the' array used for this.....---------*/
+				// feed into 'the' array used for this
 				for (j = 0; j < txtRES2; j++)
 				{ // vertical
 					for (i = 0; i < txtRES2; i++)
@@ -3456,7 +3478,8 @@ void load_textures96x96_SEMITRANSPARENT_wOpenGL()
 						txt1[j][i][3] = (GLubyte)alpha;
 
 						if (txt1[j][i][0] == 0 && txt1[j][i][1] == 0 && txt1[j][i][2] == 0)
-						{					   // ADD TRANSPARECY VALUE ARTIFICIALLY ACCORDING TO SOME CONVENTION LIKE BLACK => TRANSPARENT
+						{
+							// ADD TRANSPARECY VALUE ARTIFICIALLY ACCORDING TO SOME CONVENTION LIKE BLACK => TRANSPARENT
 							txt1[j][i][3] = 0; // make this pixel totally transparent (alpha = 0) ; opaque is alpha = 255. .
 						}
 
@@ -3472,7 +3495,8 @@ void load_textures96x96_SEMITRANSPARENT_wOpenGL()
 
 				texName = textures_available + texn - 1; // VERY CAREFUL!!! NOT OVERWRITE ALREADY OCCUPIED TEXTURES!!
 
-				//---------| TEXTURE PROCESSING |-----THIS PART MUST BE EXECUTED ONLY ONCE!!! OTHEERWISE IT SILENTLY OVERLOADS MEMORY AT EACH CALL-----------
+				//---------| TEXTURE PROCESSING |-----THIS PART MUST BE EXECUTED ONLY ONCE!!! OTHEERWISE 
+				// IT SILENTLY OVERLOADS MEMORY AT EACH CALL
 				glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
 				glGenTextures(1, &texName);
@@ -3481,19 +3505,19 @@ void load_textures96x96_SEMITRANSPARENT_wOpenGL()
 
 				glBindTexture(GL_TEXTURE_2D, texid[textures_available + texn - 1]); // [texn-1] because startd fron 1, be careful
 
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST /* GL_LINEAR  */); // what OpgnGL should do when texture is magnified GL_NEAREST: non-smoothed texture | GL_LINEAR: smoothed
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST ); // what OpgnGL should do when texture is magnified GL_NEAREST: non-smoothed texture | GL_LINEAR: smoothed
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);	// ...when texture is miniaturized because far; GL_NEAREST: non-smoothed tecture
 
 				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, txtRES2, txtRES2, 0, GL_RGBA, GL_UNSIGNED_BYTE, txt1);
 				glGenerateMipmap(GL_TEXTURE_2D);
 
 				glEnable(GL_TEXTURE_2D);
-				glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, /*GL_COMBINE*/ GL_DECAL); // the GL_DECAL option draws texture as is: no color mixing thigs. GL_MODULATE lets mixing.
+				glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL); // the GL_DECAL option draws texture as is: no color mixing thigs. GL_MODULATE lets mixing.
 
 				glBindTexture(GL_TEXTURE_2D, texName);
 				//--------------------------| END OF TEXTURE LOAD PROCESSING |-------------------------------
 
-				texn++;				  // augment count... next texture
+				texn++;	// augment count... next texture
 				textures_available++; // idem but on an aextern variable... .
 			}
 			else
@@ -3545,7 +3569,7 @@ int load_hmap_from_bitmap(char *filename)
 				color_to_convert = getpixel(image, i, TERRAIN_SIZE - 1 - j);
 				SDL_GetRGB(color_to_convert, image->format, &red, &green, &blue);
 
-				terrain1.shmap[i][j] = ((float)red + 256.0 * ((float)green)) / (256.0); /* SIMPLIFICED WAY... */
+				terrain1.shmap[i][j] = ((float)red + 256.0 * ((float)green)) / (256.0); // SIMPLIFICED WAY... 
 			}
 		}
 		printf("HEIGHTMAP LOADED FROM FILE: %s\n", filename);
@@ -3578,7 +3602,7 @@ int load_maptex_from_bitmap(char *filename)
 
 		SDL_Delay(600);
 
-		/*---------feed into 'the' array used for this.....---------*/
+		// feed into 'the' array used for this
 		for (j = 0; j < 300; j++)
 		{ // vertical
 			for (i = 0; i < 300; i++)
@@ -3586,9 +3610,11 @@ int load_maptex_from_bitmap(char *filename)
 				color_to_convert = getpixel(sdl_image, i, j);
 				SDL_GetRGB(color_to_convert, sdl_image->format, &red, &green, &blue);
 
-				terrain1.map_texture_indexes[i][299 - j] = -0 + (int)red + ((int)green) * 256; // divided by two because of our convention...
+				terrain1.map_texture_indexes[i][299 - j] = -0 + (int)red + ((int)green) * 256; 
 				if (terrain1.map_texture_indexes[i][299 - j] >= textures_available)
-				{												  // if indes is superior to the number of total loaded textures, put it to some defult number within num of availble textures.
+				{
+					// if indes is superior to the number of total loaded textures, put it to some 
+					// defult number within num of availble textures.
 					terrain1.map_texture_indexes[i][299 - j] = 0; // defult.
 				}
 
@@ -3618,7 +3644,7 @@ int load_maptex_from_bitmap(char *filename)
 // ####################################################################################################################
 long int check_vector_elements(char filename[])
 {
-	FILE *InFilePtr; /* pointer to input file */
+	FILE *InFilePtr; // pointer to input file
 	InFilePtr = fopen(filename, "r");
 	long int i = 0;
 	float test;
@@ -3629,24 +3655,26 @@ long int check_vector_elements(char filename[])
 		printf("%f  \n", test);
 	}
 
-	fclose(InFilePtr); /* safe file closure. */
+	fclose(InFilePtr); // safe file closure. 
 	return i;
 } // end check_vector_elements function
 
-/*=======================| Read in numeric vector form file |==========
-only space-separated or newline-separated numbers!! else goes error ====*/
+// ####################################################################################################################
+// Read in numeric vector form file
+// only space-separated or newline-separated numbers!! else goes error
+// ####################################################################################################################
 void read_vector(char filename[], float dest_string[], long int maxsize)
 {
-	FILE *FilePtr; /* pointer to input file */
+	FILE *FilePtr; // pointer to input file 
 	FilePtr = fopen(filename, "r");
-	long int i = 0; /* MUST put it   =0  .... */
+	long int i = 0; // MUST put it   =0 
 
 	while (fscanf(FilePtr, "%f", &dest_string[i]) != EOF && i < maxsize)
 	{
-		i++; /* augment index of casel in dest_string[].... */
+		i++; // augment index of casel in dest_string[]
 		printf("%f . \n", dest_string[i]);
 	}
-	fclose(FilePtr); /* safe file closure. */
+	fclose(FilePtr); // safe file closure.
 	printf("\nFILE FOUND & READ IN. LENGHT LIMIT WAS FIXED TO: %li . \n", maxsize);
 } // end read_vector function
 
@@ -3658,14 +3686,14 @@ void import_airplane_polyheron(void)
 	// read in poly definition from file
 	float auxxv[3 * NVERTEXES];
 	int nelem = 0, i, j;
-	FILE *FilePtr; /* pointer to input file */
+	FILE *FilePtr; // pointer to input file
 
 	printf("TRYING TO IMPORT VERTEX LIST OF 3D MODEL\n");
 
 	nelem = check_vector_elements("input/vertexes.txt");
 	read_vector("input/vertexes.txt", auxxv, nelem); //read file and values in the auxxv array.
 
-	/* feed into 'the' array used for this..... */
+	// feed into 'the' array used for this
 	for (j = 0; j < nelem / 3; j++)
 	{
 		for (i = 0; i < 3; i++)
@@ -3680,7 +3708,7 @@ void import_airplane_polyheron(void)
 	nelem = check_vector_elements("input/triangulation.txt");
 	read_vector("input/triangulation.txt", auxxv, nelem); //read file and values in the auxxv array.
 
-	/* feed into 'the' array used for this..... */
+	// feed into 'the' array used for this
 	for (j = 0; j < nelem / 3; j++)
 	{
 		for (i = 0; i < 3; i++)
@@ -3695,7 +3723,7 @@ void import_airplane_polyheron(void)
 	nelem = check_vector_elements("input/facecolor.txt");
 	read_vector("input/facecolor.txt", auxxv, nelem); //read file and values in the auxxv array.
 
-	/* feed into 'the' array used for this..... */
+	// feed into 'the' array used for this
 	for (j = 0; j < nelem / 3; j++)
 	{
 		for (i = 0; i < 3; i++)
@@ -3712,7 +3740,7 @@ void import_airplane_polyheron(void)
 Uint32 getpixel(SDL_Surface *surface, int x, int y)
 {
 	int bpp = surface->format->BytesPerPixel;
-	/* Here p is the address to the pixel we want to retrieve */
+	// Here p is the address to the pixel we want to retrieve 
 	Uint8 *p = (Uint8 *)surface->pixels + y * surface->pitch + x * bpp;
 
 	switch (bpp)
@@ -3725,7 +3753,7 @@ Uint32 getpixel(SDL_Surface *surface, int x, int y)
 		return *(Uint16 *)p;
 		break;
 
-	case 3: /* don't care about this bullshit! */
+	case 3: 
 		if (SDL_BYTEORDER == SDL_BIG_ENDIAN)
 			return p[0] << 16 | p[1] << 8 | p[2];
 		else
@@ -3737,6 +3765,6 @@ Uint32 getpixel(SDL_Surface *surface, int x, int y)
 		break;
 
 	default:
-		return 0; /* shouldn't happen, but avoids warnings */
+		return 0; // shouldn't happen, but avoids warnings 
 	}
 } // end getpixel function
