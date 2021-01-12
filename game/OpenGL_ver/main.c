@@ -113,6 +113,20 @@ int waitdt_ms(double tt_ms);
 
 double say_terrain_height(struct subterrain *ite, double x, double z);
 
+// multiplication of 2  matrixes 3x3, in size 
+void mat3x3_mult(double mat1[3][3], double mat2[3][3]);
+
+// INVERSE OF 3x3 MATRIC (USED FOR OBTAINING THE INVERSE OF THE INERTIA TENSOR): 
+void inv(double in_3x3_matrix[3][3]);
+
+double body_rebounce(double rx, double ry, double rz,
+					 double nx, double ny, double nz, double e, double lat);
+
+void make_inertia_tensor(int n_vertexs); // very useful....
+
+void initSDL(void);
+void initOpenGL(void);
+
 // #                                                                                                                  #
 // # End function prototypes                                                                                          #
 // ####################################################################################################################
@@ -232,211 +246,216 @@ float treeR1 = 0.5;
 float texcoords_gnd_tri1[3][2] = {
 	{0.0, 0.0},
 	{1.0, 0.0},
-	{0.0, 1.0}};
+	{0.0, 1.0}
+};
 
 float texcoords_gnd_tri2[3][2] = {
 	{1.0, 0.0},
 	{0.0, 1.0},
-	{1.0, 1.0}};
+	{1.0, 1.0}
+};
 
 #define NLINES 20
 #define NVERTEXES 200
 
 // AEREO: DEFINIZIONE DEI VERTICI 
 float punti[NVERTEXES][3] = {// scatola 
-							 {74, 76, -57},
-							 {74, 76, 57},
-							 {74, 76, 262},
-							 {-74, 76, 262},
-							 {-74, 76, 57},
-							 {-74, 76, -57},
-							 {-74, 76, -262},
-							 {74, 76, 262},
-							 {74, 76, -549},
-							 {-44, 76, -549},
-							 {74, 76, 549},
-							 {-44, 76, 549},
-							 {244, -1, 50},
-							 {244, -1, -50},
-							 {-354, 10, 12},
-							 {-354, 10, -12},
-							 {-370, 10, -165},
-							 {-434, 10, -165},
-							 {-434, 10, 0},
-							 {-434, 10, 165},
-							 {-370, 10, 165},
-							 {244, -75, 50},
-							 {244, -75, -50},
-							 {74, 10, -80},
-							 {74, 10, 50},
-							 {-74, 40, 50},
-							 {-74, 40, -50},
-							 {-377, 25, 0},
-							 {-159, 10, 0},
-							 {-445, 108, 0},
-							 {90, -135, -134},
-							 {-220, -135, -30},
-							 {-220, -135, 30},
-							 {90, -135, 134},
-							 {17, 75, 50},
-							 {74, 76, -262},
-							 {17, 10, -40},
-							 {17, -10, 40},
-							 {-17, 20, -40},
-							 {-17, 20, 40},
-							 {-17, -40, -60},
-							 {-17, -20, 40},
-							 {-445, 5, 0},
-							 {-445, 5, 0},
-							 {65, -50, -40},
-							 {65, -50, 40},
-							 {65, 10, -40},
-							 {-156, 10, 0},
-							 {35, 20, -40},
-							 {35, 20, 40},
-							 {-35, 20, 89},
-							 {-35, 0, 89},
-							 {10, 70, -50},
-							 {56, 71, -40},
-							 {56, 71, -79},
-							 {10, 70, 50},
-							 {16, -50, -40},
-							 {16, -50, -40},
-							 {17, 20, -40},
-							 {0, 5, -40},
-							 {17, 20, -40},
-							 {17, 20, -40},
-							 {-10, 20, -40},
-							 {-35, 20, -40},
-							 {-35, 20, -40},
-							 {120, 75, -40},
-							 {120, 75, -40},
-							 {0, 75, -40},
-							 {-15, -50, -40},
-							 {-15, -50, -40},
-							 {-15, -20, 6},
-							 {56, 73, 40},
-							 {-30, 20, -40},
-							 {-30, 20, -40},
-							 {-35, 20, 39},
-							 {-35, 0, 39},
-							 {-110, -50, -90},
-							 {14, -50, -80},
-							 {14, -50, 80},
-							 {-110, -50, -4},
-							 {16, -50, 0},
-							 {16, -50, 0},
-							 {18, 20, 0},
-							 {6, 75, 5},
-							 {80, -20, 0},
-							 {80, -20, 0},
-							 {-100, 20, 0},
-							 {-20, 50, 7},
-							 {-10, 50, 0},
-							 {120, -75, 40},
-							 {120, -75, -40},
-							 {0, 75, -8},
-							 {-165, -50, -0},
-							 {-165, -50, 7},
-							 {-155, -20, -0},
-							 {-100, 20, 8},
-							 {10, 70, -6},
-							 {-35, 20, 8},
-							 {-120, -140, -80},
-							 {-120, -140, 80}};
+	{74, 76, -57},
+	{74, 76, 57},
+	{74, 76, 262},
+	{-74, 76, 262},
+	{-74, 76, 57},
+	{-74, 76, -57},
+	{-74, 76, -262},
+	{74, 76, 262},
+	{74, 76, -549},
+	{-44, 76, -549},
+	{74, 76, 549},
+	{-44, 76, 549},
+	{244, -1, 50},
+	{244, -1, -50},
+	{-354, 10, 12},
+	{-354, 10, -12},
+	{-370, 10, -165},
+	{-434, 10, -165},
+	{-434, 10, 0},
+	{-434, 10, 165},
+	{-370, 10, 165},
+	{244, -75, 50},
+	{244, -75, -50},
+	{74, 10, -80},
+	{74, 10, 50},
+	{-74, 40, 50},
+	{-74, 40, -50},
+	{-377, 25, 0},
+	{-159, 10, 0},
+	{-445, 108, 0},
+	{90, -135, -134},
+	{-220, -135, -30},
+	{-220, -135, 30},
+	{90, -135, 134},
+	{17, 75, 50},
+	{74, 76, -262},
+	{17, 10, -40},
+	{17, -10, 40},
+	{-17, 20, -40},
+	{-17, 20, 40},
+	{-17, -40, -60},
+	{-17, -20, 40},
+	{-445, 5, 0},
+	{-445, 5, 0},
+	{65, -50, -40},
+	{65, -50, 40},
+	{65, 10, -40},
+	{-156, 10, 0},
+	{35, 20, -40},
+	{35, 20, 40},
+	{-35, 20, 89},
+	{-35, 0, 89},
+	{10, 70, -50},
+	{56, 71, -40},
+	{56, 71, -79},
+	{10, 70, 50},
+	{16, -50, -40},
+	{16, -50, -40},
+	{17, 20, -40},
+	{0, 5, -40},
+	{17, 20, -40},
+	{17, 20, -40},
+	{-10, 20, -40},
+	{-35, 20, -40},
+	{-35, 20, -40},
+	{120, 75, -40},
+	{120, 75, -40},
+	{0, 75, -40},
+	{-15, -50, -40},
+	{-15, -50, -40},
+	{-15, -20, 6},
+	{56, 73, 40},
+	{-30, 20, -40},
+	{-30, 20, -40},
+	{-35, 20, 39},
+	{-35, 0, 39},
+	{-110, -50, -90},
+	{14, -50, -80},
+	{14, -50, 80},
+	{-110, -50, -4},
+	{16, -50, 0},
+	{16, -50, 0},
+	{18, 20, 0},
+	{6, 75, 5},
+	{80, -20, 0},
+	{80, -20, 0},
+	{-100, 20, 0},
+	{-20, 50, 7},
+	{-10, 50, 0},
+	{120, -75, 40},
+	{120, -75, -40},
+	{0, 75, -8},
+	{-165, -50, -0},
+	{-165, -50, 7},
+	{-155, -20, -0},
+	{-100, 20, 8},
+	{10, 70, -6},
+	{-35, 20, 8},
+	{-120, -140, -80},
+	{-120, -140, 80}
+};
 
 // chi sono i 2 punti estremi delle linee da disegnare? 
 // NOTA: estremi[ i-esima linea][quale punto e' l'estremo ] 
 int estremi[NLINES][2] = {
-						  {0, 1},
-						  {1, 2},
-						  {0, 3},
-						  {2, 3},
+	{0, 1},
+	{1, 2},
+	{0, 3},
+	{2, 3},
 
-						  {4, 5},
-						  {6, 7},
-						  {5, 6},
-						  {4, 7},
+	{4, 5},
+	{6, 7},
+	{5, 6},
+	{4, 7},
 
-						  {0, 4},
-						  {1, 5},
-						  {2, 6},
-						  {3, 7},
+	{0, 4},
+	{1, 5},
+	{2, 6},
+	{3, 7},
 
-						  {8, 9},
-						  {9, 10},
-						  {10, 11},
-						  {8, 11},
+	{8, 9},
+	{9, 10},
+	{10, 11},
+	{8, 11},
 
-						  {12, 13},
-						  {13, 14},
-						  {14, 15},
-						  {12, 15}};
+	{12, 13},
+	{13, 14},
+	{14, 15},
+	{12, 15}
+};
 
 // chi sono i 2 punti estremi delle linee da disegnare? 
 // NOTA: estremi[ i-esima linea][quale punto e' l'estremo ] 
 int tris[NTRIS][3] = {
-					  {0, 4, 5},
-					  {1, 2, 3},
-					  {1, 3, 4},
-					  {0, 1, 4},
-					  {0, 5, 6},
-					  {0, 6, 35},
-					  {6, 8, 35},
-					  {6, 8, 9},
-					  {2, 10, 11},
-					  {2, 11, 3},
-					  {5, 13, 4},
-					  {4, 12, 13},
-					  {0, 1, 15},
-					  {1, 14, 15},
-					  {15, 16, 18},
-					  {16, 18, 17},
-					  {14, 20, 19},
-					  {14, 18, 19},
-					  {13, 22, 23},
-					  {12, 22, 21},
-					  {15, 84, 92},
-					  {23, 5, 0},
-					  {23, 24, 4},
-					  {40, 23, 22},
-					  {21, 24, 26},
-					  {18, 28, 29},
-					  {28, 27, 18},
-					  {0, 31, 5},
-					  {1, 4, 32},
-					  {13, 12, 22},
-					  {14, 38, 50},
-					  {89, 88, 94},
-					  {94, 95, 89},
-					  {11, 45, 82},
-					  {11, 91, 82},
-					  {17, 19, 91},
-					  {91, 19, 43},
-					  {90, 94, 95},
-					  {16, 18, 40},
-					  {83, 79, 7},
-					  {66, 90, 95},
-					  {96, 67, 31},
-					  {31, 7, 96},
-					  {13, 37, 67},
-					  {23, 26, 28},
-					  {28, 97, 23},
-					  {43, 82, 91},
-					  {42, 43, 82},
-					  {42, 58, 82},
-					  {37, 38, 49},
-					  {31, 39, 49},
-					  {49, 67, 31},
-					  {49, 67, 37},
-					  {10, 12, 20},
-					  {40, 42, 43},
-					  {43, 41, 40},
-					  {18, 40, 42},
-					  {40, 20, 21},
-					  {20, 21, 26},
-					  {20, 25, 26},
-					  {25, 26, 4}};
+	{0, 4, 5},
+	{1, 2, 3},
+	{1, 3, 4},
+	{0, 1, 4},
+	{0, 5, 6},
+	{0, 6, 35},
+	{6, 8, 35},
+	{6, 8, 9},
+	{2, 10, 11},
+	{2, 11, 3},
+	{5, 13, 4},
+	{4, 12, 13},
+	{0, 1, 15},
+	{1, 14, 15},
+	{15, 16, 18},
+	{16, 18, 17},
+	{14, 20, 19},
+	{14, 18, 19},
+	{13, 22, 23},
+	{12, 22, 21},
+	{15, 84, 92},
+	{23, 5, 0},
+	{23, 24, 4},
+	{40, 23, 22},
+	{21, 24, 26},
+	{18, 28, 29},
+	{28, 27, 18},
+	{0, 31, 5},
+	{1, 4, 32},
+	{13, 12, 22},
+	{14, 38, 50},
+	{89, 88, 94},
+	{94, 95, 89},
+	{11, 45, 82},
+	{11, 91, 82},
+	{17, 19, 91},
+	{91, 19, 43},
+	{90, 94, 95},
+	{16, 18, 40},
+	{83, 79, 7},
+	{66, 90, 95},
+	{96, 67, 31},
+	{31, 7, 96},
+	{13, 37, 67},
+	{23, 26, 28},
+	{28, 97, 23},
+	{43, 82, 91},
+	{42, 43, 82},
+	{42, 58, 82},
+	{37, 38, 49},
+	{31, 39, 49},
+	{49, 67, 31},
+	{49, 67, 37},
+	{10, 12, 20},
+	{40, 42, 43},
+	{43, 41, 40},
+	{18, 40, 42},
+	{40, 20, 21},
+	{20, 21, 26},
+	{20, 25, 26},
+	{25, 26, 4}
+};
 
 // ovvio a cosa serve... 
 float col_tris[NTRIS][3] = {
@@ -468,7 +487,8 @@ float col_tris[NTRIS][3] = {
 	{0.3, 0.4, 0.3},
 
 	{0.7, 0.4, 0.3},
-	{0.4, 0.4, 0.3}};
+	{0.4, 0.4, 0.3}
+};
 
 int nvertexes = 100; // default value
 int ntris = 33;		 // default value
@@ -524,16 +544,20 @@ double result_matrix[3][3], R_T[3][3], temp_mat[3][3];
 double Id[3][3] = {
 	{1.0, 0.0, 0.0},
 	{0.0, 1.0, 0.0},
-	{0.0, 0.0, 1.0}};
+	{0.0, 0.0, 1.0}
+};
 
 double dR[3][3] = {
 	{1.0, 0.0, 0.0},
 	{0.0, 1.0, 0.0},
-	{0.0, 0.0, 1.0}};
+	{0.0, 0.0, 1.0}
+};
 
-double inv_It_now[3][3] = {{1.0, 0.0, 0.0},
-						   {0.0, 1.0, 0.0},
-						   {0.0, 0.0, 1.0}};
+double inv_It_now[3][3] = {
+	{1.0, 0.0, 0.0},
+	{0.0, 1.0, 0.0},
+	{0.0, 0.0, 1.0}
+};
 
 double axis1_orig[3] = {1.0, 0.0, 0.0};
 double axis2_orig[3] = {0.0, 1.0, 0.0};
@@ -545,16 +569,6 @@ double axis_1[3], axis_2[3], axis_3[3];
 // auxiliaries:
 double SD[3][3], SD2[3][3], u1, u2, u3, w_abs, dAng;
 
-// multiplication of 2  matrixes 3x3, in size 
-void mat3x3_mult(double mat1[3][3], double mat2[3][3]);
-
-// INVERSE OF 3x3 MATRIC (USED FOR OBTAINING THE INVERSE OF THE INERTIA TENSOR): 
-void inv(double in_3x3_matrix[3][3]);
-
-double body_rebounce(double rx, double ry, double rz,
-					 double nx, double ny, double nz, double e, double lat);
-
-void make_inertia_tensor(int n_vertexs); // very useful....
 // ==END OF IMULATION physical QUANTITIES DECLARATIONS========================
 
 int logo[8][128] = {
@@ -620,64 +634,10 @@ int main()
 	double g = -9.81; // POSITIVE +++++ ASSUMED!!
 
 	float color[4] = {0.0, 0.0, 0.0, 1.0};
-	// code to start SDL graphics system: 
-	//==========================|SDL CODE BLOCK 2|=========================
-	// Initialize SDL 
 
-	if (SDL_Init(SDL_INIT_VIDEO) != 0)
-	{
-		printf("Unable to initialize SDL: %s\n", SDL_GetError());
-		getchar();
-	}
+	initSDL();
 
-	// Enable double-buffering
-	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-
-	// Initialize the screen / window 
-	window = SDL_CreateWindow("FlightCraft_3D (GL) - by Simon Hasur",
-							  SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-							  WIDTH, HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
-	if (window == NULL)
-	{
-		printf("Couldn't create window.");
-		SDL_Quit();
-		exit(2);
-	}
-	printf("Created window\n");
-	// Create context
-	context = SDL_GL_CreateContext(window);
-	if (context == NULL)
-	{
-		printf("OpenGL context could not be created! SDL Error: %s\n", SDL_GetError());
-		SDL_Quit();
-		exit(1);
-	}
-
-	screen = SDL_GetWindowSurface(window);
-	printf("Set global screen variable by calling SDL_GetWindowSurface\n");
-
-	if (!screen)
-	{
-		printf("Couldn't set %dx%d GL video mode: %s\n", WIDTH,
-			   HEIGHT, SDL_GetError());
-		SDL_Quit();
-		exit(2);
-	}
-	SDL_UpdateWindowSurface(window);
-
-	glEnable(GL_DEPTH_TEST); // activate hidden_surface_removal in OpenGL.
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glEnable(GL_BLEND);
-
-	// SET SOME GL OPTIONS FOR LEAST PRECISION, SINCE THIS IS NOT A GRAPHICS PROGRAM... 
-	// WE NEED COMPUTER POWER FOR PHYSICS CALCS MORE 
-	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST); // Fastest - less expensive - Perspective Calculations
-	glHint(GL_POLYGON_SMOOTH_HINT, GL_FASTEST);			// Fastest - less expensive - Perspective Calculations
-
-	printf("1 check graphics Window!\n");
+	initOpenGL();
 
 	// if there is an external polyhedron definition for better-defined airplanes, let's use it.
 
@@ -1932,6 +1892,78 @@ int main()
 
 	return 0;
 } // end main function
+
+// ####################################################################################################################
+// Function initSDL
+// ####################################################################################################################
+void initSDL()
+{
+	// code to start SDL graphics system: 
+	//==========================|SDL CODE BLOCK 2|=========================
+	// Initialize SDL 
+
+	if (SDL_Init(SDL_INIT_VIDEO) != 0)
+	{
+		printf("Unable to initialize SDL: %s\n", SDL_GetError());
+		getchar();
+	}
+
+	// Enable double-buffering
+	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+
+	// Initialize the screen / window 
+	window = SDL_CreateWindow("FlightCraft_3D (GL) - by Simon Hasur",
+							  SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+							  WIDTH, HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+	if (window == NULL)
+	{
+		printf("Couldn't create window.");
+		SDL_Quit();
+		exit(2);
+	}
+	printf("Created window\n");
+
+	// Create context
+	context = SDL_GL_CreateContext(window);
+	if (context == NULL)
+	{
+		printf("OpenGL context could not be created! SDL Error: %s\n", SDL_GetError());
+		SDL_Quit();
+		exit(1);
+	}
+
+	screen = SDL_GetWindowSurface(window);
+	printf("Set global screen variable by calling SDL_GetWindowSurface\n");
+
+	if (!screen)
+	{
+		printf("Couldn't set %dx%d GL video mode: %s\n", WIDTH,
+			   HEIGHT, SDL_GetError());
+		SDL_Quit();
+		exit(2);
+	}
+	SDL_UpdateWindowSurface(window);
+} // end initSDL function
+
+// ####################################################################################################################
+// Function initOpenGL
+// ####################################################################################################################
+void initOpenGL()
+{
+	glEnable(GL_DEPTH_TEST); // activate hidden_surface_removal in OpenGL.
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_BLEND);
+
+	// SET SOME GL OPTIONS FOR LEAST PRECISION, SINCE THIS IS NOT A GRAPHICS PROGRAM... 
+	// WE NEED COMPUTER POWER FOR PHYSICS CALCS MORE 
+	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST); // Fastest - less expensive - Perspective Calculations
+	glHint(GL_POLYGON_SMOOTH_HINT, GL_FASTEST);			// Fastest - less expensive - Perspective Calculations
+
+	printf("1 check graphics Window!\n");
+} // end initOpenGL function
 
 // ####################################################################################################################
 // Function xclearpixboard
