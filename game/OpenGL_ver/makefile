@@ -1,5 +1,5 @@
 compila: 
-	gcc -o a.out main.c  -lm -lSDL -lGL -lGLU  
+	gcc -o main main.c  -lm -lSDL2 -lGL -lGLU  
 
 
 
