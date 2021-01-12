@@ -1,0 +1,80 @@
+Translations.txt 
+The following are translations from comments, written in Italian, in the original code.
+These translations were generated using Google Translate.
+
+posizione telecamera vituale 
+virtual camera position
+
+versori dei 3 assi della telecamera virtuale 
+versors of the 3 axes of the virtual camera
+
+versori dei 3 assi del sistema di riferimento rispetto cui sono dati i vertici dello aeroplano 
+versors of the 3 axes of the reference system with respect to which the vertices of the airplane are given
+
+AEREO: DEFINIZIONE DEI VERTICI 
+PLANE: DEFINITION OF THE VERTEXES
+
+scatola 
+box 
+
+chi sono i 2 punti estremi delle linee da disegnare? 
+who are the 2 extreme points of the lines to draw?
+
+NOTA: estremi[ i-esima linea][quale punto e' l'estremo ] 
+NOTE: extremes [i-th line] [which point is the extreme]
+
+ovvio a cosa serve... 
+obvious what it's for ...
+
+CODINO alignment
+TAIL alignment
+
+per ora non lo usiamo 
+for now we don't use it
+
+3 angoli CHE INDICANO LA ORIENTAZIONE del sistema di riferimento della telecaera virtuale, per dire 
+3 angles THAT INDICATE THE ORIENTATION of the reference system of the virtual camera, so to speak
+
+3 angoli CHE INDICANO LA ORIENTAZIONE del sistema di riferimento dello aeroplano di questo game 
+3 angles THAT INDICATE THE ORIENTATION of the reference system of the airplane of this game
+
+uno step di simulazione che da' un risultato non troppo disastroso.
+a simulation step that gives a not too disastrous result.
+
+idem
+ditto 
+
+scenario inquadrature 3D
+3D shot scenery
+
+LE COORDINATE DEI PUNTI DELLA PISTA, NEL SISTEMA DI RIFERIMENTO DEL PARACADUTISTA
+THE COORDINATES OF THE RUNWAY POINTS, IN THE PARACHUTIST'S REFERENCE SYSTEM
+
+test asse perpendiclare allo 'schermo' grafica 3D:
+test axis perpendicular to the 3D graphics 'screen':
+
+3 ASSI DELLO SPAZIO CARTESIANO... COSI' SI CAPISCE DOVE STANNO LE COSE
+3 AXES OF CARTESIAN SPACE ... SO YOU KNOW WHERE THINGS ARE
+
+TRIANGOLO 1 
+TRIANGLE 1
+
+calcola lecoordinate di questi 3 punti nel sistema P-Q-R 
+calculates the coordinates of these 3 points in the P-Q-R system
+
+DISEGNA IL TERRENO IN MODO ALGORITMICO, UNA GRIGILIA RETTANGOLARE COME AL SOLITO, 'REDERING' WIREFRAME O A TRINGOLI RIPIENI
+DRAW THE GROUND IN AN ALGORITHMIC WAY, A RECTANGULAR GRAY AS USUAL, 'REDERING' WIREFRAME OR FILLED TRINGLES
+
+escamotage 
+trick 
+
+calcola lecoordinate di questi 3 punti nel sistema P-Q-R del paracadutista/pilota 
+calculates the coordinates of these 3 points in the parachutist / pilot's P-Q-R system
+
+DISEGNA SOLO LO AEREO... GRAFICA VETTORIALE BELLO SEMPLICE...
+DRAW ONLY THE PLANE ... BEAUTIFUL SIMPLE VECTOR GRAPHICS ...
+
+estremo 1
+extreme 1
+
+

@@ -1,0 +1,7 @@
+Notes.txt 
+
+The c and v keys, which rotate the viewpoint around the plane, only appear to work when view = 0
+The r and f keys, which also rotate the viewpoint around the plane, only appear to work when view = 0.
+
+It appears that the facets on the plane are made up of triangles, hence the variables 
+col_tris (which hold the airplane's colors)
