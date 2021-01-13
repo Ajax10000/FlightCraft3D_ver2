@@ -95,3 +95,6 @@ read file and check how many numbers there are:
 
 N.B.: numeri separati da spazi o da a-capo. Con virgole o altro si blocca. 
 N.B.: numbers separated by spaces or by a-line. With commas or other it blocks.
+
+SEMBRA TUTTO OK
+EVERYTHING SEEMS OK
