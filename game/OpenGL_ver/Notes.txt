@@ -5,3 +5,78 @@ The r and f keys, which also rotate the viewpoint around the plane, only appear 
 
 It appears that the facets on the plane are made up of triangles, hence the variables 
 col_tris (which hold the airplane's colors)
+Note that the author loads data into col_tris from a file named "facecolors.txt". 
+So this implies to me that the faces (facets?) are made up of triangles, and each triangle has a color 
+specified in col_tris.
+
+The author refers to global variables as "extern" values or "extern" variables. See functions 
+projectile_launch, mat3x3_mult, inv, load_textures_wOpenGL, and load_textures96x96_SEMITRANSPARENT_wOpenGL
+From projectile_launch: 
+    // "x is an extern variable!!! be careful!!" 
+
+From load_textures_wOpenGL (referring to variable textures_available):
+    textures_available = texn; // at left is extern... you know... .
+
+From load_textures96x96_SEMITRANSPARENT_wOpenGL:
+    textures_available++; // idem but on an extern variable... .
+
+From mat3x3_mult (referring to variable result_matrix):
+    result_matrix[im][jm] = sum; // EXTERN VALUE!!! It's an easy way to implement all this.
+
+Notes on global variables
+punti = points on plane
+L = angular momentum
+v = velocity 
+p = momentum
+MASS = mass of plane
+
+punti = points on plane (in centimeters?)
+From function main:
+	for (i = 0; i < NVERTEXES; i++)
+	{
+		tmp[i][0] = 0.01 * gloPunti[i][0]; // from centimeters to meters (x/100)
+		tmp[i][1] = 0.01 * gloPunti[i][1];
+		tmp[i][2] = 0.01 * gloPunti[i][2];
+	}
+
+p = momentum, defined in physics as mass x velocity
+h (a local variable defined in function main) = simulation step
+From function main:
+		// momentum p (linear quantity)
+		p[0] = MASS * v[0];
+		p[1] = MASS * v[1];
+		p[2] = MASS * v[2];
+
+		p[0] = p[0] + Fcm[0] * h;
+		p[1] = p[1] + Fcm[1] * h; // we model gravity as a force given by: g*MASS, downward 
+		p[2] = p[2] + Fcm[2] * h + g * MASS * h;
+
+L = angular momentum 
+h (a local variable defined in function main) = simulation step
+		L[0] = L[0] + torque_tot[0] * h;
+		L[1] = L[1] + torque_tot[1] * h;
+		L[2] = L[2] + torque_tot[2] * h;
+
+
+xp, yp, zp = location of plane 
+h (a local variable defined in function main) = simulation step
+From function main:
+        // location of plane = old location + (velocity vector)*(simulation step)
+		xp = xp + v[0] * h;
+		yp = yp + v[1] * h;
+		zp = zp + v[2] * h;
+
+Notes on Units
+From function main:
+	for (i = 0; i < NVERTEXES; i++)
+	{
+		tmp[i][0] = 0.01 * gloPunti[i][0]; // from centimeters to meters (x/100)
+		tmp[i][1] = 0.01 * gloPunti[i][1];
+		tmp[i][2] = 0.01 * gloPunti[i][2];
+	}
+
+	// IMPORTANT NOTE: 2 meters far from camera virtual 'lens' along it perpendiculat to it 
+	// towards screen, axes are each 1 meter long. use in an intelligent way the measures... 
+
+From function make_inertia_tensor:
+    double std_vxmass = 10.0;			 // 10 Kg
