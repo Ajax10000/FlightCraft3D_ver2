@@ -132,8 +132,13 @@ void initPoints(void);
 void initAirplaneColors(void);
 void initTrees(void);
 void initTerrain(void);
+void initPhysicsVars(void);
 void drawLogo(void);
 void drawAxes(void);
+void drawTerrain(void);
+void drawTrees(void);
+void loadAirplaneModel(void);
+void checkForPlaneCollision(void);
 
 // #                                                                                                                  #
 // # End function prototypes                                                                                          #
@@ -147,10 +152,22 @@ void drawAxes(void);
 #define WIDTH 480
 #define HEIGHT 320
 #define COLDEPTH 16
-SDL_Surface *screen;
-SDL_Event event;		   // for real-time interactivity functions provided by SDL library 
-SDL_Window *window = NULL; // New for SDL 2
-SDL_GLContext context;	   // New for SDL2
+
+// glo prefix to global variable names is supposed to remind you that it is a global variable.
+// Though I usually use "gl" to prefix global variables, in this case it might get confused with 
+// something relating to OpenGL, as most OpenGL functions start with "gl".
+
+// gloScreen is used only in function main
+SDL_Surface *gloScreen;
+
+// gloEvent is used only in function main
+SDL_Event gloEvent;		   // for real-time interactivity functions provided by SDL library 
+
+// gloWindow is used in functions initSDL and sdldisplay
+SDL_Window *gloWindow = NULL; // New for SDL 2
+
+// Set in function initSDL
+SDL_GLContext gloContext;	   // New for SDL2
 const GLdouble pi = 3.1415926535897932384626433832795;
 
 // low_graphics is used only in function main.
@@ -165,10 +182,10 @@ double best_dt_ms = 10.0;
 // texture_ids is defined but not used
 int texture_ids[100];
 
-// textures_available indicates how many textures are loaded or randomly-generated
+// gloTexturesAvailable indicates how many textures are loaded or randomly-generated
 // Set in function load_textures_wOpenGL and load_textures96x96_SEMITRANSPARENT_wOpenGL.
 // Used (read) in functions main, load_textures96x96_SEMITRANSPARENT_wOpenGL, and load_maptex_from_bitmap.
-int textures_available = 0; 
+int gloTexturesAvailable = 0; 
 
 // MAG is used in function xclearpixboard.
 // MAG can be increased by 10 by the user at runtime by clicking on the 't' key.
@@ -731,13 +748,15 @@ int main()
 
 	xclearpixboard(WIDTH, HEIGHT);
 
+	// initTerrain initializes global variable terrain1 with random values
 	initTerrain();
 
+	// initAirplaneColors initializes global variable col_tris with random values
 	initAirplaneColors();
 
 	// load textures in
 	load_textures_wOpenGL(); 
-	tree_texture_ID_bounds[0] = textures_available; // at what ID do tree textures begin (and end also...)
+	tree_texture_ID_bounds[0] = gloTexturesAvailable; // at what ID do tree textures begin (and end also...)
 
 	// ditto but with "bitmap" image files with alpha value for transparency information on each pixel... 
 	// this is mainly used for drawing trees in a quick, nice and simple way.
@@ -747,6 +766,7 @@ int main()
 	// of available textures is inserted... .
 	load_maptex_from_bitmap("terrain_data/maptex_300x300.bmp"); 
 
+	// initTrees initializes global variable gloTrees
 	initTrees();
 
 	if (low_graphics == 0)
@@ -754,60 +774,12 @@ int main()
 		addsmoke_wsim(xp, yp, zp, h, 1); // commented out for testing
 	}
 
-	make_inertia_tensor(NVERTEXES);
+	// initPhysicsVars will set global variables It_init, p, L, It_initINV, Fcm and torque_tot
+	initPhysicsVars();
 
-	// momentum p (linear quantity)
-	// momentum = mass x velocity
-	p[0] = MASS * v[0];
-	p[1] = MASS * v[1];
-	p[2] = MASS * v[2];
+	// loadAirplaneModel sets global variables gloPunti, 
+	loadAirplaneModel();
 
-	// angular momentum (angular/rotational quantity)
-	L[0] = It_now[0][0] * w[0] + It_now[0][1] * w[1] + It_now[0][2] * w[2];
-	L[1] = It_now[1][0] * w[0] + It_now[1][1] * w[1] + It_now[1][2] * w[2];
-	L[2] = It_now[2][0] * w[0] + It_now[2][1] * w[1] + It_now[2][2] * w[2];
-
-	inv(It_init); // puts the inverse matrix into the "gloResultMatrix" global variable. 
-
-	// we copy it (the gloResultMatrix) into "R_INV"... 
-	for (j = 0; j < 3; j++)
-	{
-		for (i = 0; i < 3; i++)
-		{
-			It_initINV[j][i] = gloResultMatrix[j][i];
-		}
-	}
-
-	// reset forces to 0.0 
-	for (i = 0; i < 3; i++)
-	{
-		Fcm[i] = 0.0;
-		torque_tot[i] = 0.0;
-	}
-
-	for (j = 0; j < 3; j++)
-	{ 
-		printf("CHECK Inertia tensor: %f  %f  %f \n", It_init[j][0], It_init[j][1], It_init[j][2]);
-	}
-
-	for (j = 0; j < 3; j++)
-	{ 
-		printf("CHECK its inverse   : %f  %f  %f \n", It_initINV[j][0], It_initINV[j][1], It_initINV[j][2]);
-	}
-
-	printf("TRYING TO IMPORT VERTEX LIST OF 3D MODEL\n");
-	FILE *FilePtr; // pointer to input file 
-
-	FilePtr = fopen("input/vertexes.txt", "r");
-	if (FilePtr < 0)
-	{
-		printf("NO FILE TO IMPORT VERTEX LIST...USING DEFAULT...\n");
-		fclose(FilePtr);
-	}
-	else
-	{
-		import_airplane_polyheron();
-	}
 	//============================"INITIALISATION" PROCEDURES DONE=============
 
 	while (cycles < 50000)
@@ -850,7 +822,7 @@ int main()
 		}
 
 		// ===========PHYSICS PROCEDURE=============
-		// SEMBRA TUTTO OK 
+		// Sembra tutto OK / Everything seems OK
 		// now calculate axes in their new 'orientation', using the orientation matrix.
 
 		//R:
@@ -1110,27 +1082,7 @@ int main()
 		//=================DONE UPDATE OF ORIENTATION MATRIX and intertia tensor=================
 		//====END PHYSICALLY SIMULATED UPDATE OF AIRPLANE POS AND ROTATION, ORIENTAION=====
 
-		// Detecting and resolving collision with ground
-		// simplified collision with ground
-		for (i = 0; i < NVERTEXES; i++)
-		{
-			// AIRPLANE...
-			// coordinates of plane's vertices in the "Game World"'s reference frame.
-			double xw, yw, zw; 
-			xw = gloPunti[i][0] * axis_1[0] + gloPunti[i][1] * axis_2[0] + gloPunti[i][2] * axis_3[0];
-			yw = gloPunti[i][0] * axis_1[1] + gloPunti[i][1] * axis_2[1] + gloPunti[i][2] * axis_3[1];
-			zw = gloPunti[i][0] * axis_1[2] + gloPunti[i][1] * axis_2[2] + gloPunti[i][2] * axis_3[2];
-
-			double he_id = say_terrain_height(&terrain1, xp + xw, yp + yw);
-			if (zp + zw < he_id)
-			{ 
-				// just as any vertex of airplane touches ground and tries to go below 
-				body_rebounce(xw, yw, zw, terrain1.auxnormal[0], terrain1.auxnormal[1], terrain1.auxnormal[2], 0.06, 0);
-				printf("TOUCH GND \n");
-				zp = zp + (he_id - zp - zw);
-				// check is normal < 0 and eventually calculated and assigns new velocities and so.
-			}
-		}
+		checkForPlaneCollision();
 
 		// representation and graphics perocedure
 		xclearpixboard(WIDTH, HEIGHT); // CANCELLA SCHERMATA/ LAVAGNA.
@@ -1247,256 +1199,9 @@ int main()
 
 		drawLogo();
 
-		// 3 assi dello spazio cartesiano, cosi' si capisce dove stanno le cose
-		// 3 axes of cartesian space, so you know where things are
-		// Triangolo 1 / Triangle 1
-		float Xo[5], Yo[5], Zo[5], x_c[5], y_c[5], z_c[5];
-		float GPunit;
-		int xi, yi, Xi, Yi;
+		drawTerrain();
 
-		GPunit = terrain1.GPunit;
-
-		Xo[3] = xp;
-		Yo[3] = yp;
-		Zo[3] = zp;
-
-		Xo[0] = xp + 10 * Pa[0];
-		Yo[0] = yp + 10 * Pa[1];
-		Zo[0] = zp + 10 * Pa[2];
-
-		Xo[1] = xp + 10 * Qa[0];
-		Yo[1] = yp + 10 * Qa[1];
-		Zo[1] = zp + 10 * Qa[2];
-
-		Xo[2] = xp + 10 * Ra[0];
-		Yo[2] = yp + 10 * Ra[1];
-		Zo[2] = zp + 10 * Ra[2];
-
-		// calcola lecoordinate di questi 3 punti nel sistema P-Q-R 
-		// calculates the coordinates of these 3 points in the P-Q-R system
-		for (i = 0; i < 4; i++)
-		{
-			x_c[i] = P[0] * (Xo[i] - x) + P[1] * (Yo[i] - y) + P[2] * (Zo[i] - z);
-			y_c[i] = Q[0] * (Xo[i] - x) + Q[1] * (Yo[i] - y) + Q[2] * (Zo[i] - z);
-			z_c[i] = R[0] * (Xo[i] - x) + R[1] * (Yo[i] - y) + R[2] * (Zo[i] - z);
-		}
-
-		for (i = 0; i < 3; i++)
-		{
-			color[0] = i / 3.0;
-			color[1] = i / 3.0;
-			color[2] = i / 3.0;
-
-			xaddline_persp(x_c[i], y_c[i], -z_c[i], x_c[3], y_c[3], -z_c[3], color, WIDTH, HEIGHT);
-		}
-
-		// DISEGNA IL TERRENO IN MODO ALGORITMICO, UNA GRIGILIA RETTANGOLARE COME AL SOLITO,
-		// 'REDERING' WIREFRAME O A TRINGOLI RIPIENI 
-		// DRAW THE GROUND IN AN ALGORITHMIC WAY, A RECTANGULAR GRAY AS USUAL, 
-		// 'RENDERING' WIREFRAME OR FILLED TRINGLES
-		// 
-		// Draw only near triangles, in order to avoid overloading graphics computational heavyness 
-		int lv = 6;
-
-		Xi = floor(xp / (terrain1.GPunit));
-		Yi = floor(yp / (terrain1.GPunit));
-
-		lv = 12;
-
-		if (low_graphics == 1)
-		{
-			lv = 6;
-		}
-
-		for (xi = Xi - lv; xi < Xi + lv; xi = xi + 1)
-		{
-			for (yi = Yi - lv; yi < Yi + lv; yi = yi + 1)
-			{
-				// Triangolo 1 / Triangle 1
-				Xo[0] = GPunit * xi;
-				Yo[0] = GPunit * yi;
-				Zo[0] = 0.0;
-
-				Xo[1] = GPunit * (xi + 1);
-				Yo[1] = GPunit * (yi);
-				Zo[1] = 0.0;
-
-				Xo[2] = GPunit * (xi);
-				Yo[2] = GPunit * (yi + 1);
-				Zo[2] = 0.0;
-
-				Xo[3] = GPunit * (xi + 1);
-				Yo[3] = GPunit * (yi + 1);
-				Zo[3] = 0.0;
-
-				// default color
-				color[0] = 0.4;
-				color[1] = 0.4;
-				color[2] = 0.4;
-
-				// failsafe variable preset 
-				Xo[4] = 1;
-				Yo[4] = 1;
-				Zo[4] = 1;
-
-				if (Xi + lv < terrain1.map_size && Yi + lv < terrain1.map_size)
-				{
-					// escamotage (trick) for a 0-terrain outside sampled limit. but sampled within, good 
-					Zo[0] = GPunit * terrain1.shmap[xi][yi];		 // the height sample 
-					Zo[1] = GPunit * terrain1.shmap[xi + 1][yi];	 // the height sample 
-					Zo[2] = GPunit * terrain1.shmap[xi][yi + 1];	 // the height sample 
-					Zo[3] = GPunit * terrain1.shmap[xi + 1][yi + 1]; // the height sample 
-
-					color[0] = terrain1.scol[xi][yi][0];
-					color[1] = terrain1.scol[xi][yi][1];
-					color[2] = terrain1.scol[xi][yi][2];
-
-					// now prepare a freshly calculated normal vector and then we draw it. 
-					// it's fundamental that normals are ok for rebounce 
-					say_terrain_height(&terrain1, Xo[0] + 0.01, Yo[0] + 0.01); // check what is the local normal 
-
-					Xo[4] = Xo[0] + 20.0 * terrain1.auxnormal[0];
-					Yo[4] = Yo[0] + 20.0 * terrain1.auxnormal[1];
-					Zo[4] = Zo[0] + 20.0 * terrain1.auxnormal[2]; // the height sample 
-				}
-
-				// calcola lecoordinate di questi 3 punti nel sistema P-Q-R del paracadutista/pilota 
-				// calculates the coordinates of these 3 points in the parachutist / pilot's P-Q-R system
-				for (i = 0; i < 5; i++)
-				{
-					x_c[i] = P[0] * (Xo[i] - x) + P[1] * (Yo[i] - y) + P[2] * (Zo[i] - z);
-					y_c[i] = Q[0] * (Xo[i] - x) + Q[1] * (Yo[i] - y) + Q[2] * (Zo[i] - z);
-					z_c[i] = R[0] * (Xo[i] - x) + R[1] * (Yo[i] - y) + R[2] * (Zo[i] - z);
-				}
-
-				xaddline_persp(x_c[0], y_c[0], -z_c[0],
-							   x_c[4], y_c[4], -z_c[4], color, WIDTH, HEIGHT);
-
-				if (xi >= 0 && yi >= 0)
-				{
-					// Triangolo 1 / Triangle 1
-					GLaddftriang_perspTEXTURED(x_c[0], y_c[0], z_c[0],
-											   x_c[1], y_c[1], z_c[1],
-											   x_c[2], y_c[2], z_c[2],
-											   texid[terrain1.map_texture_indexes[xi][yi]], texcoords_gnd_tri1,
-											   color, WIDTH, HEIGHT);
-
-					// Triangolo 2 / Triangle 2 (change color a little bit)
-					color[1] = color[1] + 0.1; // draw with slightly different color... 
-
-					GLaddftriang_perspTEXTURED(x_c[1], y_c[1], z_c[1],
-											   x_c[2], y_c[2], z_c[2],
-											   x_c[3], y_c[3], z_c[3],
-											   texid[terrain1.map_texture_indexes[xi][yi]], texcoords_gnd_tri2,
-											   color, WIDTH, HEIGHT);
-				}
-			}
-		}
-
-		//trees
-		glEnable(GL_TEXTURE_2D);
-		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-
-		for (k = 0; k < NTREES; k++)
-		{
-			float xctree, yctree, zctree, sctree;
-
-			xctree = gloTrees[k][0]; // x of conventinal geometric center
-			yctree = gloTrees[k][1]; // y of conventinal geometric center
-
-			if ((xctree < x + 1000.0 && xctree > x - 1000.0) && (yctree < y + 1000.0 && yctree > y - 1000.0))
-			{
-				// draw only trees that are not too far away
-				// z of conventinal geometric center. this was pre-calculated so that trees 
-				// stay nicely on the terrain surface.
-				zctree = gloTrees[k][2]; 
-
-				// magnification value: how much to magnify original (1_unit x 1_unit) square?.
-				sctree = gloTrees[k][3]; 
-
-				Xo[0] = xctree - sctree * 0.9;
-				Yo[0] = yctree;
-				Zo[0] = zctree - treeR1 + sctree * 2.0;
-
-				Xo[1] = xctree + sctree * 0.9;
-				Yo[1] = yctree;
-				Zo[1] = zctree - treeR1 + sctree * 2.0;
-
-				Xo[2] = xctree + sctree * 0.9;
-				Yo[2] = yctree;
-				Zo[2] = zctree - treeR1;
-
-				Xo[3] = xctree - sctree * 0.9;
-				Yo[3] = yctree;
-				Zo[3] = zctree - treeR1;
-
-				Xo[4] = xctree;
-				Yo[4] = yctree;
-				Zo[4] = zctree + 2.0;
-
-				glBindTexture(GL_TEXTURE_2D, texid[(int)gloTrees[k][4]]);
-
-				// calcola lecoordinate di questi 3 punti nel sistema P-Q-R del paracadutista/pilota 
-				// calculates the coordinates of these 3 points in the parachutist / pilot's P-Q-R system
-				for (i = 0; i < 5; i++)
-				{
-					x_c[i] = P[0] * (Xo[i] - x) + P[1] * (Yo[i] - y) + P[2] * (Zo[i] - z);
-					y_c[i] = Q[0] * (Xo[i] - x) + Q[1] * (Yo[i] - y) + Q[2] * (Zo[i] - z);
-					z_c[i] = R[0] * (Xo[i] - x) + R[1] * (Yo[i] - y) + R[2] * (Zo[i] - z);
-				}
-
-				glBegin(GL_QUADS);
-					glTexCoord2f(0.0, 0.0);
-					glVertex3f(x_c[0], y_c[0], z_c[0]); // point 1
-					glTexCoord2f(1.0, 0.0);
-					glVertex3f(x_c[1], y_c[1], z_c[1]); // point 2
-					glTexCoord2f(1.0, 1.0);
-					glVertex3f(x_c[2], y_c[2], z_c[2]); // point 3
-					glTexCoord2f(0.0, 1.0);
-					glVertex3f(x_c[3], y_c[3], z_c[3]); // point 4
-				glEnd();
-
-				// change these coordinates:
-				Xo[0] = xctree;
-				Yo[0] = yctree - sctree * 0.9;
-				Zo[0] = zctree - treeR1 + sctree * 2.0;
-
-				Xo[1] = xctree;
-				Yo[1] = yctree + sctree * 0.9;
-				Zo[1] = zctree - treeR1 + sctree * 2.0;
-
-				Xo[2] = xctree;
-				Yo[2] = yctree + sctree * 0.9;
-				Zo[2] = zctree - treeR1;
-
-				Xo[3] = xctree;
-				Yo[3] = yctree - sctree * 0.9;
-				Zo[3] = zctree - treeR1;
-
-				// again this is to obtain coordinates in the virtual camera's reference frame.
-				// calcola lecoordinate di questi 3 punti nel sistema P-Q-R del paracadutista/pilota 
-				// calculates the coordinates of these 3 points in the parachutist / pilot's P-Q-R system
-				for (i = 0; i < 5; i++)
-				{
-					x_c[i] = P[0] * (Xo[i] - x) + P[1] * (Yo[i] - y) + P[2] * (Zo[i] - z);
-					y_c[i] = Q[0] * (Xo[i] - x) + Q[1] * (Yo[i] - y) + Q[2] * (Zo[i] - z);
-					z_c[i] = R[0] * (Xo[i] - x) + R[1] * (Yo[i] - y) + R[2] * (Zo[i] - z);
-				}
-
-				// finally, draw also this:
-				glBegin(GL_QUADS);
-					glTexCoord2f(0.0, 0.0);
-					glVertex3f(x_c[0], y_c[0], z_c[0]); // point 1
-					glTexCoord2f(1.0, 0.0);
-					glVertex3f(x_c[1], y_c[1], z_c[1]); // point 2
-					glTexCoord2f(1.0, 1.0);
-					glVertex3f(x_c[2], y_c[2], z_c[2]); // point 3
-					glTexCoord2f(0.0, 1.0);
-					glVertex3f(x_c[3], y_c[3], z_c[3]); // point 4
-				glEnd();
-			}
-		}
-		glDisable(GL_TEXTURE_2D);
+		drawTrees();
 
 		if (low_graphics == 0)
 		{
@@ -1576,7 +1281,7 @@ int main()
 			// Display status/debugging information
 			printf("GAME TIME [sec] =  %f \n", cycles * h);
 			printf("GOING ON...game cycle %i : plane position: x = %f, y = %f, z = %f \n theta = %3.2f, fi = %f3.2\n", cycles, x, y, z, theta, fi);
-			printf("Xi =  %i , Yi = %i \n", Xi, Yi);
+			// printf("Xi =  %i , Yi = %i \n", Xi, Yi); // Xi and Yi were moved to function drawTerrain
 
 			for (j = 0; j < 10; j++)
 			{
@@ -1592,42 +1297,42 @@ int main()
 		cycles++;
 
 		//===============================|SDL's real-time interactivity|=============================
-		while (SDL_PollEvent(&event))
+		while (SDL_PollEvent(&gloEvent))
 		{ 
 			// Loop until there are no events left on the queue 
-			if (event.type == SDL_KEYDOWN)
+			if (gloEvent.type == SDL_KEYDOWN)
 			{ 
 				// condition: keypress event detected 
-				if (event.key.keysym.sym == SDLK_ESCAPE)
+				if (gloEvent.key.keysym.sym == SDLK_ESCAPE)
 				{
 					printf("ESC KEY PRESSED: PROGRAM TERMINATED\n");
 					SDL_Quit();
 					exit(1); 
 				}
 
-				if (event.key.keysym.sym == SDLK_c)
+				if (gloEvent.key.keysym.sym == SDLK_c)
 				{
 					turnch = -1.0; 
 				}
-				if (event.key.keysym.sym == SDLK_v)
+				if (gloEvent.key.keysym.sym == SDLK_v)
 				{
 					turnch = 1.0; 
 				}
 
-				if (event.key.keysym.sym == SDLK_r)
+				if (gloEvent.key.keysym.sym == SDLK_r)
 				{
 					turncv = 1.0; 
 				}
-				if (event.key.keysym.sym == SDLK_f)
+				if (gloEvent.key.keysym.sym == SDLK_f)
 				{
 					turncv = -1.0; 
 				}
 
-				if (event.key.keysym.sym == SDLK_9)
+				if (gloEvent.key.keysym.sym == SDLK_9)
 				{
 					Pforce = Pforce + 5000.0; 
 				}
-				if (event.key.keysym.sym == SDLK_8)
+				if (gloEvent.key.keysym.sym == SDLK_8)
 				{
 					Pforce = Pforce - 4000.0; 
 					if (Pforce <= 0.0)
@@ -1636,7 +1341,7 @@ int main()
 					}
 				}
 
-				if (event.key.keysym.sym == SDLK_1)
+				if (gloEvent.key.keysym.sym == SDLK_1)
 				{
 					RR = RR - 2.0; 
 					if (view == 4)
@@ -1644,7 +1349,7 @@ int main()
 						x_cockpit_view = x_cockpit_view - 0.1;
 					}
 				}
-				if (event.key.keysym.sym == SDLK_2)
+				if (gloEvent.key.keysym.sym == SDLK_2)
 				{
 					RR = RR + 2.0;
 					if (view == 4)
@@ -1653,7 +1358,7 @@ int main()
 					}
 				}
 
-				if (event.key.keysym.sym == SDLK_3)
+				if (gloEvent.key.keysym.sym == SDLK_3)
 				{
 					y_cockpit_view = y_cockpit_view + 0.1;
 					if (y_cockpit_view > 2.0)
@@ -1661,7 +1366,7 @@ int main()
 						y_cockpit_view = -2.0;
 					}
 				}
-				if (event.key.keysym.sym == SDLK_4)
+				if (gloEvent.key.keysym.sym == SDLK_4)
 				{
 					z_cockpit_view = z_cockpit_view + 0.1;
 					if (z_cockpit_view > 2.0)
@@ -1670,11 +1375,11 @@ int main()
 					}
 				}
 
-				if (event.key.keysym.sym == SDLK_t)
+				if (gloEvent.key.keysym.sym == SDLK_t)
 				{
 					MAG = MAG + 10.0; 
 				}
-				if (event.key.keysym.sym == SDLK_i)
+				if (gloEvent.key.keysym.sym == SDLK_i)
 				{
 					FILE *FilePtr; // pointer to input file 
 
@@ -1692,17 +1397,17 @@ int main()
 					}
 				}
 
-				if (event.key.keysym.sym == SDLK_e)
+				if (gloEvent.key.keysym.sym == SDLK_e)
 				{
 					addfrantumation_wsim(20, 20, 20, h, 1);
 				}
 
-				if (event.key.keysym.sym == SDLK_m)
+				if (gloEvent.key.keysym.sym == SDLK_m)
 				{
 					low_graphics = 1; // LOW GRAPHICS MODE for slow computers 
 				}
 
-				if (event.key.keysym.sym == SDLK_o)
+				if (gloEvent.key.keysym.sym == SDLK_o)
 				{
 					view = view + 1; // change view
 					if (view == 5)
@@ -1711,7 +1416,7 @@ int main()
 					}
 				}
 
-				if (event.key.keysym.sym == SDLK_p)
+				if (gloEvent.key.keysym.sym == SDLK_p)
 				{
 					aboard = -1 * aboard;
 					x_pilot = xp;
@@ -1719,87 +1424,87 @@ int main()
 					RR = 1.5;
 				}
 
-				if (event.key.keysym.sym == SDLK_5)
+				if (gloEvent.key.keysym.sym == SDLK_5)
 				{
 
 					h = h - 0.002;
 				}
-				if (event.key.keysym.sym == SDLK_6)
+				if (gloEvent.key.keysym.sym == SDLK_6)
 				{
 					h = h + 0.001;
 				}
 
-				if (event.key.keysym.sym == SDLK_s)
+				if (gloEvent.key.keysym.sym == SDLK_s)
 				{
 					// velocity of plane's CM + velocity of projectile... rotation ignored.
 					projectile_launch(xp, yp, zp, v[0] + 100.0 * Pa[0], v[1] + 100.0 * Pa[1], v[2] + 100.0 * Pa[2], h, 1);
 				}
 
-				if (event.key.keysym.sym == SDLK_UP || event.key.keysym.sym == SDLK_w)
+				if (gloEvent.key.keysym.sym == SDLK_UP || gloEvent.key.keysym.sym == SDLK_w)
 				{
 					x_pilot = x_pilot - 2.0 * R[0];
 					y_pilot = y_pilot - 2.0 * R[1];
 
 					plane_down = 1;
 				}
-				if (event.key.keysym.sym == SDLK_DOWN || event.key.keysym.sym == SDLK_z)
+				if (gloEvent.key.keysym.sym == SDLK_DOWN || gloEvent.key.keysym.sym == SDLK_z)
 				{
 					plane_up = 1;
 				}
-				if (event.key.keysym.sym == SDLK_LEFT || event.key.keysym.sym == SDLK_a)
+				if (gloEvent.key.keysym.sym == SDLK_LEFT || gloEvent.key.keysym.sym == SDLK_a)
 				{
 					// test
 					plane_inclleft = 1;
 				}
-				if (event.key.keysym.sym == SDLK_RIGHT || event.key.keysym.sym == SDLK_d)
+				if (gloEvent.key.keysym.sym == SDLK_RIGHT || gloEvent.key.keysym.sym == SDLK_d)
 				{
 					// test
 					plane_inclright = 1;
 				}
 			} // end condition of if-keypress-is-detected 
 
-			if (event.type == SDL_KEYUP)
+			if (gloEvent.type == SDL_KEYUP)
 			{ 
 				// condition: key-RELEASE event detected 
-				if (event.key.keysym.sym == SDLK_c)
+				if (gloEvent.key.keysym.sym == SDLK_c)
 				{
 					turnch = 0.0; 
 				}
-				if (event.key.keysym.sym == SDLK_v)
+				if (gloEvent.key.keysym.sym == SDLK_v)
 				{
 					turnch = 0.0; 
 				}
 
-				if (event.key.keysym.sym == SDLK_r)
+				if (gloEvent.key.keysym.sym == SDLK_r)
 				{
 					turncv = 0.0; 
 				}
-				if (event.key.keysym.sym == SDLK_f)
+				if (gloEvent.key.keysym.sym == SDLK_f)
 				{
 					turncv = 0.0; 
 				}
 
-				if (event.key.keysym.sym == SDLK_DOWN || event.key.keysym.sym == SDLK_z)
+				if (gloEvent.key.keysym.sym == SDLK_DOWN || gloEvent.key.keysym.sym == SDLK_z)
 				{
 					plane_up = 0;
 				}
-				if (event.key.keysym.sym == SDLK_UP || event.key.keysym.sym == SDLK_w)
+				if (gloEvent.key.keysym.sym == SDLK_UP || gloEvent.key.keysym.sym == SDLK_w)
 				{
 					plane_down = 0;
 				}
 
-				if (event.key.keysym.sym == SDLK_LEFT || event.key.keysym.sym == SDLK_a)
+				if (gloEvent.key.keysym.sym == SDLK_LEFT || gloEvent.key.keysym.sym == SDLK_a)
 				{
 					plane_inclleft = 0;
 				}
-				if (event.key.keysym.sym == SDLK_RIGHT || event.key.keysym.sym == SDLK_d)
+				if (gloEvent.key.keysym.sym == SDLK_RIGHT || gloEvent.key.keysym.sym == SDLK_d)
 				{
 					plane_inclright = 0;
 				}
 			}
 
 			// extra case: if graphic window is closed, terminate program 
-			if (event.type == SDL_QUIT)
+			if (gloEvent.type == SDL_QUIT)
 			{ 
 				printf("GRAPHICS WINDOW CLOSED: PROGRAM TERMINATED\n");
 				SDL_Quit();
@@ -1840,10 +1545,10 @@ void initSDL()
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 
 	// Initialize the screen / window 
-	window = SDL_CreateWindow("FlightCraft_3D (GL) - by Simon Hasur",
+	gloWindow = SDL_CreateWindow("FlightCraft_3D (GL) - by Simon Hasur",
 							  SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
 							  WIDTH, HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
-	if (window == NULL)
+	if (gloWindow == NULL)
 	{
 		printf("Couldn't create window.");
 		SDL_Quit();
@@ -1852,25 +1557,25 @@ void initSDL()
 	printf("Created window\n");
 
 	// Create context
-	context = SDL_GL_CreateContext(window);
-	if (context == NULL)
+	gloContext = SDL_GL_CreateContext(gloWindow);
+	if (gloContext == NULL)
 	{
 		printf("OpenGL context could not be created! SDL Error: %s\n", SDL_GetError());
 		SDL_Quit();
 		exit(1);
 	}
 
-	screen = SDL_GetWindowSurface(window);
-	printf("Set global screen variable by calling SDL_GetWindowSurface\n");
+	gloScreen = SDL_GetWindowSurface(gloWindow);
+	printf("Set global gloScreen variable by calling SDL_GetWindowSurface\n");
 
-	if (!screen)
+	if (!gloScreen)
 	{
 		printf("Couldn't set %dx%d GL video mode: %s\n", WIDTH,
 			   HEIGHT, SDL_GetError());
 		SDL_Quit();
 		exit(2);
 	}
-	SDL_UpdateWindowSurface(window);
+	SDL_UpdateWindowSurface(gloWindow);
 } // end initSDL function
 
 // ####################################################################################################################
@@ -2078,6 +1783,61 @@ void initTerrain()
 } // end initTerrain function
 
 // ####################################################################################################################
+// Function initPhysicsVars 
+// ####################################################################################################################
+void initPhysicsVars()
+{
+	int i, j;
+
+	// make_inertia_tensor will set global variable It_init
+	make_inertia_tensor(NVERTEXES);
+
+	// momentum p (linear quantity)
+	// momentum = mass x velocity
+	//
+	// Note that since v is set to {0.0, 0.0, 0.0} when defined (i.e., 0 velocity), 
+	// the plane will initially have no momentum, hence the plane is falling when the game starts.
+	// The user can increase the force of the propeller (Pforce) by pressing the 9 key, but that 
+	// does not seem to affect the velocity variable v.
+	p[0] = MASS * v[0];
+	p[1] = MASS * v[1];
+	p[2] = MASS * v[2];
+
+	// angular momentum (angular/rotational quantity)
+	L[0] = It_now[0][0] * w[0] + It_now[0][1] * w[1] + It_now[0][2] * w[2];
+	L[1] = It_now[1][0] * w[0] + It_now[1][1] * w[1] + It_now[1][2] * w[2];
+	L[2] = It_now[2][0] * w[0] + It_now[2][1] * w[1] + It_now[2][2] * w[2];
+
+	inv(It_init); // puts the inverse matrix into the "gloResultMatrix" global variable. 
+
+	// we copy it (the gloResultMatrix) into "R_INV"... 
+	for (j = 0; j < 3; j++)
+	{
+		for (i = 0; i < 3; i++)
+		{
+			It_initINV[j][i] = gloResultMatrix[j][i];
+		}
+	}
+
+	// reset forces to 0.0 
+	for (i = 0; i < 3; i++)
+	{
+		Fcm[i] = 0.0;
+		torque_tot[i] = 0.0;
+	}
+
+	for (j = 0; j < 3; j++)
+	{ 
+		printf("CHECK Inertia tensor: %f  %f  %f \n", It_init[j][0], It_init[j][1], It_init[j][2]);
+	}
+
+	for (j = 0; j < 3; j++)
+	{ 
+		printf("CHECK its inverse   : %f  %f  %f \n", It_initINV[j][0], It_initINV[j][1], It_initINV[j][2]);
+	}
+} // end initPhysicsVars function
+
+// ####################################################################################################################
 // Function drawLogo draws the logo.
 // ####################################################################################################################
 void drawLogo()
@@ -2140,6 +1900,324 @@ void drawAxes()
 } // end drawAxes function
 
 // ####################################################################################################################
+// Function drawTrees
+// ####################################################################################################################
+void drawTrees()
+{
+	float Xo[5], Yo[5], Zo[5], x_c[5], y_c[5], z_c[5];
+	int i, k;
+
+	//trees
+	glEnable(GL_TEXTURE_2D);
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+
+	for (k = 0; k < NTREES; k++)
+	{
+		float xctree, yctree, zctree, sctree;
+
+		xctree = gloTrees[k][0]; // x of conventinal geometric center
+		yctree = gloTrees[k][1]; // y of conventinal geometric center
+
+		if ((xctree < x + 1000.0 && xctree > x - 1000.0) && (yctree < y + 1000.0 && yctree > y - 1000.0))
+		{
+			// draw only trees that are not too far away
+			// z of conventinal geometric center. this was pre-calculated so that trees 
+			// stay nicely on the terrain surface.
+			zctree = gloTrees[k][2]; 
+
+			// magnification value: how much to magnify original (1_unit x 1_unit) square?.
+			sctree = gloTrees[k][3]; 
+
+			Xo[0] = xctree - sctree * 0.9;
+			Yo[0] = yctree;
+			Zo[0] = zctree - treeR1 + sctree * 2.0;
+
+			Xo[1] = xctree + sctree * 0.9;
+			Yo[1] = yctree;
+			Zo[1] = zctree - treeR1 + sctree * 2.0;
+
+			Xo[2] = xctree + sctree * 0.9;
+			Yo[2] = yctree;
+			Zo[2] = zctree - treeR1;
+
+			Xo[3] = xctree - sctree * 0.9;
+			Yo[3] = yctree;
+			Zo[3] = zctree - treeR1;
+
+			Xo[4] = xctree;
+			Yo[4] = yctree;
+			Zo[4] = zctree + 2.0;
+
+			glBindTexture(GL_TEXTURE_2D, texid[(int)gloTrees[k][4]]);
+
+			// calcola lecoordinate di questi 3 punti nel sistema P-Q-R del paracadutista/pilota 
+			// calculates the coordinates of these 3 points in the parachutist / pilot's P-Q-R system
+			for (i = 0; i < 5; i++)
+			{
+				x_c[i] = P[0] * (Xo[i] - x) + P[1] * (Yo[i] - y) + P[2] * (Zo[i] - z);
+				y_c[i] = Q[0] * (Xo[i] - x) + Q[1] * (Yo[i] - y) + Q[2] * (Zo[i] - z);
+				z_c[i] = R[0] * (Xo[i] - x) + R[1] * (Yo[i] - y) + R[2] * (Zo[i] - z);
+			}
+
+			glBegin(GL_QUADS);
+				glTexCoord2f(0.0, 0.0);
+				glVertex3f(x_c[0], y_c[0], z_c[0]); // point 1
+				glTexCoord2f(1.0, 0.0);
+				glVertex3f(x_c[1], y_c[1], z_c[1]); // point 2
+				glTexCoord2f(1.0, 1.0);
+				glVertex3f(x_c[2], y_c[2], z_c[2]); // point 3
+				glTexCoord2f(0.0, 1.0);
+				glVertex3f(x_c[3], y_c[3], z_c[3]); // point 4
+			glEnd();
+
+			// change these coordinates:
+			Xo[0] = xctree;
+			Yo[0] = yctree - sctree * 0.9;
+			Zo[0] = zctree - treeR1 + sctree * 2.0;
+
+			Xo[1] = xctree;
+			Yo[1] = yctree + sctree * 0.9;
+			Zo[1] = zctree - treeR1 + sctree * 2.0;
+
+			Xo[2] = xctree;
+			Yo[2] = yctree + sctree * 0.9;
+			Zo[2] = zctree - treeR1;
+
+			Xo[3] = xctree;
+			Yo[3] = yctree - sctree * 0.9;
+			Zo[3] = zctree - treeR1;
+
+			// again this is to obtain coordinates in the virtual camera's reference frame.
+			// calcola lecoordinate di questi 3 punti nel sistema P-Q-R del paracadutista/pilota 
+			// calculates the coordinates of these 3 points in the parachutist / pilot's P-Q-R system
+			for (i = 0; i < 5; i++)
+			{
+				x_c[i] = P[0] * (Xo[i] - x) + P[1] * (Yo[i] - y) + P[2] * (Zo[i] - z);
+				y_c[i] = Q[0] * (Xo[i] - x) + Q[1] * (Yo[i] - y) + Q[2] * (Zo[i] - z);
+				z_c[i] = R[0] * (Xo[i] - x) + R[1] * (Yo[i] - y) + R[2] * (Zo[i] - z);
+			}
+
+			// finally, draw also this:
+			glBegin(GL_QUADS);
+				glTexCoord2f(0.0, 0.0);
+				glVertex3f(x_c[0], y_c[0], z_c[0]); // point 1
+				glTexCoord2f(1.0, 0.0);
+				glVertex3f(x_c[1], y_c[1], z_c[1]); // point 2
+				glTexCoord2f(1.0, 1.0);
+				glVertex3f(x_c[2], y_c[2], z_c[2]); // point 3
+				glTexCoord2f(0.0, 1.0);
+				glVertex3f(x_c[3], y_c[3], z_c[3]); // point 4
+			glEnd();
+		}
+	}
+	glDisable(GL_TEXTURE_2D);
+} // end drawTrees function
+
+// ####################################################################################################################
+// Function drawTerrain
+// ####################################################################################################################
+void drawTerrain() {
+	float color[4] = {0.0, 0.0, 0.0, 1.0};
+	int i;
+
+	// 3 assi dello spazio cartesiano, cosi' si capisce dove stanno le cose
+	// 3 axes of cartesian space, so you know where things are
+	// Triangolo 1 / Triangle 1
+	float Xo[5], Yo[5], Zo[5], x_c[5], y_c[5], z_c[5];
+	float GPunit;
+	int xi, yi, Xi, Yi;
+
+	GPunit = terrain1.GPunit;
+
+	Xo[3] = xp;
+	Yo[3] = yp;
+	Zo[3] = zp;
+
+	Xo[0] = xp + 10 * Pa[0];
+	Yo[0] = yp + 10 * Pa[1];
+	Zo[0] = zp + 10 * Pa[2];
+
+	Xo[1] = xp + 10 * Qa[0];
+	Yo[1] = yp + 10 * Qa[1];
+	Zo[1] = zp + 10 * Qa[2];
+
+	Xo[2] = xp + 10 * Ra[0];
+	Yo[2] = yp + 10 * Ra[1];
+	Zo[2] = zp + 10 * Ra[2];
+
+	// calcola lecoordinate di questi 3 punti nel sistema P-Q-R 
+	// calculates the coordinates of these 3 points in the P-Q-R system
+	for (i = 0; i < 4; i++)
+	{
+		x_c[i] = P[0] * (Xo[i] - x) + P[1] * (Yo[i] - y) + P[2] * (Zo[i] - z);
+		y_c[i] = Q[0] * (Xo[i] - x) + Q[1] * (Yo[i] - y) + Q[2] * (Zo[i] - z);
+		z_c[i] = R[0] * (Xo[i] - x) + R[1] * (Yo[i] - y) + R[2] * (Zo[i] - z);
+	}
+
+	for (i = 0; i < 3; i++)
+	{
+		color[0] = i / 3.0;
+		color[1] = i / 3.0;
+		color[2] = i / 3.0;
+
+		xaddline_persp(x_c[i], y_c[i], -z_c[i], x_c[3], y_c[3], -z_c[3], color, WIDTH, HEIGHT);
+	}
+
+	// DISEGNA IL TERRENO IN MODO ALGORITMICO, UNA GRIGILIA RETTANGOLARE COME AL SOLITO,
+	// 'REDERING' WIREFRAME O A TRINGOLI RIPIENI 
+	// DRAW THE GROUND IN AN ALGORITHMIC WAY, A RECTANGULAR GRAY AS USUAL, 
+	// 'RENDERING' WIREFRAME OR FILLED TRINGLES
+	// 
+	// Draw only near triangles, in order to avoid overloading graphics computational heavyness 
+	int lv = 6;
+
+	Xi = floor(xp / (terrain1.GPunit));
+	Yi = floor(yp / (terrain1.GPunit));
+
+	lv = 12;
+
+	if (low_graphics == 1)
+	{
+		lv = 6;
+	}
+
+	for (xi = Xi - lv; xi < Xi + lv; xi = xi + 1)
+	{
+		for (yi = Yi - lv; yi < Yi + lv; yi = yi + 1)
+		{
+			// Triangolo 1 / Triangle 1
+			Xo[0] = GPunit * xi;
+			Yo[0] = GPunit * yi;
+			Zo[0] = 0.0;
+
+			Xo[1] = GPunit * (xi + 1);
+			Yo[1] = GPunit * (yi);
+			Zo[1] = 0.0;
+
+			Xo[2] = GPunit * (xi);
+			Yo[2] = GPunit * (yi + 1);
+			Zo[2] = 0.0;
+
+			Xo[3] = GPunit * (xi + 1);
+			Yo[3] = GPunit * (yi + 1);
+			Zo[3] = 0.0;
+
+			// default color
+			color[0] = 0.4;
+			color[1] = 0.4;
+			color[2] = 0.4;
+
+			// failsafe variable preset 
+			Xo[4] = 1;
+			Yo[4] = 1;
+			Zo[4] = 1;
+
+			if (Xi + lv < terrain1.map_size && Yi + lv < terrain1.map_size)
+			{
+				// escamotage (trick) for a 0-terrain outside sampled limit. but sampled within, good 
+				Zo[0] = GPunit * terrain1.shmap[xi][yi];		 // the height sample 
+				Zo[1] = GPunit * terrain1.shmap[xi + 1][yi];	 // the height sample 
+				Zo[2] = GPunit * terrain1.shmap[xi][yi + 1];	 // the height sample 
+				Zo[3] = GPunit * terrain1.shmap[xi + 1][yi + 1]; // the height sample 
+
+				color[0] = terrain1.scol[xi][yi][0];
+				color[1] = terrain1.scol[xi][yi][1];
+				color[2] = terrain1.scol[xi][yi][2];
+
+				// now prepare a freshly calculated normal vector and then we draw it. 
+				// it's fundamental that normals are ok for rebounce 
+				say_terrain_height(&terrain1, Xo[0] + 0.01, Yo[0] + 0.01); // check what is the local normal 
+
+				Xo[4] = Xo[0] + 20.0 * terrain1.auxnormal[0];
+				Yo[4] = Yo[0] + 20.0 * terrain1.auxnormal[1];
+				Zo[4] = Zo[0] + 20.0 * terrain1.auxnormal[2]; // the height sample 
+			}
+
+			// calcola lecoordinate di questi 3 punti nel sistema P-Q-R del paracadutista/pilota 
+			// calculates the coordinates of these 3 points in the parachutist / pilot's P-Q-R system
+			for (i = 0; i < 5; i++)
+			{
+				x_c[i] = P[0] * (Xo[i] - x) + P[1] * (Yo[i] - y) + P[2] * (Zo[i] - z);
+				y_c[i] = Q[0] * (Xo[i] - x) + Q[1] * (Yo[i] - y) + Q[2] * (Zo[i] - z);
+				z_c[i] = R[0] * (Xo[i] - x) + R[1] * (Yo[i] - y) + R[2] * (Zo[i] - z);
+			}
+
+			xaddline_persp(x_c[0], y_c[0], -z_c[0],
+							x_c[4], y_c[4], -z_c[4], color, WIDTH, HEIGHT);
+
+			if (xi >= 0 && yi >= 0)
+			{
+				// Triangolo 1 / Triangle 1
+				GLaddftriang_perspTEXTURED(x_c[0], y_c[0], z_c[0],
+											x_c[1], y_c[1], z_c[1],
+											x_c[2], y_c[2], z_c[2],
+											texid[terrain1.map_texture_indexes[xi][yi]], texcoords_gnd_tri1,
+											color, WIDTH, HEIGHT);
+
+				// Triangolo 2 / Triangle 2 (change color a little bit)
+				color[1] = color[1] + 0.1; // draw with slightly different color... 
+
+				GLaddftriang_perspTEXTURED(x_c[1], y_c[1], z_c[1],
+											x_c[2], y_c[2], z_c[2],
+											x_c[3], y_c[3], z_c[3],
+											texid[terrain1.map_texture_indexes[xi][yi]], texcoords_gnd_tri2,
+											color, WIDTH, HEIGHT);
+			}
+		}
+	}
+} // end function drawTerrain
+
+// ####################################################################################################################
+// Function loadAirplaneModel
+// ####################################################################################################################
+void loadAirplaneModel()
+{
+	printf("TRYING TO IMPORT VERTEX LIST OF 3D MODEL\n");
+	FILE *FilePtr; // pointer to input file 
+
+	FilePtr = fopen("input/vertexes.txt", "r");
+	if (FilePtr < 0)
+	{
+		printf("NO FILE TO IMPORT VERTEX LIST...USING DEFAULT...\n");
+		fclose(FilePtr);
+	}
+	else
+	{
+		import_airplane_polyheron();
+	}
+} // end loadAirplaneModel function
+
+// ####################################################################################################################
+// Function checkForPlaneCollision
+// ####################################################################################################################
+void checkForPlaneCollision()
+{
+	int i;
+
+	// Detecting and resolving collision with ground
+	// simplified collision with ground
+	for (i = 0; i < NVERTEXES; i++)
+	{
+		// AIRPLANE...
+		// coordinates of plane's vertices in the "Game World"'s reference frame.
+		double xw, yw, zw; 
+		xw = gloPunti[i][0] * axis_1[0] + gloPunti[i][1] * axis_2[0] + gloPunti[i][2] * axis_3[0];
+		yw = gloPunti[i][0] * axis_1[1] + gloPunti[i][1] * axis_2[1] + gloPunti[i][2] * axis_3[1];
+		zw = gloPunti[i][0] * axis_1[2] + gloPunti[i][1] * axis_2[2] + gloPunti[i][2] * axis_3[2];
+
+		double he_id = say_terrain_height(&terrain1, xp + xw, yp + yw);
+		if (zp + zw < he_id)
+		{ 
+			// just as any vertex of airplane touches ground and tries to go below 
+			body_rebounce(xw, yw, zw, terrain1.auxnormal[0], terrain1.auxnormal[1], terrain1.auxnormal[2], 0.06, 0);
+			printf("TOUCH GND \n");
+			zp = zp + (he_id - zp - zw);
+			// check is normal < 0 and eventually calculated and assigns new velocities and so.
+		}
+	}
+} // end checkForPlaneCollision function
+
+// ####################################################################################################################
 // Function xclearpixboard
 // ####################################################################################################################
 void xclearpixboard(int xlimit, int ylimit)
@@ -2168,9 +2246,9 @@ void xclearpixboard(int xlimit, int ylimit)
 // THE SDL graphics function: ALL SDL DRAW COMMANDS HERE... 
 // ===============================|SDL CODE BLOCK 3|==================================
 // ####################################################################################################################
-void sdldisplay(int sw, int sh)
+void sdldisplay(int sw, int sh) // parameters sw and sh are not used
 {
-	SDL_GL_SwapWindow(window);
+	SDL_GL_SwapWindow(gloWindow);
 } // end sdldisplay function
 
 // ####################################################################################################################
@@ -2323,7 +2401,8 @@ void xadd1pix(int x, int y, float color[3],
 // virtual camera pointing toward positive z-axis and passes them to the failsafe pixel drawing function. 
 // ####################################################################################################################
 void xaddpoint_persp(float x1, float y1, float z1, float color[3],
-					 int pbwidth, int pbheight)
+					 int pbwidth,  // parameter pbwidth is not used
+					 int pbheight) // parameter pbheight is not used
 {
 	glColor3f(color[0], color[1], color[2]);
 	glPointSize(2);
@@ -2340,8 +2419,10 @@ void xaddpoint_persp(float x1, float y1, float z1, float color[3],
 // now we define the function which, given 2 points in 3D, calculates where they end up on the
 // virtual camera pointing toward positive z-axis and passes them to the 2D line drawing function. 
 // ####################################################################################################################
-void xaddline_persp(float x1, float y1, float z1, float x2, float y2, float z2, float color[3],
-					int pbwidth, int pbheight)
+void xaddline_persp(float x1, float y1, float z1, 
+					float x2, float y2, float z2, float color[3],
+					int pbwidth,  // parameter pbwidth is not used
+					int pbheight) // parameter pbheight is no used
 {
 	glColor3f(color[0], color[1], color[2]);
 
@@ -2940,16 +3021,16 @@ double say_terrain_height(struct subterrain *ite, double x, double z)
 // ####################################################################################################################
 // Function xaddftriang draws a filled triangle to pixel matrix (actually it doesn't draw anything!)
 // ####################################################################################################################
-void xaddftriang(int x1, int y1,
-				 int x2, int y2,
-				 int x3, int y3,
+void xaddftriang(int x1, int y1, // parameters x1 and y1 are not used
+				 int x2, int y2, // parameters x2 and y2 are not used
+				 int x3, int y3, // parameters x3 and y3 are not used
 				 float color[3],
-				 int step,
-				 int xlimit, int ylimit)
+				 int step,       // parameter step is not used
+				 int xlimit, int ylimit) // parameters xlimit and ylimit are not used
 {
 	// convert RGB color intensities, call the allocate/activate function provided by Xlib,
 	// and then call the function that puts it into use.
-	int color_index = 0;
+	int color_index = 0; // local variable color_index is not used
 
 	if (color[0] > 1.0)
 	{
@@ -3028,7 +3109,9 @@ void xaddftriang_perspTEXTURED_pp(float x1, float y1, float z1,
 								  float x2, float y2, float z2,
 								  float x3, float y3, float z3,
 								  int step,
-								  float color[3], int pbwidth, int pbheight)
+								  float color[3], 
+								  int pbwidth,  // parameter pbwidth is not used
+								  int pbheight) // parameter pbheight is not used
 {
 	static int alternative = 0;
 	static int texture_generated = 0; // at first call of this function, a 32x32 texture sample will be generated 
@@ -3613,7 +3696,7 @@ void load_textures_wOpenGL()
 				//--------------------------| END OF TEXTURE LOAD PROCESSING |-------------------------------
 
 				texn++;	// augment count... next texture
-				textures_available = texn; // at left is extern... you know... .
+				gloTexturesAvailable = texn; // at left is extern... you know... .
 			}
 			else
 			{
@@ -3721,7 +3804,7 @@ void load_textures96x96_SEMITRANSPARENT_wOpenGL()
 				// Release the surface
 				SDL_FreeSurface(image);
 
-				texName = textures_available + texn - 1; // VERY CAREFUL!!! NOT OVERWRITE ALREADY OCCUPIED TEXTURES!!
+				texName = gloTexturesAvailable + texn - 1; // VERY CAREFUL!!! NOT OVERWRITE ALREADY OCCUPIED TEXTURES!!
 
 				//---------| TEXTURE PROCESSING |-----THIS PART MUST BE EXECUTED ONLY ONCE!!! 
 				// Otherwise it silently overloads memory at each call
@@ -3729,9 +3812,9 @@ void load_textures96x96_SEMITRANSPARENT_wOpenGL()
 
 				glGenTextures(1, &texName);
 
-				texid[textures_available + texn - 1] = texName; // [texn-1] because started from 1, be careful
+				texid[gloTexturesAvailable + texn - 1] = texName; // [texn-1] because started from 1, be careful
 
-				glBindTexture(GL_TEXTURE_2D, texid[textures_available + texn - 1]); // [texn-1] because started from 1, be careful
+				glBindTexture(GL_TEXTURE_2D, texid[gloTexturesAvailable + texn - 1]); // [texn-1] because started from 1, be careful
 
 				// what OpenGL should do when texture is magnified GL_NEAREST: non-smoothed texture | GL_LINEAR: smoothed
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST ); 
@@ -3749,7 +3832,7 @@ void load_textures96x96_SEMITRANSPARENT_wOpenGL()
 				//--------------------------| END OF TEXTURE LOAD PROCESSING |-------------------------------
 
 				texn++;	// augment count... next texture
-				textures_available++; // ditto but on an extern variable... .
+				gloTexturesAvailable++; // ditto but on an extern variable... .
 			}
 			else
 			{
@@ -3839,7 +3922,7 @@ int load_maptex_from_bitmap(char *filename)
 				SDL_GetRGB(color_to_convert, sdl_image->format, &red, &green, &blue);
 
 				terrain1.map_texture_indexes[i][299 - j] = -0 + (int)red + ((int)green) * 256; 
-				if (terrain1.map_texture_indexes[i][299 - j] >= textures_available)
+				if (terrain1.map_texture_indexes[i][299 - j] >= gloTexturesAvailable)
 				{
 					// if index is superior to the number of total loaded textures, put it to some 
 					// default number within the number of available textures.
