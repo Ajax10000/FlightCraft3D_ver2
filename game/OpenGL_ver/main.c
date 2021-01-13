@@ -115,7 +115,7 @@ int waitdt_ms(double tt_ms);
 
 double say_terrain_height(struct subterrain *ite, double x, double z);
 
-// mat3x3_mult multiplies two 3x3 matrixes 3x3, placing result in global variable result_matrix
+// mat3x3_mult multiplies two 3x3 matrixes 3x3, placing result in global variable gloResultMatrix
 void mat3x3_mult(double mat1[3][3], double mat2[3][3]);
 
 // inv calculates the inverse of a 3x3 matrix (used for obtaining the inverse of the inertia tensor)
@@ -131,7 +131,9 @@ void initOpenGL(void);
 void initPoints(void);
 void initAirplaneColors(void);
 void initTrees(void);
+void initTerrain(void);
 void drawLogo(void);
+void drawAxes(void);
 
 // #                                                                                                                  #
 // # End function prototypes                                                                                          #
@@ -181,7 +183,8 @@ float z_cockpit_view = 0.6;
 int aboard = 1;
 float x_pilot, y_pilot, z_pilot;
 
-// autoset by general graphics procedure!! posizione telecamera vituale 
+// autoset by general graphics procedure!! 
+// posizione telecamera vituale / virtual camera position
 float x = 0.0, y = 0.0, z = 0.0;		  
 
 // coordinates of airplane in game... external view is just needed here to make this game 
@@ -190,9 +193,11 @@ float x = 0.0, y = 0.0, z = 0.0;
 float xp = 200.0, yp = 200.0, zp = 400.0; 
 
 // versori dei 3 assi della telecamera virtuale 
+// versors of the 3 axes of the virtual camera
 float P[3], Q[3], R[3];
 
 // versori dei 3 assi del sistema di riferimento rispetto cui sono dati i vertici dello aeroplano 
+// versors of the 3 axes of the reference system with respect to which the vertices of the airplane are given
 float Pa[3], Qa[3], Ra[3]; 
 
 struct subterrain terrain1;
@@ -281,11 +286,13 @@ float texcoords_gnd_tri2[3][2] = {
 
 #define NLINES 20
 #define NVERTEXES 200
-
-// AEREO: DEFINIZIONE DEI VERTICI 
+ 
+// Aereo: Definizione dei vertici
+// Plane: Definition of the vertexes
+//
 // Used in functions main and make_inertia_tensor.
 // Set in function import_airplane_polyheron.
-float gloPunti[NVERTEXES][3] = {// scatola 
+float gloPunti[NVERTEXES][3] = {// scatola  / box
 	{  74,   76,  -57},
 	{  74,   76,   57},
 	{  74,   76,  262},
@@ -389,8 +396,8 @@ float gloPunti[NVERTEXES][3] = {// scatola
 };
 
 // Global variable estremi is defined but not used
-// chi sono i 2 punti estremi delle linee da disegnare? 
-// NOTA: estremi[ i-esima linea][quale punto e' l'estremo ] 
+// chi sono i 2 punti estremi delle linee da disegnare? / who are the 2 extreme points of the lines to draw?
+// NOTA: estremi[ i-esima linea][quale punto e' l'estremo ] / NOTE: extremes [i-th line] [which point is the extreme]
 int estremi[NLINES][2] = {
 	{0, 1},
 	{1, 2},
@@ -418,40 +425,41 @@ int estremi[NLINES][2] = {
 	{12, 15}
 };
 
-// chi sono i 2 punti estremi delle linee da disegnare? 
-// NOTA: estremi[ i-esima linea][quale punto e' l'estremo ] 
+// chi sono i 2 punti estremi delle linee da disegnare? / who are the 2 extreme points of the lines to draw?
+// NOTA: estremi[ i-esima linea][quale punto e' l'estremo ] / NOTE: extremes [i-th line] [which point is the extreme]
+// Initialized below with 61 elements, indexed from 0 to 60.
 int tris[NTRIS][3] = {
-	{0, 4, 5},
-	{1, 2, 3},
-	{1, 3, 4},
-	{0, 1, 4},
-	{0, 5, 6},
-	{0, 6, 35},
-	{6, 8, 35},
-	{6, 8, 9},
-	{2, 10, 11},
-	{2, 11, 3},
-	{5, 13, 4},
-	{4, 12, 13},
-	{0, 1, 15},
-	{1, 14, 15},
+	{ 0,  4,  5}, // 0
+	{ 1,  2,  3},
+	{ 1,  3,  4},
+	{ 0,  1,  4},
+	{ 0,  5,  6},
+	{ 0,  6, 35},
+	{ 6,  8, 35},
+	{ 6,  8,  9},
+	{ 2, 10, 11},
+	{ 2, 11,  3},
+	{ 5, 13,  4}, // 10
+	{ 4, 12, 13},
+	{ 0,  1, 15},
+	{ 1, 14, 15},
 	{15, 16, 18},
 	{16, 18, 17},
 	{14, 20, 19},
 	{14, 18, 19},
 	{13, 22, 23},
 	{12, 22, 21},
-	{15, 84, 92},
-	{23, 5, 0},
-	{23, 24, 4},
+	{15, 84, 92}, // 20
+	{23,  5,  0},
+	{23, 24,  4},
 	{40, 23, 22},
 	{21, 24, 26},
 	{18, 28, 29},
 	{28, 27, 18},
-	{0, 31, 5},
-	{1, 4, 32},
+	{ 0, 31,  5},
+	{ 1,  4, 32},
 	{13, 12, 22},
-	{14, 38, 50},
+	{14, 38, 50}, // 30
 	{89, 88, 94},
 	{94, 95, 89},
 	{11, 45, 82},
@@ -460,10 +468,10 @@ int tris[NTRIS][3] = {
 	{91, 19, 43},
 	{90, 94, 95},
 	{16, 18, 40},
-	{83, 79, 7},
-	{66, 90, 95},
+	{83, 79,  7},
+	{66, 90, 95}, // 40
 	{96, 67, 31},
-	{31, 7, 96},
+	{31,  7, 96},
 	{13, 37, 67},
 	{23, 26, 28},
 	{28, 97, 23},
@@ -471,7 +479,7 @@ int tris[NTRIS][3] = {
 	{42, 43, 82},
 	{42, 58, 82},
 	{37, 38, 49},
-	{31, 39, 49},
+	{31, 39, 49}, // 50
 	{49, 67, 31},
 	{49, 67, 37},
 	{10, 12, 20},
@@ -481,10 +489,10 @@ int tris[NTRIS][3] = {
 	{40, 20, 21},
 	{20, 21, 26},
 	{20, 25, 26},
-	{25, 26, 4}
+	{25, 26,  4} // 60
 };
 
-// ovvio a cosa serve... 
+// ovvio a cosa serve... / obvious what it's for ...
 // col_tris holds the airplane's colors
 // Initialized with random colors in initAirplaneColors
 // Loaded with data from file input/facecolor.txt in function import_airplane_polyheron
@@ -524,6 +532,7 @@ int nvertexes = 100; // default value
 int ntris = 33;		 // default value
 
 // quantities used for simulation / realistic motion and rebounce from ground
+// v = velocity
 float v[3] = {0.0, 0.0, 0.0}; // (needs initial value!) 
 
 // p = momentum
@@ -537,6 +546,8 @@ double Rm[3][3] = {
 // orientation (angular): needs inital value (IDENTITY MATRIX!!!)
 
 double w[3] = {0.0, 0.0, 0.0};
+
+// L = angular momentum
 double L[3] = {0.0, 0.0, 0.0};
 
 // constants which characterize dynamically the body
@@ -594,7 +605,9 @@ double Pforce = 0.0;
 // in a way to make it fly a bit like a real airplane.
 double vpar, vperp;	 
 
-double result_matrix[3][3], R_T[3][3], temp_mat[3][3];
+double gloResultMatrix[3][3];
+double R_T[3][3];
+double temp_mat[3][3];
 
 double Id[3][3] = {
 	{1.0, 0.0, 0.0},
@@ -660,22 +673,26 @@ int main()
 	int j = 0;
 	int k = 0;
 
-// how many segments to draw in scenery
+// how many segments to draw in scenery (used only with unused variables px, py and pz)
 #define NDOTS 3000
 
+	// Variables px, py and pz are defined, and set to 0 in function main, but are otherwise not used.
 	float px[NDOTS];
 	float py[NDOTS];
 	float pz[NDOTS];
 
+	// varR is defined but not used
 	float varR = 10.0;
 	float RR = 20.0;
 
-	// per ora non lo usiamo 
-	// 3 angoli CHE INDICANO LA ORIENTAZIONE del sistema di riferimento della telecaera virtuale, per dire 
+	// per ora non lo usiamo / for now we don't use it
+	// 3 angoli che indicano la orientazione del sistema di riferimento della telecaera virtuale, per dire 
+	// 3 angles that indicate the orientation of the reference system of the virtual camera, so to speak
 	float theta = 4.2, fi = 1.2, psi = 0.0; 
 
-	// per ora non lo usiamo 
-	// 3 angoli CHE INDICANO LA ORIENTAZIONE del sistema di riferimento dello aeroplano di questo game 
+	// per ora non lo usiamo / for now we don't use it
+	// 3 angoli che indicano la orientazione del sistema di riferimento dello aeroplano di questo game 
+	// 3 angles that indicate the orientation of the reference system of the airplane of this game
 	float thp = 0.2, fip = 0.2, psip = 0.0; 
 
 	// For internal view!!! cockpit view
@@ -683,9 +700,11 @@ int main()
 
 	int cycles;
 
-	// uno step di simulazione che da' un risultato non troppo disastroso.
+	// uno step di simulazione che da' un risultato non troppo disastroso
+	// a simulation step that gives a not too disastrous result
 	float h = 0.01; 
 
+	// x1, y1 and z1 are defined here as doubles, but later in function main they are defined as floats
 	double x1, y1, z1;
 
 	double g = -9.81; // positive +++++ assumed!!
@@ -712,91 +731,7 @@ int main()
 
 	xclearpixboard(WIDTH, HEIGHT);
 
-	// Game terrain initial values
-	// BE CAREFUL!!! says how many meters per side, if seen from above, because inclined sides obey
-	// sqrt(x^2 + z^2) but this is referred to the case when it's seen **FROM ABOVE**
-	terrain1.GPunit = 50.0; 
-	terrain1.map_size = 300;
-
-	// test... the pseudorandom num sequence gotten using the rand() function is the same. on the same system so... it's not random.
-	srand(1234); 
-	// but so it is random since the time now is a number, the time in a second is another number and 
-	// except system time reset of overflow the num is always different.
-	srand((long int)time(NULL));
-	printf("TIME number used to generate random environment: %li\n\n", (long int)time(NULL));
-	waitdt_ms(1000.0);
-
-	// generate random height samples 
-	for (j = 0; j < TERRAIN_SIZE; j++)
-	{
-		for (i = 0; i < TERRAIN_SIZE; i++)
-		{
-			terrain1.shmap[j][i] = 0.2 * (((double)rand()) / ((double)RAND_MAX));
-
-			terrain1.scol[j][i][0] = (float)0.1 * rand() / (float)RAND_MAX;
-			terrain1.scol[j][i][1] = (float)0.6 * rand() / (float)RAND_MAX;
-			terrain1.scol[j][i][2] = (float)0.0 * rand() / (float)RAND_MAX;
-			terrain1.map_texture_indexes[j][i] = 1; // BULK TEXTURE... DEFAULT TEXTURE.
-		}
-	}
-
-	int kux;
-
-	for (kux = 0; kux < 10; kux++)
-	{
-		// more natural shape... 
-		for (k = 0; k < 600; k++)
-		{
-			int x, y, s_x, s_y, siz;
-			j = (int)TERRAIN_SIZE * ((float)rand() / (float)RAND_MAX);
-			i = (int)TERRAIN_SIZE * ((float)rand() / (float)RAND_MAX);
-			siz = (int)TERRAIN_SIZE / 4 * ((float)rand() / (float)RAND_MAX);
-
-			s_x = 10 + (int)siz * ((float)rand() / (float)RAND_MAX);
-			s_y = 10 + (int)siz * ((float)rand() / (float)RAND_MAX);
-
-			for (y = j; y < j + s_x && y < TERRAIN_SIZE; y++)
-			{
-				for (x = i; x < i + s_y && x < TERRAIN_SIZE; x++)
-				{
-					terrain1.shmap[y][x] = terrain1.shmap[y][x] + 0.2;
-
-					terrain1.scol[y][x][0] = terrain1.scol[y][x][0] * 0.98;
-					terrain1.scol[y][x][1] = terrain1.scol[y][x][1] * 0.99;
-					terrain1.map_texture_indexes[y][x] = 4 + k % 3;
-				}
-			}
-		} // end for k
-	} // end for kux
-
-	// put plane, lengthy airports at random positions, with random size 
-	for (k = 0; k < 50; k++)
-	{ 
-		// be careful... this is not rescaled
-		int x, y, airport_x, airport_y;
-		j = (int)TERRAIN_SIZE * ((float)rand() / (float)RAND_MAX);
-		i = (int)TERRAIN_SIZE * ((float)rand() / (float)RAND_MAX);
-
-		// x= 200 meters + 20*some  [meters]
-		// y= 200 meters + 100*some [meters]
-		airport_x = (200 + (int)20 * ((float)rand() / (float)RAND_MAX)) / terrain1.GPunit;
-		airport_y = (200 + (int)500 * ((float)rand() / (float)RAND_MAX)) / terrain1.GPunit;
-
-		for (y = j; y < j + airport_x && y < TERRAIN_SIZE; y++)
-		{
-			for (x = i; x < i + airport_y && x < TERRAIN_SIZE; x++)
-			{
-				terrain1.shmap[y][x] = terrain1.shmap[j][i] + 1.0;
-
-				terrain1.scol[y][x][0] = 0.4;
-				terrain1.scol[y][x][1] = 0.4;
-				terrain1.map_texture_indexes[y][x] = 3;
-			}
-		}
-	}
-	// --------------END OF RANDOM TERRAIN GENERATON-----------------
-
-	terrain1.map_size = load_hmap_from_bitmap("terrain_data/hmap_300x300.bmp");
+	initTerrain();
 
 	initAirplaneColors();
 
@@ -804,7 +739,7 @@ int main()
 	load_textures_wOpenGL(); 
 	tree_texture_ID_bounds[0] = textures_available; // at what ID do tree textures begin (and end also...)
 
-	// idem but with "bitmap" image files with alpha value for transparency information on each pixel... 
+	// ditto but with "bitmap" image files with alpha value for transparency information on each pixel... 
 	// this is mainly used for drawing trees in a quick, nice and simple way.
 	load_textures96x96_SEMITRANSPARENT_wOpenGL(); 
 
@@ -822,6 +757,7 @@ int main()
 	make_inertia_tensor(NVERTEXES);
 
 	// momentum p (linear quantity)
+	// momentum = mass x velocity
 	p[0] = MASS * v[0];
 	p[1] = MASS * v[1];
 	p[2] = MASS * v[2];
@@ -831,14 +767,14 @@ int main()
 	L[1] = It_now[1][0] * w[0] + It_now[1][1] * w[1] + It_now[1][2] * w[2];
 	L[2] = It_now[2][0] * w[0] + It_now[2][1] * w[1] + It_now[2][2] * w[2];
 
-	inv(It_init); // puts the inverse matrix into the "result_matrix" global variable. 
+	inv(It_init); // puts the inverse matrix into the "gloResultMatrix" global variable. 
 
-	// we copy it (the result_matrix) into "R_INV"... 
+	// we copy it (the gloResultMatrix) into "R_INV"... 
 	for (j = 0; j < 3; j++)
 	{
 		for (i = 0; i < 3; i++)
 		{
-			It_initINV[j][i] = result_matrix[j][i];
+			It_initINV[j][i] = gloResultMatrix[j][i];
 		}
 	}
 
@@ -1048,6 +984,7 @@ int main()
 		}
 
 		// update position and orientation
+		// xp, yp, zp give the location of the airplane
 		xp = xp + v[0] * h;
 		yp = yp + v[1] * h;
 		zp = zp + v[2] * h;
@@ -1083,15 +1020,15 @@ int main()
 		SD[2][1] = u1;
 		SD[2][2] = 0.0;
 
-		// multiply SD times SD and place the product in the global variable result_matrix
+		// multiply SD times SD and place the product in the global variable gloResultMatrix
 		mat3x3_mult(SD, SD); 
 
-		// Copy result_matrix to matrix SD2
+		// Copy gloResultMatrix to matrix SD2
 		for (j = 0; j < 3; j++)
 		{
 			for (i = 0; i < 3; i++)
 			{
-				SD2[j][i] = result_matrix[j][i];
+				SD2[j][i] = gloResultMatrix[j][i];
 			}
 		}
 
@@ -1103,14 +1040,14 @@ int main()
 			}
 		}
 
-		// Multiply dR times Rm and place the product in the global variable result_matrix
+		// Multiply dR times Rm and place the product in the global variable gloResultMatrix
 		mat3x3_mult(dR, Rm); 
 
 		for (j = 0; j < 3; j++)
 		{
 			for (i = 0; i < 3; i++)
 			{
-				Rm[j][i] = result_matrix[j][i];
+				Rm[j][i] = gloResultMatrix[j][i];
 			}
 		}
 
@@ -1131,7 +1068,7 @@ int main()
 		{
 			for (i = 0; i < 3; i++)
 			{
-				temp_mat[j][i] = result_matrix[j][i]; //SAFE COPY!!! PASSING EXTERN VARIABLE AND THEN MODIFYING IT IS NOT SAFE... COMPILERS MAY FAIL TO DO IT CORRECTLY!!!
+				temp_mat[j][i] = gloResultMatrix[j][i]; //SAFE COPY!!! PASSING EXTERN VARIABLE AND THEN MODIFYING IT IS NOT SAFE... COMPILERS MAY FAIL TO DO IT CORRECTLY!!!
 				//SAFEST SIMPLE METHOD --> BEST METHOD.
 			}
 		}
@@ -1143,7 +1080,7 @@ int main()
 		{
 			for (i = 0; i < 3; i++)
 			{
-				It_now[j][i] = result_matrix[j][i];
+				It_now[j][i] = gloResultMatrix[j][i];
 			}
 		}
 
@@ -1155,7 +1092,7 @@ int main()
 		{
 			for (i = 0; i < 3; i++)
 			{
-				temp_mat[j][i] = result_matrix[j][i]; //SAFE COPY!!! PASSING EXTERN VARIABLE AND THEN MODIFYING IT IS NOT SAFE... COMPILERS MAY FAIL TO DO IT CORRECTLY!!!
+				temp_mat[j][i] = gloResultMatrix[j][i]; //SAFE COPY!!! PASSING EXTERN VARIABLE AND THEN MODIFYING IT IS NOT SAFE... COMPILERS MAY FAIL TO DO IT CORRECTLY!!!
 				//SAFEST SIMPLE METHOD --> BEST METHOD.
 			}
 		}
@@ -1166,7 +1103,7 @@ int main()
 		{
 			for (i = 0; i < 3; i++)
 			{
-				inv_It_now[j][i] = result_matrix[j][i];
+				inv_It_now[j][i] = gloResultMatrix[j][i];
 			}
 		}
 
@@ -1198,7 +1135,7 @@ int main()
 		// representation and graphics perocedure
 		xclearpixboard(WIDTH, HEIGHT); // CANCELLA SCHERMATA/ LAVAGNA.
 
-		//------------------ scenario inquadrature 3D---------------------------------- 
+		// scenario inquadrature 3D / 3D shot scenery
 		if (view == 1)
 		{
 			P[0] = -sin(theta);
@@ -1260,7 +1197,7 @@ int main()
 			Qp[1] = Qa[1];
 			Qp[2] = Qa[2];
 
-			// Ri, Pi, Qi - this is most practival axis-order.
+			// Ri, Pi, Qi - this is most practical axis-order.
 			P[0] = Rp[0] * (-sin(theta)) + Pp[0] * (cos(theta)) + Qp[0] * 0.0;
 			P[1] = Rp[1] * (-sin(theta)) + Pp[1] * (cos(theta)) + Qp[1] * 0.0;
 			P[2] = Rp[2] * (-sin(theta)) + Pp[2] * (cos(theta)) + Qp[2] * 0.0;
@@ -1297,7 +1234,8 @@ int main()
 			z = say_terrain_height(&terrain1, x_pilot, y_pilot) + 1.75;
 		}
 
-		// LE COORDINATE DEI PUNTI DELLA PISTA, NEL SISTEMA DI RIFERIMENTO DEL PARACADUTISTA 
+		// Le coordinate dei punti della pista, nel sistema di riferimento del paracadutista
+		// The coordinates of the runway points, in the parachutist's reference system
 		float x1, y1, z1, x2, y2, z2; 
 
 		if (low_graphics == 0)
@@ -1305,39 +1243,13 @@ int main()
 			addsmoke_wsim(xp, yp, zp, h, 2); // DEACTIVATED TO TEST
 		}
 
-		// test asse perpendiclare allo 'schermo' grafica 3D: 
-		// let's avoid stupid mistakes... check if all basic things work 
-		color[0] = 1.0;
-		color[1] = 0.0;
-		color[2] = 0.0;
-		// IMPORTANT NOTE: 2 meters far from camera virtual 'lens' along it perpendiculat to it 
-		// towards screen, axes are each 1 meter long. use in an intelligent way the measures... 
-		// in these cases, go use uni-length references. It's the obvious choice but saying it is not bad.
-
-		// xc
-		xaddline_persp(0.0 - 1.0, 0.0 - 1.0, 2.0,
-					   1.0 - 1.0, 0.0 - 1.0, 2.0, color, WIDTH, HEIGHT);
-
-		// yc
-		color[0] = 0.0;
-		color[1] = 1.0;
-		color[2] = 0.0;
-
-		xaddline_persp(0.0 - 1.0, 0.0 - 1.0, 2.0,
-					   0.0 - 1.0, 1.0 - 1.0, 2.0, color, WIDTH, HEIGHT);
-
-		// zc
-		color[0] = 0.0;
-		color[1] = 0.0;
-		color[2] = 1.0;
-
-		xaddline_persp(0.0 - 1.0, 0.0 - 1.0, 2.0,
-					   0.0 - 1.0, 0.0 - 1.0, 2.0 + 1.0, color, WIDTH, HEIGHT);
+		drawAxes();
 
 		drawLogo();
 
-		// 3 ASSI DELLO SPAZIO CARTESIANO... COSI' SI CAPISCE DOVE STANNO LE COSE 
-		// TRIANGOLO 1 
+		// 3 assi dello spazio cartesiano, cosi' si capisce dove stanno le cose
+		// 3 axes of cartesian space, so you know where things are
+		// Triangolo 1 / Triangle 1
 		float Xo[5], Yo[5], Zo[5], x_c[5], y_c[5], z_c[5];
 		float GPunit;
 		int xi, yi, Xi, Yi;
@@ -1361,6 +1273,7 @@ int main()
 		Zo[2] = zp + 10 * Ra[2];
 
 		// calcola lecoordinate di questi 3 punti nel sistema P-Q-R 
+		// calculates the coordinates of these 3 points in the P-Q-R system
 		for (i = 0; i < 4; i++)
 		{
 			x_c[i] = P[0] * (Xo[i] - x) + P[1] * (Yo[i] - y) + P[2] * (Zo[i] - z);
@@ -1379,8 +1292,10 @@ int main()
 
 		// DISEGNA IL TERRENO IN MODO ALGORITMICO, UNA GRIGILIA RETTANGOLARE COME AL SOLITO,
 		// 'REDERING' WIREFRAME O A TRINGOLI RIPIENI 
-
-		// draw only near triangles, in order to avoid overloading graphics computational heavyness 
+		// DRAW THE GROUND IN AN ALGORITHMIC WAY, A RECTANGULAR GRAY AS USUAL, 
+		// 'RENDERING' WIREFRAME OR FILLED TRINGLES
+		// 
+		// Draw only near triangles, in order to avoid overloading graphics computational heavyness 
 		int lv = 6;
 
 		Xi = floor(xp / (terrain1.GPunit));
@@ -1397,7 +1312,7 @@ int main()
 		{
 			for (yi = Yi - lv; yi < Yi + lv; yi = yi + 1)
 			{
-				// TRIANGOLO 1 
+				// Triangolo 1 / Triangle 1
 				Xo[0] = GPunit * xi;
 				Yo[0] = GPunit * yi;
 				Zo[0] = 0.0;
@@ -1426,7 +1341,7 @@ int main()
 
 				if (Xi + lv < terrain1.map_size && Yi + lv < terrain1.map_size)
 				{
-					// escamotage for a 0-terrain outside sampled limit. but sampled within, good 
+					// escamotage (trick) for a 0-terrain outside sampled limit. but sampled within, good 
 					Zo[0] = GPunit * terrain1.shmap[xi][yi];		 // the height sample 
 					Zo[1] = GPunit * terrain1.shmap[xi + 1][yi];	 // the height sample 
 					Zo[2] = GPunit * terrain1.shmap[xi][yi + 1];	 // the height sample 
@@ -1446,6 +1361,7 @@ int main()
 				}
 
 				// calcola lecoordinate di questi 3 punti nel sistema P-Q-R del paracadutista/pilota 
+				// calculates the coordinates of these 3 points in the parachutist / pilot's P-Q-R system
 				for (i = 0; i < 5; i++)
 				{
 					x_c[i] = P[0] * (Xo[i] - x) + P[1] * (Yo[i] - y) + P[2] * (Zo[i] - z);
@@ -1458,14 +1374,14 @@ int main()
 
 				if (xi >= 0 && yi >= 0)
 				{
-					// TRIANGOLO 1
+					// Triangolo 1 / Triangle 1
 					GLaddftriang_perspTEXTURED(x_c[0], y_c[0], z_c[0],
 											   x_c[1], y_c[1], z_c[1],
 											   x_c[2], y_c[2], z_c[2],
 											   texid[terrain1.map_texture_indexes[xi][yi]], texcoords_gnd_tri1,
 											   color, WIDTH, HEIGHT);
 
-					// TRIANGOLO 2 (change color a little bit)
+					// Triangolo 2 / Triangle 2 (change color a little bit)
 					color[1] = color[1] + 0.1; // draw with slightly different color... 
 
 					GLaddftriang_perspTEXTURED(x_c[1], y_c[1], z_c[1],
@@ -1521,6 +1437,7 @@ int main()
 				glBindTexture(GL_TEXTURE_2D, texid[(int)gloTrees[k][4]]);
 
 				// calcola lecoordinate di questi 3 punti nel sistema P-Q-R del paracadutista/pilota 
+				// calculates the coordinates of these 3 points in the parachutist / pilot's P-Q-R system
 				for (i = 0; i < 5; i++)
 				{
 					x_c[i] = P[0] * (Xo[i] - x) + P[1] * (Yo[i] - y) + P[2] * (Zo[i] - z);
@@ -1556,8 +1473,9 @@ int main()
 				Yo[3] = yctree - sctree * 0.9;
 				Zo[3] = zctree - treeR1;
 
-				// again this to obtain coordintes in the virtual camera's reference frame.
+				// again this is to obtain coordinates in the virtual camera's reference frame.
 				// calcola lecoordinate di questi 3 punti nel sistema P-Q-R del paracadutista/pilota 
+				// calculates the coordinates of these 3 points in the parachutist / pilot's P-Q-R system
 				for (i = 0; i < 5; i++)
 				{
 					x_c[i] = P[0] * (Xo[i] - x) + P[1] * (Yo[i] - y) + P[2] * (Zo[i] - z);
@@ -1587,7 +1505,8 @@ int main()
 
 		float x1a, y1a, z1a, x2a, y2a, z2a, x3a, y3a, z3a, x3, y3, z3;
 
-		// DISEGNA SOLO LO AEREO... GRAFICA VETTORIALE BELLO SEMPLICE...
+		// Disegna solo lo aereo
+		// Draw only the plane
 		color[0] = 1.0;
 		color[1] = 1.0;
 		color[2] = 1.0;
@@ -1606,12 +1525,12 @@ int main()
 			y3a = Pa[1] * gloPunti[tris[i][2]][0] + Qa[1] * gloPunti[tris[i][2]][1] + Ra[1] * gloPunti[tris[i][2]][2];
 			z3a = Pa[2] * gloPunti[tris[i][2]][0] + Qa[2] * gloPunti[tris[i][2]][1] + Ra[2] * gloPunti[tris[i][2]][2];
 
-			// estremo 1 
+			// estremo 1 / extreme 1
 			x1 = P[0] * (x1a + xp - x) + P[1] * (y1a + yp - y) + P[2] * (z1a + zp - z);
 			y1 = Q[0] * (x1a + xp - x) + Q[1] * (y1a + yp - y) + Q[2] * (z1a + zp - z);
 			z1 = R[0] * (x1a + xp - x) + R[1] * (y1a + yp - y) + R[2] * (z1a + zp - z);
 
-			// estremo 2 
+			// estremo 2 / extreme 2
 			x2 = P[0] * (x2a + xp - x) + P[1] * (y2a + yp - y) + P[2] * (z2a + zp - z);
 			y2 = Q[0] * (x2a + xp - x) + Q[1] * (y2a + yp - y) + Q[2] * (z2a + zp - z);
 			z2 = R[0] * (x2a + xp - x) + R[1] * (y2a + yp - y) + R[2] * (z2a + zp - z);
@@ -1643,7 +1562,7 @@ int main()
 		if (low_graphics == 0)
 		{
 			addfrantumation_wsim(x1, y1, z1, h, 0);	// we must make special effect sequences go on. 
-			projectile_launch(10, 10, 10, 20, 10, -0.1, h, 0); // idem 
+			projectile_launch(10, 10, 10, 20, 10, -0.1, h, 0); // idem / ditto
 		}
 
 		// call function which displays the matrix of pixels in a true graphics window 
@@ -1995,7 +1914,7 @@ void initPoints()
 } // end initPoints function
 
 // ####################################################################################################################
-// Function initAirplaneColors
+// Function initAirplaneColors initializes the airplane colors to random numbers.
 // ####################################################################################################################
 void initAirplaneColors()
 {
@@ -2051,7 +1970,7 @@ void initTrees()
 
 			if (gloTrees[k + j][4] == 0.0)
 			{
-				gloTrees[k + j][4] = tree_texture_ID_bounds[0]; // texture iD number
+				gloTrees[k + j][4] = tree_texture_ID_bounds[0]; // texture id number
 				gloTrees[k + j][3] = 3;
 			}
 			else if (gloTrees[k + j][4] == 1.0)
@@ -2065,7 +1984,101 @@ void initTrees()
 } // end initTrees function
 
 // ####################################################################################################################
-// Functio drawLogo
+// Function initTerrain initializes the terrain with random values.
+// ####################################################################################################################
+void initTerrain()
+{
+	int i, j, k;
+
+	// Game terrain initial values
+	// BE CAREFUL!!! says how many meters per side, if seen from above, because inclined sides obey
+	// sqrt(x^2 + z^2) but this is referred to the case when it's seen **FROM ABOVE**
+	terrain1.GPunit = 50.0; 
+	terrain1.map_size = 300;
+
+	// test... the pseudorandom num sequence gotten using the rand() function is the same. 
+	// on the same system so... it's not random.
+	srand(1234); 
+	// but so it is random since the time now is a number, the time in a second is another number and 
+	// except system time reset of overflow the num is always different.
+	srand((long int)time(NULL));
+	printf("TIME number used to generate random environment: %li\n\n", (long int)time(NULL));
+	waitdt_ms(1000.0);
+
+	// generate random height samples 
+	for (j = 0; j < TERRAIN_SIZE; j++)
+	{
+		for (i = 0; i < TERRAIN_SIZE; i++)
+		{
+			terrain1.shmap[j][i] = 0.2 * (((double)rand()) / ((double)RAND_MAX));
+
+			terrain1.scol[j][i][0] = (float)0.1 * rand() / (float)RAND_MAX;
+			terrain1.scol[j][i][1] = (float)0.6 * rand() / (float)RAND_MAX;
+			terrain1.scol[j][i][2] = (float)0.0 * rand() / (float)RAND_MAX;
+			terrain1.map_texture_indexes[j][i] = 1; // BULK TEXTURE... DEFAULT TEXTURE.
+		}
+	}
+
+	int kux;
+
+	for (kux = 0; kux < 10; kux++)
+	{
+		// more natural shape... 
+		for (k = 0; k < 600; k++)
+		{
+			int x, y, s_x, s_y, siz;
+			j = (int)TERRAIN_SIZE * ((float)rand() / (float)RAND_MAX);
+			i = (int)TERRAIN_SIZE * ((float)rand() / (float)RAND_MAX);
+			siz = (int)TERRAIN_SIZE / 4 * ((float)rand() / (float)RAND_MAX);
+
+			s_x = 10 + (int)siz * ((float)rand() / (float)RAND_MAX);
+			s_y = 10 + (int)siz * ((float)rand() / (float)RAND_MAX);
+
+			for (y = j; y < j + s_x && y < TERRAIN_SIZE; y++)
+			{
+				for (x = i; x < i + s_y && x < TERRAIN_SIZE; x++)
+				{
+					terrain1.shmap[y][x] = terrain1.shmap[y][x] + 0.2;
+
+					terrain1.scol[y][x][0] = terrain1.scol[y][x][0] * 0.98;
+					terrain1.scol[y][x][1] = terrain1.scol[y][x][1] * 0.99;
+					terrain1.map_texture_indexes[y][x] = 4 + k % 3;
+				}
+			}
+		} // end for k
+	} // end for kux
+
+	// put plane, lengthy airports at random positions, with random size 
+	for (k = 0; k < 50; k++)
+	{ 
+		// be careful... this is not rescaled
+		int x, y, airport_x, airport_y;
+		j = (int)TERRAIN_SIZE * ((float)rand() / (float)RAND_MAX);
+		i = (int)TERRAIN_SIZE * ((float)rand() / (float)RAND_MAX);
+
+		// x= 200 meters + 20*some  [meters]
+		// y= 200 meters + 100*some [meters]
+		airport_x = (200 + (int)20 * ((float)rand() / (float)RAND_MAX)) / terrain1.GPunit;
+		airport_y = (200 + (int)500 * ((float)rand() / (float)RAND_MAX)) / terrain1.GPunit;
+
+		for (y = j; y < j + airport_x && y < TERRAIN_SIZE; y++)
+		{
+			for (x = i; x < i + airport_y && x < TERRAIN_SIZE; x++)
+			{
+				terrain1.shmap[y][x] = terrain1.shmap[j][i] + 1.0;
+
+				terrain1.scol[y][x][0] = 0.4;
+				terrain1.scol[y][x][1] = 0.4;
+				terrain1.map_texture_indexes[y][x] = 3;
+			}
+		}
+	}
+
+	terrain1.map_size = load_hmap_from_bitmap("terrain_data/hmap_300x300.bmp");
+} // end initTerrain function
+
+// ####################################################################################################################
+// Function drawLogo draws the logo.
 // ####################################################################################################################
 void drawLogo()
 {
@@ -2087,6 +2100,44 @@ void drawLogo()
 		}
 	}
 } // end drawLogo function 
+
+// ####################################################################################################################
+// Function drawAxes
+// ####################################################################################################################
+void drawAxes()
+{
+	float color[4] = {0.0, 0.0, 0.0, 1.0};
+
+	// test asse perpendiclare allo 'schermo' grafica 3D
+	// test axis perpendicular to the 3D graphics 'screen':
+	color[0] = 1.0;
+	color[1] = 0.0;
+	color[2] = 0.0;
+	
+	// IMPORTANT NOTE: 2 meters far from camera virtual 'lens' along it perpendiculat to it 
+	// towards screen, axes are each 1 meter long. use in an intelligent way the measures... 
+	// in these cases, go use unit-length references. It's the obvious choice but saying it is not bad.
+
+	// xc
+	xaddline_persp(0.0 - 1.0, 0.0 - 1.0, 2.0,
+					1.0 - 1.0, 0.0 - 1.0, 2.0, color, WIDTH, HEIGHT);
+
+	// yc
+	color[0] = 0.0;
+	color[1] = 1.0;
+	color[2] = 0.0;
+
+	xaddline_persp(0.0 - 1.0, 0.0 - 1.0, 2.0,
+					0.0 - 1.0, 1.0 - 1.0, 2.0, color, WIDTH, HEIGHT);
+
+	// zc
+	color[0] = 0.0;
+	color[1] = 0.0;
+	color[2] = 1.0;
+
+	xaddline_persp(0.0 - 1.0, 0.0 - 1.0, 2.0,
+					0.0 - 1.0, 0.0 - 1.0, 2.0 + 1.0, color, WIDTH, HEIGHT);
+} // end drawAxes function
 
 // ####################################################################################################################
 // Function xclearpixboard
@@ -2119,14 +2170,12 @@ void xclearpixboard(int xlimit, int ylimit)
 // ####################################################################################################################
 void sdldisplay(int sw, int sh)
 {
-	int i, j;
-
 	SDL_GL_SwapWindow(window);
 } // end sdldisplay function
 
 // ####################################################################################################################
-// a timer function to pause to regulate FPS is a good utility to have...
-// define function waitdt_sec(double): 
+// Function waitdt_ms is a timer function.
+// A timer function to pause to regulate FPS is a good utility to have...
 // ####################################################################################################################
 int waitdt_ms(double tt_ms)
 {
@@ -2137,8 +2186,9 @@ int waitdt_ms(double tt_ms)
 	// set the variables according to the time-measurement process 
 	time1 = clock(); // request processor time, or local time, no problem which
 
+	// WAIT: holds the program execution here until tt_sec passes. 
 	while (dt_ms < tt_ms)
-	{ // WAIT: holds the program execution here until tt_sec passes. 
+	{ 
 		time2 = clock();
 		dt_ms = (time2 - time1) / (CLOCKS_PER_SEC / 1000.0);
 	}
@@ -2146,6 +2196,7 @@ int waitdt_ms(double tt_ms)
 } // end waitdt_ms() function 
 
 // ####################################################################################################################
+// Function xaddline
 // NOT USED IN OPENGL VERSION 
 // interpolate 2 points graphically 
 // ####################################################################################################################
@@ -2217,10 +2268,10 @@ void xaddline(int x1, int y1,
 							pixmatrix[j][i][1] = color[1];
 							pixmatrix[j][i][2] = color[2];
 						}
-					}
+					} // for j
 				}
 			}
-		}
+		} // for i
 	}
 	else
 	{ // IF LINE IS VERTICAL 
@@ -2252,6 +2303,7 @@ void xaddline(int x1, int y1,
 } // end xaddline function
 
 // ####################################################################################################################
+// Function xadd1pix
 // add 1 pixel to output image but in a failsafe manner: no accidental segfaults. 
 // ####################################################################################################################
 void xadd1pix(int x, int y, float color[3],
@@ -2266,6 +2318,7 @@ void xadd1pix(int x, int y, float color[3],
 } // end xadd1pix function
 
 // ####################################################################################################################
+// Function xaddpoint_persp
 // now we define the function which, given 1 point in 3D, calculates where it ends up on the
 // virtual camera pointing toward positive z-axis and passes them to the failsafe pixel drawing function. 
 // ####################################################################################################################
@@ -2283,6 +2336,7 @@ void xaddpoint_persp(float x1, float y1, float z1, float color[3],
 } // end xaddpoint_persp function
 
 // ####################################################################################################################
+// Function xaddline_persp
 // now we define the function which, given 2 points in 3D, calculates where they end up on the
 // virtual camera pointing toward positive z-axis and passes them to the 2D line drawing function. 
 // ####################################################################################################################
@@ -2300,6 +2354,7 @@ void xaddline_persp(float x1, float y1, float z1, float x2, float y2, float z2, 
 } // end xaddline_persp function
 
 // ####################################################################################################################
+// Function addsmoke_wsim
 // point frantumation sequence function (a special effect)
 // add new explosion or just process those already started
 // ####################################################################################################################
@@ -2319,14 +2374,15 @@ void addsmoke_wsim(double x0, double y0, double z0, double dft, int option)
 
 	glDisable(GL_DEPTH_TEST);
 	if (option == 1 && N_as < NAUTSM)
-	{ // FIRST PLACE RESERVED TO AUTOSMOKE... POINTLIKE EVAPORATING SMOKE 
+	{
+		// First place reserved to autosmoke... pointlike evaporating smoke
 		count[N_as] = LT;
 		xc = (float)x0;
 		yc = (float)y0;
 		zc = (float)z0;
 
 		auxc = 0;
-		// careful.. total MUST EQUAL MP contant, otherwise segfault will happen. 
+		// careful.. total must equal MP contant, otherwise segfault will happen. 
 		for (i = -2; i < 3; i++)
 		{ // SO: -1, 0 , 1
 			for (j = -2; j < 3; j++)
@@ -2365,12 +2421,13 @@ void addsmoke_wsim(double x0, double y0, double z0, double dft, int option)
 		MAXN = auxc;
 		auxc = 0; // put it back to zero!!! see option 2 to undersand why!
 
-		N_as++; // we augment it... FIRST SLOT IS USED FOR DYNAMICALLY DRAGGED SMOKE SEQ
+		N_as++; // we augment it... first slot is used for dynamically dragged smoke seq
 	}
 
 	if (option == 2)
 	{
-		// "ACCUMULO" PER COSIDDIRE LE POSIZIONI NEL BLOCCO DI NUMERI float px,py e pz,CHE ABBIAMO CREATO APPOSTA 
+		// "accumulo" per cosiddire le posizioni nel blocco di numeri float px, py e pz, che abbiamo creato apposta
+		// "accumulation" to consider the positions in the block of numbers float px, py, and pz, which we have created only
 		for (i = MAXN - 1; i > 0; i--)
 		{
 			xm[0][i] = xm[0][i - 1];
@@ -2385,6 +2442,7 @@ void addsmoke_wsim(double x0, double y0, double z0, double dft, int option)
 		}
 
 		// nella primissima casella mettiamo la posizione di "ADESSO" 
+		// in the very first box we put the position of "NOW"
 		xm[0][0] = x0; 
 		ym[0][0] = y0;
 		zm[0][0] = z0;
@@ -2401,7 +2459,7 @@ void addsmoke_wsim(double x0, double y0, double z0, double dft, int option)
 	{
 		if (count[j] > 0)
 		{ 
-			// CHECK EXTENSION process stuff and decrease count only as long as it's above 0 yet
+			// Check extension process stuff and decrease count only as long as it's above 0 yet
 			// all combination of 1 and 0, see why... JUST A BASIC TRICK, this is NOT A PROFI SPECIAL EFFECT
 			float F_pullup = 3.0;
 
@@ -2453,10 +2511,10 @@ void addsmoke_wsim(double x0, double y0, double z0, double dft, int option)
 				color[2] = colors[j][i][2];
 				color[3] = 0.1;
 
-				xaddftriang_persp(xt, yt, -zt,
+				xaddftriang_persp( xt,  yt,  -zt,
 								  xt2, yt2, -zt2,
-								  xt3, yt3, -zt3, 2,
-								  color, WIDTH, HEIGHT);
+								  xt3, yt3, -zt3, 
+								  2, color, WIDTH, HEIGHT);
 			}
 		}
 
@@ -2493,7 +2551,7 @@ void addsmoke_wsim(double x0, double y0, double z0, double dft, int option)
 			}
 
 			// reduce total num of smoke sequences in scene but 'delete' the ended 
-			// slot too bu meking shrink into it all previous ones.
+			// slot too by making shrink into it all previous ones.
 			N_as--; 
 		} // else block
 	} // NAUTSM count
@@ -2502,7 +2560,8 @@ void addsmoke_wsim(double x0, double y0, double z0, double dft, int option)
 } // end addsmoke_wsim function
 
 // ####################################################################################################################
-// GLI EFFETTI SPECIALI di base NEI GAMES 
+// Function addfrantumation_wsim
+// Gli effetti speciali di base nei games / the basic special effects in the games
 // point frantumation sequence function (a special effect)
 // add new explosion or just process those already started
 // ####################################################################################################################
@@ -2599,10 +2658,10 @@ void addfrantumation_wsim(float x0, float y0, float z0, double dft, int option)
 			color[1] = colors[i][1];
 			color[2] = colors[i][2];
 			color[3] = 1.0;
-			xaddftriang_persp(xt, yt, -zt,
+			xaddftriang_persp( xt,  yt,  -zt,
 							  xt2, yt2, -zt2,
-							  xt3, yt3, -zt3, 1,
-							  color, WIDTH, HEIGHT);
+							  xt3, yt3, -zt3, 
+							  1, color, WIDTH, HEIGHT);
 		}
 
 		count--;
@@ -2774,12 +2833,16 @@ double say_terrain_height(struct subterrain *ite, double x, double z)
 	Zf = z / ite[0].GPunit;
 
 	// a cautional correction to avoid SegmentationFault: SECURE.
+	// if Xi accidentally goes out of range ...
 	if (Xi < 0 || Xi > ite[0].map_size)
-	{ // if it accidentally becomes negative, put it zero but under that there is no terrain!! 
+	{  
+		// set it to zero, but under that there is no terrain!! 
 		Xi = 0;
 	}
+	// if Yi accidentally goes out of range ...
 	if (Yi < 0 || Yi > ite[0].map_size)
-	{ // if it accidentally becomes negative, put it zero but under that there is no terrain!! 
+	{ 
+		// set it to zero, but under that there is no terrain!! 
 		Yi = 0;
 	}
 
@@ -2795,8 +2858,8 @@ double say_terrain_height(struct subterrain *ite, double x, double z)
 		col = 1;
 	}
 
-	// ===THIS IS TRIANGLE 1 , BUT WE MUST ALSO IMPLEMENT THAT IT SEES IF TRI_1 OR TRI_2
-	//vect1.component-by component.
+	// THIS IS TRIANGLE 1 , BUT WE MUST ALSO IMPLEMENT THAT IT SEES IF TRI_1 OR TRI_2
+	// vect1.component-by component.
 	if (col == 0)
 	{
 		vector0[0] = 1.0; // pick from the on-purpose triangle storer....
@@ -2841,7 +2904,7 @@ double say_terrain_height(struct subterrain *ite, double x, double z)
 	dpl = -apl * Xtri - bpl * Ytri - cpl * Ztri;
 
 	// now set height and that's it. 
-	y = -(		   //is negative!check equation members always!!
+	y = -(		   //is negative! check equation members always!!
 		(apl * x + //(ax +
 		 cpl * z + // cx +
 		 dpl) /
@@ -2856,9 +2919,10 @@ double say_terrain_height(struct subterrain *ite, double x, double z)
 	s_nloc[1] = s_nloc[1] / lenght;
 	s_nloc[2] = s_nloc[2] / lenght;
 
-	// look if verse is good... not always; must check if the y of the normal is positive... easy. if negative, invert vector.
+	// look if verse is good... not always; must check if the y of the normal is 
+	// positive... easy. if negative, invert vector.
 	if (s_nloc[1] < 0.0)
-	{ // be coherent with indexes, which is x which y and z for your implementation.
+	{ 
 		s_nloc[0] = -s_nloc[0];
 		s_nloc[1] = -s_nloc[1];
 		s_nloc[2] = -s_nloc[2];
@@ -2874,7 +2938,7 @@ double say_terrain_height(struct subterrain *ite, double x, double z)
 } // end say_terrain_height function
 
 // ####################################################################################################################
-// Function xaddftriang draws a filled triangle to pixel matrix 
+// Function xaddftriang draws a filled triangle to pixel matrix (actually it doesn't draw anything!)
 // ####################################################################################################################
 void xaddftriang(int x1, int y1,
 				 int x2, int y2,
@@ -2904,14 +2968,17 @@ void xaddftriang(int x1, int y1,
 } // end xaddftriang function
 
 // ####################################################################################################################
-// now we define the function which, given 2 points in 3D, calculates where they end up on the
-// virtual camera pointing toward positive z-s and passes them to the 2D line drawing function. 
+// Function xaddftriang_persp
+// now we define the function which, given 3 points in 3D, calculates where they end up on the
+// virtual camera pointing toward positive z-s and passes them to the 3D line drawing function. 
 // ####################################################################################################################
 void xaddftriang_persp(float x1, float y1, float z1,
 					   float x2, float y2, float z2,
 					   float x3, float y3, float z3,
-					   int step,
-					   float color[4], int pbwidth, int pbheight)
+					   int step, // this parameter is not used
+					   float color[4], 
+					   int pbwidth, // this parameter is not used
+					   int pbheight) // this parameter is not used
 {
 	glColor4f(color[0], color[1], color[2], color[3]);
 
@@ -2931,7 +2998,9 @@ void GLaddftriang_perspTEXTURED(float x1, float y1, float z1,
 								float x2, float y2, float z2,
 								float x3, float y3, float z3,
 								int texId, float texcoords[3][2],
-								float color[3], int pbwidth, int pbheight)
+								float color[3], 
+								int pbwidth, // this parameter is not used
+								int pbheight) // this parameter is not used
 {
 	glBindTexture(GL_TEXTURE_2D, texId);
 	glEnable(GL_TEXTURE_2D); 
@@ -3132,6 +3201,7 @@ struct mystruct
 };
 
 // ####################################################################################################################
+// Function swap
 // Interchange *px and *py  STRUCT 
 // ####################################################################################################################
 void swap(struct mystruct *px, struct mystruct *py)
@@ -3145,6 +3215,7 @@ void swap(struct mystruct *px, struct mystruct *py)
 } // end function swap
 
 // ####################################################################################################################
+// Function shellsort_struct
 // Shell Sort STRUCT 
 // shellsort: sort v[0]...v[n-1] into increasing order, with respect to some element of the struct.
 // Calls swap(). 
@@ -3167,7 +3238,7 @@ void shellsort_struct(struct mystruct *v, int n)
 } // end shellsort_struct function
 
 // ####################################################################################################################
-// Function mat3x3_mult multiplies two 3x3 matrices and places the result in global variable result_matrix.
+// Function mat3x3_mult multiplies two 3x3 matrices and places the result in global variable gloResultMatrix.
 // ####################################################################################################################
 void mat3x3_mult(double mat1[3][3], double mat2[3][3])
 {
@@ -3183,13 +3254,13 @@ void mat3x3_mult(double mat1[3][3], double mat2[3][3])
 			{
 				sum = sum + mat1[im][k] * mat2[k][jm];
 			}
-			result_matrix[im][jm] = sum; // EXTERN VALUE!!! It's an easy way to implement all this.
+			gloResultMatrix[im][jm] = sum; // EXTERN VALUE!!! It's an easy way to implement all this.
 		}
 	}
 } // end mat3x3_mult function
 
 // ####################################################################################################################
-// INVERSE OF 3x3 MATRIC (USED FOR OBTAINING THE INVERSE OF THE INERTIA TENSOR)
+// Function inv calculates the inverse of a 3x3 matrix (used for obtaining the inverse of the inertia tensor).
 // ####################################################################################################################
 void inv(double in_3x3_matrix[3][3])
 {
@@ -3266,7 +3337,7 @@ void inv(double in_3x3_matrix[3][3])
 		for (j = 0; j < 3; j++)
 		{
 			X[i][j] = C[i][j] * x;
-			result_matrix[i][j] = C[i][j] * x; // EXTERN VALUE!!!
+			gloResultMatrix[i][j] = C[i][j] * x; // EXTERN VALUE!!!
 		}
 	}
 } // end inv function
@@ -3275,12 +3346,14 @@ void inv(double in_3x3_matrix[3][3])
 // Function body_rebounce
 // ####################################################################################################################
 double body_rebounce(double rx, double ry, double rz,
-					 double nx, double ny, double nz, double e, double lat)
+					 double nx, double ny, double nz, 
+					 double e, 
+					 double lat) // parameter lat is not used
 {
 	double jelf = 0, jel = 300.0;
 	double vector0[3], vector1[3], axis[3];
 	double vvertex[3], vnorm;
-	double auxv[3], auxv2[3], UP, DOWN; // auxilliary to brake up some longer formulas into feasibly small parts.
+	double auxv[3], auxv2[3], UP, DOWN; // auxilliary to break up some longer formulas into feasibly small parts.
 
 	vector0[0] = nx;
 	vector0[1] = ny;
@@ -3373,7 +3446,7 @@ double body_rebounce(double rx, double ry, double rz,
 // ####################################################################################################################
 void make_inertia_tensor(int n_vertexs)
 {
-// be very careful to assign storage space correctly!!!! ohterwise it brings to 0 all elements!!!
+// be very careful to assign storage space correctly!!!! otherwise it brings to 0 all elements!!!
 #define ne 1000
 	int i, j, k;
 	double Ixxe[ne], Iyye[ne], Izze[ne]; // those  'principal moments of inertia'....
@@ -3382,7 +3455,7 @@ void make_inertia_tensor(int n_vertexs)
 	double Ixy = 0, Ixz = 0, Iyz = 0;	 // these are automatically set = 0, that's important.... 
 	double std_vxmass = 10.0;			 // 10 Kg
 
-	// compute the elemets of the final tensor matrix:
+	// compute the elements of the final tensor matrix:
 	for (i = 0; i < n_vertexs; i++)
 	{
 		// those 'principal moments of inertia'...
@@ -3413,7 +3486,7 @@ void make_inertia_tensor(int n_vertexs)
 	It_init[1][1] = Iyy;
 	It_init[2][2] = Izz;
 
-	// put inertia products in result_matrix tensor
+	// put inertia products in gloResultMatrix tensor
 	It_init[0][1] = -Ixy;
 	It_init[1][0] = -Ixy;
 
@@ -3650,18 +3723,21 @@ void load_textures96x96_SEMITRANSPARENT_wOpenGL()
 
 				texName = textures_available + texn - 1; // VERY CAREFUL!!! NOT OVERWRITE ALREADY OCCUPIED TEXTURES!!
 
-				//---------| TEXTURE PROCESSING |-----THIS PART MUST BE EXECUTED ONLY ONCE!!! OTHEERWISE 
-				// IT SILENTLY OVERLOADS MEMORY AT EACH CALL
+				//---------| TEXTURE PROCESSING |-----THIS PART MUST BE EXECUTED ONLY ONCE!!! 
+				// Otherwise it silently overloads memory at each call
 				glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
 				glGenTextures(1, &texName);
 
-				texid[textures_available + texn - 1] = texName; // [texn-1] because started fron 1, be careful
+				texid[textures_available + texn - 1] = texName; // [texn-1] because started from 1, be careful
 
-				glBindTexture(GL_TEXTURE_2D, texid[textures_available + texn - 1]); // [texn-1] because started fron 1, be careful
+				glBindTexture(GL_TEXTURE_2D, texid[textures_available + texn - 1]); // [texn-1] because started from 1, be careful
 
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST ); // what OpgnGL should do when texture is magnified GL_NEAREST: non-smoothed texture | GL_LINEAR: smoothed
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);	// ...when texture is miniaturized because far; GL_NEAREST: non-smoothed tecture
+				// what OpenGL should do when texture is magnified GL_NEAREST: non-smoothed texture | GL_LINEAR: smoothed
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST ); 
+
+				// ...when texture is miniaturized because far; GL_NEAREST: non-smoothed texture
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);	
 
 				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, txtRES2, txtRES2, 0, GL_RGBA, GL_UNSIGNED_BYTE, txt1);
 				glGenerateMipmap(GL_TEXTURE_2D);
@@ -3673,7 +3749,7 @@ void load_textures96x96_SEMITRANSPARENT_wOpenGL()
 				//--------------------------| END OF TEXTURE LOAD PROCESSING |-------------------------------
 
 				texn++;	// augment count... next texture
-				textures_available++; // idem but on an extern variable... .
+				textures_available++; // ditto but on an extern variable... .
 			}
 			else
 			{
@@ -3681,13 +3757,12 @@ void load_textures96x96_SEMITRANSPARENT_wOpenGL()
 				printf("SDL_GetError() notify: %s\n", SDL_GetError());
 				texn = -1; // cause exiting from while loop.
 			}
-		}
+		} // end while
 	}
 } // end load_textures96x96_SEMITRANSPARENT_wOpenGL function
 
 // ####################################################################################################################
-// loads and fill in hmap, colmap, and the image indicating where to give bulk filling textures, and 
-// where to visualizare colmap's colo, wher elet instead texture with it's original colors 
+// Function load_hmap_from_bitmap populates field shmap of structure terrain1.
 // ####################################################################################################################
 int load_hmap_from_bitmap(char *filename)
 {
@@ -3706,7 +3781,6 @@ int load_hmap_from_bitmap(char *filename)
 			terrain1.shmap[j][i] = (float)rand() / (float)RAND_MAX;
 		}
 	}
-	//=================GROUND TEXTURE PERSONALISED...=====================
 
 	printf("TRYING TO OPEN FILE: %s\n", filename);
 
@@ -3736,6 +3810,7 @@ int load_hmap_from_bitmap(char *filename)
 } // end load_hmap_from_bitmap function
 
 // ####################################################################################################################
+// Function load_maptex_from_bitmap
 // load texture ID map from a bitmap deviced by an editor (or with a graphics editor program, but 
 // that would be RATHER UNPRACTICAL... )
 // ####################################################################################################################
@@ -3792,8 +3867,10 @@ int load_maptex_from_bitmap(char *filename)
 } // end load_maptex_from_bitmap function
 
 // ####################################################################################################################
-// leggi file e controlla quanti numeri ci sono: 
+// Function check_vector_elements
+// leggi file e controlla quanti numeri ci sono / read file and check how many numbers there are
 // N.B.: numeri separati da spazi o da a-capo. Con virgole o altro si blocca. 
+// N.B.: numbers separated by spaces or by a-line. With commas or other it blocks.
 // ####################################################################################################################
 long int check_vector_elements(char filename[])
 {
@@ -3813,14 +3890,15 @@ long int check_vector_elements(char filename[])
 } // end check_vector_elements function
 
 // ####################################################################################################################
-// Read in numeric vector form file
+// Function read_vector
+// Read in numeric vector from file
 // only space-separated or newline-separated numbers!! else goes error
 // ####################################################################################################################
 void read_vector(char filename[], float dest_string[], long int maxsize)
 {
 	FILE *FilePtr; // pointer to input file 
 	FilePtr = fopen(filename, "r");
-	long int i = 0; // MUST put it   =0 
+	long int i = 0; // MUST put it = 0 
 
 	while (fscanf(FilePtr, "%f", &dest_string[i]) != EOF && i < maxsize)
 	{
