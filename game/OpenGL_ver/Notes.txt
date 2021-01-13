@@ -78,5 +78,26 @@ From function main:
 	// IMPORTANT NOTE: 2 meters far from camera virtual 'lens' along it perpendiculat to it 
 	// towards screen, axes are each 1 meter long. use in an intelligent way the measures... 
 
+	// Game terrain initial values
+	// BE CAREFUL!!! says how many meters per side, if seen from above, because inclined sides obey
+	// sqrt(x^2 + z^2) but this is referred to the case when it's seen **FROM ABOVE**
+	terrain1.GPunit = 50.0; 
+	terrain1.map_size = 300;
+
+	// x= 200 meters + 20*some  [meters]
+	// y= 200 meters + 100*some [meters]
+	airport_x = (200 + (int)20 * ((float)rand() / (float)RAND_MAX)) / terrain1.GPunit;
+	airport_y = (200 + (int)500 * ((float)rand() / (float)RAND_MAX)) / terrain1.GPunit;
+
 From function make_inertia_tensor:
     double std_vxmass = 10.0;			 // 10 Kg
+
+Unused function parameters
+There are several functions that contain unused parameters:
+sdldislay (parameters sw and sh are not used)
+xaddpoint_persp (pbwidth and pbheight are not used)
+xaddline_persp (pb width and pbheight are not used)
+xaddftriang (parameters x1, y1, x2, y2, x3, y3, step, xlimit and ylimit are not used)
+xaddftriang_persp (parameters step, pbwidth and pbheight are not used)
+GLaddftriang_perspTEXTURED (parameters pbwidth and pbheight are not used)
+body_rebounce (parameter lat is not used)
