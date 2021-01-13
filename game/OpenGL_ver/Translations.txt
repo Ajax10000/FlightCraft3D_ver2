@@ -44,6 +44,8 @@ a simulation step that gives a not too disastrous result.
 idem
 ditto 
 
+CANCELLA SCHERMATA/ LAVAGNA.
+
 scenario inquadrature 3D
 3D shot scenery
 
@@ -74,7 +76,22 @@ calculates the coordinates of these 3 points in the parachutist / pilot's P-Q-R 
 DISEGNA SOLO LO AEREO... GRAFICA VETTORIALE BELLO SEMPLICE...
 DRAW ONLY THE PLANE ... BEAUTIFUL SIMPLE VECTOR GRAPHICS ...
 
+Note - Most displays, especially computer displays, use raster graphics, not vector graphics.
+
 estremo 1
 extreme 1
 
+"ACCUMULO" PER COSIDDIRE LE POSIZIONI NEL BLOCCO DI NUMERI float px,py e pz,CHE ABBIAMO CREATO APPOSTA 
+"ACCUMULATION" TO CONSIDER THE POSITIONS IN THE BLOCK OF NUMBERS float px, py and pz, WHICH WE HAVE CREATED ONLY
 
+nella primissima casella mettiamo la posizione di "ADESSO" 
+in the very first box we put the position of "NOW"
+
+GLI EFFETTI SPECIALI di base NEI GAMES 
+THE BASIC SPECIAL EFFECTS IN THE GAMES
+
+leggi file e controlla quanti numeri ci sono: 
+read file and check how many numbers there are:
+
+N.B.: numeri separati da spazi o da a-capo. Con virgole o altro si blocca. 
+N.B.: numbers separated by spaces or by a-line. With commas or other it blocks.
