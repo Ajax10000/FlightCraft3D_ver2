@@ -137,8 +137,12 @@ void drawLogo(void);
 void drawAxes(void);
 void drawTerrain(void);
 void drawTrees(void);
+void drawAirplane(float h);
 void loadAirplaneModel(void);
 void checkForPlaneCollision(void);
+void updateTorque(int plane_up, int plane_down, int plane_inclleft, int plane_inclright);
+void updatePQRAxes(float theta, float fi);
+void updateVirtualCameraPos(float RR);
 
 // #                                                                                                                  #
 // # End function prototypes                                                                                          #
@@ -153,7 +157,7 @@ void checkForPlaneCollision(void);
 #define HEIGHT 320
 #define COLDEPTH 16
 
-// glo prefix to global variable names is supposed to remind you that it is a global variable.
+// The glo prefix to global variable names is supposed to remind you that it is a global variable.
 // Though I usually use "gl" to prefix global variables, in this case it might get confused with 
 // something relating to OpenGL, as most OpenGL functions start with "gl".
 
@@ -170,8 +174,8 @@ SDL_Window *gloWindow = NULL; // New for SDL 2
 SDL_GLContext gloContext;	   // New for SDL2
 const GLdouble pi = 3.1415926535897932384626433832795;
 
-// low_graphics is used only in function main.
-int low_graphics = 1;
+// gloUsingLowResolution is used only in function main.
+int gloUsingLowResolution = 1;
 
 // pixmatrix is populated in functions xaddline and xadd1pix
 float pixmatrix[HEIGHT][WIDTH][3];
@@ -191,7 +195,15 @@ int gloTexturesAvailable = 0;
 // MAG can be increased by 10 by the user at runtime by clicking on the 't' key.
 float MAG = 60.0;
 
-int view = 1; // start w external viwìew
+// gloView can have 4 values: 1, 2, 3, 4
+// 1 => external view, looking at plane from behind and right of the plane
+// 2 => external view, looking down at plane from directly above
+// 3 => external view, looking at right side of plane, from directly to the right side of the plane
+// 4 => internal view, from inside plane looking outside of cockpit
+// The user can switch through the various values of gloView by pressing the 'o' button
+//
+// Used (read) in functions updatePQRAxes and updateVirtualCameraPos
+int gloView = 1; // start w external view
 
 float x_cockpit_view = 0.6;
 float y_cockpit_view = 0.6;
@@ -202,6 +214,7 @@ float x_pilot, y_pilot, z_pilot;
 
 // autoset by general graphics procedure!! 
 // posizione telecamera vituale / virtual camera position
+// Updated in function updateVirtualCameraPos
 float x = 0.0, y = 0.0, z = 0.0;		  
 
 // coordinates of airplane in game... external view is just needed here to make this game 
@@ -211,6 +224,7 @@ float xp = 200.0, yp = 200.0, zp = 400.0;
 
 // versori dei 3 assi della telecamera virtuale 
 // versors of the 3 axes of the virtual camera
+// Updated in function updatePQRAxes.
 float P[3], Q[3], R[3];
 
 // versori dei 3 assi del sistema di riferimento rispetto cui sono dati i vertici dello aeroplano 
@@ -260,6 +274,7 @@ int face_texord[NTRIS][3] = {
 // c(0,1) yes.
 // see definition below of "texcoord_x[0-3]" and "texcoord_y[0-3]" 
 
+// texcoord_x and texcoord_y are defined but never used.
 // this never changes... it's a fixed convention... of course you can change it in the 
 // source cnde here and recompile for having a different flavour of editor 
 // ==vertexes of tex square:===a=b=c=d===========
@@ -280,21 +295,31 @@ const int texcoord_y[4] = {0, 0, 1, 1}; //...y
 // After all, this way trees would be polyherda as any generic polyhedra with also semitransparent 
 // faces for the 'slices' where desired. 
 //
-// Set in function main. Drawn in function main.
+// Set in function main. Drawn in function drawTrees.
 float gloTrees[NTREES][5];
-int tree_texture_ID_bounds[2]; // texture_ID -related thing
 
+// gloTreeTextureIDBounds[0] is set in function main.
+// gloTreeTextureIDBounds[0] is read in function initTrees.
+int gloTreeTextureIDBounds[2]; // texture_ID -related thing
+
+// treeR1 is used in function drawTrees.
+// Not modified, so this can be declared a constant.
 float treeR1 = 0.5;
 
 // auxilliary for giving right texture coordinates... the right way of 'splattering' the 
 // quadrangular texture image / color-matrix onto some triangles into which all 3D objects 
 // in the simplest case are divided.
+//
+// Used in function drawTerrain, where it is used as a parameter to GLaddftriang_perspTEXTURED.
+// It would be better to declare this variable as a local variable in drawTerrain.
 float texcoords_gnd_tri1[3][2] = {
 	{0.0, 0.0},
 	{1.0, 0.0},
 	{0.0, 1.0}
 };
 
+// Used in function drawTerrain, where it is used as a parameter to GLaddftriang_perspTEXTURED.
+// It would be better to declare this variable as a local variable in drawTerrain.
 float texcoords_gnd_tri2[3][2] = {
 	{1.0, 0.0},
 	{0.0, 1.0},
@@ -303,7 +328,7 @@ float texcoords_gnd_tri2[3][2] = {
 
 #define NLINES 20
 #define NVERTEXES 200
- 
+
 // Aereo: Definizione dei vertici
 // Plane: Definition of the vertexes
 //
@@ -445,6 +470,8 @@ int estremi[NLINES][2] = {
 // chi sono i 2 punti estremi delle linee da disegnare? / who are the 2 extreme points of the lines to draw?
 // NOTA: estremi[ i-esima linea][quale punto e' l'estremo ] / NOTE: extremes [i-th line] [which point is the extreme]
 // Initialized below with 61 elements, indexed from 0 to 60.
+// 
+// Used in function drawAirplane as indices into matrix gloPunti.
 int tris[NTRIS][3] = {
 	{ 0,  4,  5}, // 0
 	{ 1,  2,  3},
@@ -545,7 +572,13 @@ float col_tris[NTRIS][3] = {
 	{0.4, 0.4, 0.3}
 };
 
+// nvertexes is set in function import_airplane_polyheron to the number of rows set in array gloPunti 
+// with data read from file input/vertexes.txt.
 int nvertexes = 100; // default value
+
+// ntris is used in function drawAirplane.
+// It is set in function import_airplane_polyheron to the number of rows set in array tris 
+// with data read from file input/triangulation.txt.
 int ntris = 33;		 // default value
 
 // quantities used for simulation / realistic motion and rebounce from ground
@@ -569,6 +602,7 @@ double L[3] = {0.0, 0.0, 0.0};
 
 // constants which characterize dynamically the body
 float MASS = 1000.0; // total mass (linear motion) 
+
 double It_init[3][3] = {
 	{100.0, 0.0, 0.0},
 	{0.0, 200.0, 0.0},
@@ -589,7 +623,7 @@ double It_now[3][3] = {
 // (DON'T CARE; info: Google --> "moment of inertia tensor" ) 
 // influences from outside: force vectors
 float Fcm[3] = {0.0, 0.0, 0.0};			// total force on center-of-mass "CM" 
-double torque_tot[3] = {0.0, 0.0, 0.0}; // total torque-force on rigid body
+double gloTtlTorque[3] = {0.0, 0.0, 0.0}; // total torque-force on rigid body
 
 // costants specific to simplest **AIRPLANE** game. 
 // some constant deriving from viscosity of air 
@@ -623,8 +657,9 @@ double Pforce = 0.0;
 double vpar, vperp;	 
 
 double gloResultMatrix[3][3];
+double gloTempMatrix[3][3];
+
 double R_T[3][3];
-double temp_mat[3][3];
 
 double Id[3][3] = {
 	{1.0, 0.0, 0.0},
@@ -649,7 +684,8 @@ double axis2_orig[3] = {0.0, 1.0, 0.0};
 double axis3_orig[3] = {0.0, 0.0, 1.0};
 
 // according to present orientation: 3 principal axes of inertia.
-double axis_1[3], axis_2[3], axis_3[3]; 
+// Used in function checkForPlaneCollision.
+double gloAxis1[3], gloAxis2[3], gloAxis3[3]; 
 
 // auxillaries:
 double SD[3][3], SD2[3][3], u1, u2, u3, w_abs, dAng;
@@ -756,7 +792,7 @@ int main()
 
 	// load textures in
 	load_textures_wOpenGL(); 
-	tree_texture_ID_bounds[0] = gloTexturesAvailable; // at what ID do tree textures begin (and end also...)
+	gloTreeTextureIDBounds[0] = gloTexturesAvailable; // at what ID do tree textures begin (and end also...)
 
 	// ditto but with "bitmap" image files with alpha value for transparency information on each pixel... 
 	// this is mainly used for drawing trees in a quick, nice and simple way.
@@ -769,12 +805,12 @@ int main()
 	// initTrees initializes global variable gloTrees
 	initTrees();
 
-	if (low_graphics == 0)
+	if (gloUsingLowResolution == 0)
 	{
 		addsmoke_wsim(xp, yp, zp, h, 1); // commented out for testing
 	}
 
-	// initPhysicsVars will set global variables It_init, p, L, It_initINV, Fcm and torque_tot
+	// initPhysicsVars will set global variables It_init, p, L, It_initINV, Fcm and gloTtlTorque
 	initPhysicsVars();
 
 	// loadAirplaneModel sets global variables gloPunti, 
@@ -796,83 +832,61 @@ int main()
 			theta = theta + turnch * 0.02; // rotate camera's reference system's theta angle 
 			th_add = th_add + turnch * 0.01;
 		}
-		if (plane_up == 1)
-		{
-			torque_tot[0] += 2620.0 * axis_3[0];
-			torque_tot[1] += 2620.0 * axis_3[1];
-			torque_tot[2] += 2620.0 * axis_3[2];
-		}
-		if (plane_down == 1)
-		{
-			torque_tot[0] += -2621.0 * axis_3[0];
-			torque_tot[1] += -2621.0 * axis_3[1];
-			torque_tot[2] += -2621.0 * axis_3[2];
-		}
-		if (plane_inclleft == 1)
-		{
-			torque_tot[0] += -2620.0 * axis_1[0];
-			torque_tot[1] += -2620.0 * axis_1[1];
-			torque_tot[2] += -2620.0 * axis_1[2];
-		}
-		if (plane_inclright == 1)
-		{
-			torque_tot[0] += 2621.0 * axis_1[0];
-			torque_tot[1] += 2621.0 * axis_1[1];
-			torque_tot[2] += 2621.0 * axis_1[2];
-		}
+
+		updateTorque(plane_up, plane_down, plane_inclleft, plane_inclright);
 
 		// ===========PHYSICS PROCEDURE=============
 		// Sembra tutto OK / Everything seems OK
 		// now calculate axes in their new 'orientation', using the orientation matrix.
 
 		//R:
-		axis_1[0] = Rm[0][0] * axis1_orig[0] +
-					Rm[0][1] * axis1_orig[1] +
-					Rm[0][2] * axis1_orig[2];
+		gloAxis1[0] = Rm[0][0] * axis1_orig[0] +
+					  Rm[0][1] * axis1_orig[1] +
+					  Rm[0][2] * axis1_orig[2];
 
-		axis_1[1] = Rm[1][0] * axis1_orig[0] +
-					Rm[1][1] * axis1_orig[1] +
-					Rm[1][2] * axis1_orig[2];
+		gloAxis1[1] = Rm[1][0] * axis1_orig[0] +
+					  Rm[1][1] * axis1_orig[1] +
+					  Rm[1][2] * axis1_orig[2];
 
-		axis_1[2] = Rm[2][0] * axis1_orig[0] +
-					Rm[2][1] * axis1_orig[1] +
-					Rm[2][2] * axis1_orig[2];
+		gloAxis1[2] = Rm[2][0] * axis1_orig[0] +
+					  Rm[2][1] * axis1_orig[1] +
+					  Rm[2][2] * axis1_orig[2];
 
-		axis_2[0] = Rm[0][0] * axis2_orig[0] +
-					Rm[0][1] * axis2_orig[1] +
-					Rm[0][2] * axis2_orig[2];
+		gloAxis2[0] = Rm[0][0] * axis2_orig[0] +
+					  Rm[0][1] * axis2_orig[1] +
+					  Rm[0][2] * axis2_orig[2];
 
-		axis_2[1] = Rm[1][0] * axis2_orig[0] +
-					Rm[1][1] * axis2_orig[1] +
-					Rm[1][2] * axis2_orig[2];
+		gloAxis2[1] = Rm[1][0] * axis2_orig[0] +
+					  Rm[1][1] * axis2_orig[1] +
+					  Rm[1][2] * axis2_orig[2];
 
-		axis_2[2] = Rm[2][0] * axis2_orig[0] +
-					Rm[2][1] * axis2_orig[1] +
-					Rm[2][2] * axis2_orig[2];
+		gloAxis2[2] = Rm[2][0] * axis2_orig[0] +
+					  Rm[2][1] * axis2_orig[1] +
+					  Rm[2][2] * axis2_orig[2];
 
-		axis_3[0] = Rm[0][0] * axis3_orig[0] +
-					Rm[0][1] * axis3_orig[1] +
-					Rm[0][2] * axis3_orig[2];
+		gloAxis3[0] = Rm[0][0] * axis3_orig[0] +
+					  Rm[0][1] * axis3_orig[1] +
+					  Rm[0][2] * axis3_orig[2];
 
-		axis_3[1] = Rm[1][0] * axis3_orig[0] +
-					Rm[1][1] * axis3_orig[1] +
-					Rm[1][2] * axis3_orig[2];
+		gloAxis3[1] = Rm[1][0] * axis3_orig[0] +
+					  Rm[1][1] * axis3_orig[1] +
+					  Rm[1][2] * axis3_orig[2];
 
-		axis_3[2] = Rm[2][0] * axis3_orig[0] +
-					Rm[2][1] * axis3_orig[1] +
-					Rm[2][2] * axis3_orig[2];
+		gloAxis3[2] = Rm[2][0] * axis3_orig[0] +
+					  Rm[2][1] * axis3_orig[1] +
+					  Rm[2][2] * axis3_orig[2];
 
-		Pa[0] = axis_1[0];
-		Pa[1] = axis_1[1];
-		Pa[2] = axis_1[2];
+		Pa[0] = gloAxis1[0];
+		Pa[1] = gloAxis1[1];
+		Pa[2] = gloAxis1[2];
 
-		Qa[0] = axis_2[0];
-		Qa[1] = axis_2[1];
-		Qa[2] = axis_2[2];
+		Qa[0] = gloAxis2[0];
+		Qa[1] = gloAxis2[1];
+		Qa[2] = gloAxis2[2];
 
-		Ra[0] = axis_3[0];
-		Ra[1] = axis_3[1];
-		Ra[2] = axis_3[2];
+		Ra[0] = gloAxis3[0];
+		Ra[1] = gloAxis3[1];
+		Ra[2] = gloAxis3[2];
 		// =======END OF AXES REORIENTATION DONE============
 
 		// Calulate total Fcm and total torque, starting from external forces applied to vertices 
@@ -887,37 +901,38 @@ int main()
 		float rot2;
 		float rot3;
 
-		vlat = axis_3[0] * v[0] + axis_3[1] * v[1] + axis_3[2] * v[2]; // dot product calculated directly
+		vlat = gloAxis3[0] * v[0] + gloAxis3[1] * v[1] + gloAxis3[2] * v[2]; // dot product calculated directly
 
-		vperp = axis_2[0] * v[0] + axis_2[1] * v[1] + axis_2[2] * v[2]; // dot product calculated directly
+		vperp = gloAxis2[0] * v[0] + gloAxis2[1] * v[1] + gloAxis2[2] * v[2]; // dot product calculated directly
 
-		vpar = axis_1[0] * v[0] + axis_1[1] * v[1] + axis_1[2] * v[2];
+		vpar = gloAxis1[0] * v[0] + gloAxis1[1] * v[1] + gloAxis1[2] * v[2];
 
-		rot1 = axis_1[0] * w[0] + axis_1[1] * w[1] + axis_1[2] * w[2]; // how much it rotates around axis 1 (nose--> back)
+		rot1 = gloAxis1[0] * w[0] + gloAxis1[1] * w[1] + gloAxis1[2] * w[2]; // how much it rotates around axis 1 (nose--> back)
 
-		rot2 = axis_2[0] * w[0] + axis_2[1] * w[1] + axis_2[2] * w[2]; // how much it rotates around axis 2 (perp to wings)
+		rot2 = gloAxis2[0] * w[0] + gloAxis2[1] * w[1] + gloAxis2[2] * w[2]; // how much it rotates around axis 2 (perp to wings)
 
-		rot3 = axis_3[0] * w[0] + axis_3[1] * w[1] + axis_3[2] * w[2]; // how much it rotates around axis 3 (parallel to wings)
+		rot3 = gloAxis3[0] * w[0] + gloAxis3[1] * w[1] + gloAxis3[2] * w[2]; // how much it rotates around axis 3 (parallel to wings)
 		// effect (IN A VERY RUDIMENTAL CONCEPTION OF AERODYNAMICS, NOT SCIENTIFIC AT ALL) of air friction on the motion of Center of Mass directly.
 
-		Fcm[0] += -k_visc * vperp * axis_2[0] - k_visc2 * vlat * axis_3[0] - k_visc3 * vpar * axis_1[0] + Pforce * axis_1[0];
-		Fcm[1] += -k_visc * vperp * axis_2[1] - k_visc2 * vlat * axis_3[1] - k_visc3 * vpar * axis_1[1] + Pforce * axis_1[1];
-		Fcm[2] += -k_visc * vperp * axis_2[2] - k_visc2 * vlat * axis_3[2] - k_visc3 * vpar * axis_1[2] + Pforce * axis_1[2];
+		Fcm[0] += -k_visc * vperp * gloAxis2[0] - k_visc2 * vlat * gloAxis3[0] - k_visc3 * vpar * gloAxis1[0] + Pforce * gloAxis1[0];
+		Fcm[1] += -k_visc * vperp * gloAxis2[1] - k_visc2 * vlat * gloAxis3[1] - k_visc3 * vpar * gloAxis1[1] + Pforce * gloAxis1[1];
+		Fcm[2] += -k_visc * vperp * gloAxis2[2] - k_visc2 * vlat * gloAxis3[2] - k_visc3 * vpar * gloAxis1[2] + Pforce * gloAxis1[2];
 
 		// same for the rotational motion. other effects are not considered.
 		// if you're an expert of aeromobilism, you can write better, just substitute these weak formulas for better ones.
 
 		// generic stabilization (very poor approximation)
-		torque_tot[0] += -vpar * k_visc_rot_STABILIZE * w[0];
-		torque_tot[1] += -vpar * k_visc_rot_STABILIZE * w[1];
-		torque_tot[2] += -vpar * k_visc_rot_STABILIZE * w[2];
+		gloTtlTorque[0] += -vpar * k_visc_rot_STABILIZE * w[0];
+		gloTtlTorque[1] += -vpar * k_visc_rot_STABILIZE * w[1];
+		gloTtlTorque[2] += -vpar * k_visc_rot_STABILIZE * w[2];
 
-		double boh = axis_3[0] * v[0] + axis_3[1] * v[1] + axis_3[2] * v[2];
+		double boh = gloAxis3[0] * v[0] + gloAxis3[1] * v[1] + gloAxis3[2] * v[2];
 
 		// effetto coda verticale: decente...
-		torque_tot[0] += -k_visc_rot3 * (boh)*axis_2[0];
-		torque_tot[1] += -k_visc_rot3 * (boh)*axis_2[1];
-		torque_tot[2] += -k_visc_rot3 * (boh)*axis_2[2];
+		// vertical tail effect: decent ...
+		gloTtlTorque[0] += -k_visc_rot3 * (boh)*gloAxis2[0];
+		gloTtlTorque[1] += -k_visc_rot3 * (boh)*gloAxis2[1];
+		gloTtlTorque[2] += -k_visc_rot3 * (boh)*gloAxis2[2];
 
 		// =======tota Fcm and toal torque DONE=============
 
@@ -935,9 +950,9 @@ int main()
 		v[1] = p[1] / MASS;
 		v[2] = p[2] / MASS;
 
-		L[0] = L[0] + torque_tot[0] * h;
-		L[1] = L[1] + torque_tot[1] * h;
-		L[2] = L[2] + torque_tot[2] * h;
+		L[0] = L[0] + gloTtlTorque[0] * h;
+		L[1] = L[1] + gloTtlTorque[1] * h;
+		L[2] = L[2] + gloTtlTorque[2] * h;
 
 		// now we get the updated velocity, component by component.
 		w[0] = inv_It_now[0][0] * L[0] + inv_It_now[0][1] * L[1] + inv_It_now[0][2] * L[2];
@@ -952,7 +967,7 @@ int main()
 		for (i = 0; i < 3; i++)
 		{
 			Fcm[i] = 0.0;
-			torque_tot[i] = 0.0;
+			gloTtlTorque[i] = 0.0;
 		}
 
 		// update position and orientation
@@ -1040,12 +1055,12 @@ int main()
 		{
 			for (i = 0; i < 3; i++)
 			{
-				temp_mat[j][i] = gloResultMatrix[j][i]; //SAFE COPY!!! PASSING EXTERN VARIABLE AND THEN MODIFYING IT IS NOT SAFE... COMPILERS MAY FAIL TO DO IT CORRECTLY!!!
+				gloTempMatrix[j][i] = gloResultMatrix[j][i]; //SAFE COPY!!! PASSING EXTERN VARIABLE AND THEN MODIFYING IT IS NOT SAFE... COMPILERS MAY FAIL TO DO IT CORRECTLY!!!
 				//SAFEST SIMPLE METHOD --> BEST METHOD.
 			}
 		}
 
-		mat3x3_mult(temp_mat, R_T);
+		mat3x3_mult(gloTempMatrix, R_T);
 
 		// and put result into "It_now" 
 		for (j = 0; j < 3; j++)
@@ -1064,11 +1079,11 @@ int main()
 		{
 			for (i = 0; i < 3; i++)
 			{
-				temp_mat[j][i] = gloResultMatrix[j][i]; //SAFE COPY!!! PASSING EXTERN VARIABLE AND THEN MODIFYING IT IS NOT SAFE... COMPILERS MAY FAIL TO DO IT CORRECTLY!!!
+				gloTempMatrix[j][i] = gloResultMatrix[j][i]; //SAFE COPY!!! PASSING EXTERN VARIABLE AND THEN MODIFYING IT IS NOT SAFE... COMPILERS MAY FAIL TO DO IT CORRECTLY!!!
 				//SAFEST SIMPLE METHOD --> BEST METHOD.
 			}
 		}
-		mat3x3_mult(temp_mat, R_T);
+		mat3x3_mult(gloTempMatrix, R_T);
 
 		// we copy it into "inv_It_now"... 
 		for (j = 0; j < 3; j++)
@@ -1087,110 +1102,11 @@ int main()
 		// representation and graphics perocedure
 		xclearpixboard(WIDTH, HEIGHT); // CANCELLA SCHERMATA/ LAVAGNA.
 
-		// scenario inquadrature 3D / 3D shot scenery
-		if (view == 1)
-		{
-			P[0] = -sin(theta);
-			P[1] = cos(theta);
-			P[2] = 0.0;
+		updatePQRAxes(theta, fi);
 
-			Q[0] = -cos(theta) * cos(fi);
-			Q[1] = -sin(theta) * cos(fi);
-			Q[2] = sin(fi);
+		updateVirtualCameraPos(RR);
 
-			R[0] = cos(theta) * sin(fi);
-			R[1] = sin(theta) * sin(fi);
-			R[2] = cos(fi);
-		}
-		else if (view == 2)
-		{
-			// I know this negative index stuff is awkward but in the prototype stage 
-			// it was good to have 1 and -1. now just extend this to support more views.
-			P[0] = -Pa[0]; // had to be mirrored sorry
-			P[1] = -Pa[1];
-			P[2] = -Pa[2];
-
-			Q[0] = Ra[0];
-			Q[1] = Ra[1];
-			Q[2] = Ra[2];
-
-			R[0] = Qa[0];
-			R[1] = Qa[1];
-			R[2] = Qa[2];
-		}
-		else if (view == 3)
-		{
-			P[0] = Pa[0]; // had to be mirrored sorry
-			P[1] = Pa[1];
-			P[2] = Pa[2];
-
-			R[0] = Ra[0];
-			R[1] = Ra[1];
-			R[2] = Ra[2];
-
-			Q[0] = Qa[0];
-			Q[1] = Qa[1];
-			Q[2] = Qa[2];
-		}
-		else if (view == 4)
-		{ 
-			// INTERNAL VIEW COCKPIT
-			float Pp[3], Qp[3], Rp[3];
-
-			Rp[0] = -Pa[0]; // had to be mirrored sorry
-			Rp[1] = -Pa[1];
-			Rp[2] = -Pa[2];
-
-			Pp[0] = Ra[0];
-			Pp[1] = Ra[1];
-			Pp[2] = Ra[2];
-
-			Qp[0] = Qa[0];
-			Qp[1] = Qa[1];
-			Qp[2] = Qa[2];
-
-			// Ri, Pi, Qi - this is most practical axis-order.
-			P[0] = Rp[0] * (-sin(theta)) + Pp[0] * (cos(theta)) + Qp[0] * 0.0;
-			P[1] = Rp[1] * (-sin(theta)) + Pp[1] * (cos(theta)) + Qp[1] * 0.0;
-			P[2] = Rp[2] * (-sin(theta)) + Pp[2] * (cos(theta)) + Qp[2] * 0.0;
-
-			Q[0] = Rp[0] * (-cos(theta) * cos(fi)) + Pp[0] * (-sin(theta) * cos(fi)) + Qp[0] * sin(fi);
-			Q[1] = Rp[1] * (-cos(theta) * cos(fi)) + Pp[1] * (-sin(theta) * cos(fi)) + Qp[1] * sin(fi);
-			Q[2] = Rp[2] * (-cos(theta) * cos(fi)) + Pp[2] * (-sin(theta) * cos(fi)) + Qp[2] * sin(fi);
-
-			R[0] = Rp[0] * (cos(theta) * sin(fi)) + Pp[0] * (sin(theta) * sin(fi)) + Qp[0] * cos(fi);
-			R[1] = Rp[1] * (cos(theta) * sin(fi)) + Pp[1] * (sin(theta) * sin(fi)) + Qp[1] * cos(fi);
-			R[2] = Rp[2] * (cos(theta) * sin(fi)) + Pp[2] * (sin(theta) * sin(fi)) + Qp[2] * cos(fi);
-		}
-
-		// moving plane's CM 
-		if (aboard == 1)
-		{
-			x = xp + RR * R[0];
-			y = yp + RR * R[1];
-			z = zp + RR * R[2];
-
-			if (view == 4)
-			{ 
-				// INTERNAL VIEW COCKPIT
-				// now: here the camera position is very important.
-				x = xp + z_cockpit_view * P[0] + y_cockpit_view * Q[0] + x_cockpit_view * R[0];
-				y = yp + z_cockpit_view * P[1] + y_cockpit_view * Q[1] + x_cockpit_view * R[1];
-				z = zp + z_cockpit_view * P[2] + y_cockpit_view * Q[2] + x_cockpit_view * R[2];
-			}
-		}
-		else
-		{
-			x = x_pilot;
-			y = y_pilot;
-			z = say_terrain_height(&terrain1, x_pilot, y_pilot) + 1.75;
-		}
-
-		// Le coordinate dei punti della pista, nel sistema di riferimento del paracadutista
-		// The coordinates of the runway points, in the parachutist's reference system
-		float x1, y1, z1, x2, y2, z2; 
-
-		if (low_graphics == 0)
+		if (gloUsingLowResolution == 0)
 		{
 			addsmoke_wsim(xp, yp, zp, h, 2); // DEACTIVATED TO TEST
 		}
@@ -1203,72 +1119,13 @@ int main()
 
 		drawTrees();
 
-		if (low_graphics == 0)
+		if (gloUsingLowResolution == 0)
 		{
+			// Why are we adding smoke at coordinates (x, y, z) = (1, 2, 3)?
 			addsmoke_wsim(1, 2, 3, h, 0); // we must make special effect sequences go on. 
 		}
 
-		float x1a, y1a, z1a, x2a, y2a, z2a, x3a, y3a, z3a, x3, y3, z3;
-
-		// Disegna solo lo aereo
-		// Draw only the plane
-		color[0] = 1.0;
-		color[1] = 1.0;
-		color[2] = 1.0;
-
-		for (i = 0; i < ntris; i++)
-		{ // AIRPLANE...
-			x1a = Pa[0] * gloPunti[tris[i][0]][0] + Qa[0] * gloPunti[tris[i][0]][1] + Ra[0] * gloPunti[tris[i][0]][2];
-			y1a = Pa[1] * gloPunti[tris[i][0]][0] + Qa[1] * gloPunti[tris[i][0]][1] + Ra[1] * gloPunti[tris[i][0]][2];
-			z1a = Pa[2] * gloPunti[tris[i][0]][0] + Qa[2] * gloPunti[tris[i][0]][1] + Ra[2] * gloPunti[tris[i][0]][2];
-
-			x2a = Pa[0] * gloPunti[tris[i][1]][0] + Qa[0] * gloPunti[tris[i][1]][1] + Ra[0] * gloPunti[tris[i][1]][2];
-			y2a = Pa[1] * gloPunti[tris[i][1]][0] + Qa[1] * gloPunti[tris[i][1]][1] + Ra[1] * gloPunti[tris[i][1]][2];
-			z2a = Pa[2] * gloPunti[tris[i][1]][0] + Qa[2] * gloPunti[tris[i][1]][1] + Ra[2] * gloPunti[tris[i][1]][2];
-
-			x3a = Pa[0] * gloPunti[tris[i][2]][0] + Qa[0] * gloPunti[tris[i][2]][1] + Ra[0] * gloPunti[tris[i][2]][2];
-			y3a = Pa[1] * gloPunti[tris[i][2]][0] + Qa[1] * gloPunti[tris[i][2]][1] + Ra[1] * gloPunti[tris[i][2]][2];
-			z3a = Pa[2] * gloPunti[tris[i][2]][0] + Qa[2] * gloPunti[tris[i][2]][1] + Ra[2] * gloPunti[tris[i][2]][2];
-
-			// estremo 1 / extreme 1
-			x1 = P[0] * (x1a + xp - x) + P[1] * (y1a + yp - y) + P[2] * (z1a + zp - z);
-			y1 = Q[0] * (x1a + xp - x) + Q[1] * (y1a + yp - y) + Q[2] * (z1a + zp - z);
-			z1 = R[0] * (x1a + xp - x) + R[1] * (y1a + yp - y) + R[2] * (z1a + zp - z);
-
-			// estremo 2 / extreme 2
-			x2 = P[0] * (x2a + xp - x) + P[1] * (y2a + yp - y) + P[2] * (z2a + zp - z);
-			y2 = Q[0] * (x2a + xp - x) + Q[1] * (y2a + yp - y) + Q[2] * (z2a + zp - z);
-			z2 = R[0] * (x2a + xp - x) + R[1] * (y2a + yp - y) + R[2] * (z2a + zp - z);
-
-			// vertex 3 
-			x3 = P[0] * (x3a + xp - x) + P[1] * (y3a + yp - y) + P[2] * (z3a + zp - z);
-			y3 = Q[0] * (x3a + xp - x) + Q[1] * (y3a + yp - y) + Q[2] * (z3a + zp - z);
-			z3 = R[0] * (x3a + xp - x) + R[1] * (y3a + yp - y) + R[2] * (z3a + zp - z);
-
-			// col_tris holds the airplane's colors
-			color[0] = col_tris[i][0];
-			color[1] = col_tris[i][1];
-			color[2] = col_tris[i][2];
-
-			if (low_graphics == 0)
-			{
-				xaddftriang_persp(x1, y1, -z1,
-								  x2, y2, -z2,
-								  x3, y3, -z3, 1, color, WIDTH, HEIGHT);
-			}
-			else
-			{
-				xaddftriang_persp(x1, y1, -z1,
-								  x2, y2, -z2,
-								  x3, y3, -z3, 1, color, WIDTH, HEIGHT);
-			}
-		}
-
-		if (low_graphics == 0)
-		{
-			addfrantumation_wsim(x1, y1, z1, h, 0);	// we must make special effect sequences go on. 
-			projectile_launch(10, 10, 10, 20, 10, -0.1, h, 0); // idem / ditto
-		}
+		drawAirplane(h);
 
 		// call function which displays the matrix of pixels in a true graphics window 
 
@@ -1344,7 +1201,7 @@ int main()
 				if (gloEvent.key.keysym.sym == SDLK_1)
 				{
 					RR = RR - 2.0; 
-					if (view == 4)
+					if (gloView == 4)
 					{
 						x_cockpit_view = x_cockpit_view - 0.1;
 					}
@@ -1352,7 +1209,7 @@ int main()
 				if (gloEvent.key.keysym.sym == SDLK_2)
 				{
 					RR = RR + 2.0;
-					if (view == 4)
+					if (gloView == 4)
 					{
 						x_cockpit_view = x_cockpit_view + 0.1;
 					}
@@ -1404,15 +1261,15 @@ int main()
 
 				if (gloEvent.key.keysym.sym == SDLK_m)
 				{
-					low_graphics = 1; // LOW GRAPHICS MODE for slow computers 
+					gloUsingLowResolution = 1; // LOW GRAPHICS MODE for slow computers 
 				}
 
 				if (gloEvent.key.keysym.sym == SDLK_o)
 				{
-					view = view + 1; // change view
-					if (view == 5)
+					gloView = gloView + 1; // change view
+					if (gloView == 5)
 					{
-						view = 1; // restore to view 1 (normal external)
+						gloView = 1; // restore to view 1 (normal external)
 					}
 				}
 
@@ -1655,12 +1512,12 @@ void initTrees()
 
 		if (gloTrees[k][4] == 0)
 		{
-			gloTrees[k][4] = tree_texture_ID_bounds[0];
+			gloTrees[k][4] = gloTreeTextureIDBounds[0];
 			gloTrees[k][3] = 3;
 		}
 		else if (gloTrees[k][4] == 1)
 		{
-			gloTrees[k][4] = tree_texture_ID_bounds[0] + 2;
+			gloTrees[k][4] = gloTreeTextureIDBounds[0] + 2;
 			gloTrees[k][3] = 1;
 		}
 
@@ -1675,12 +1532,12 @@ void initTrees()
 
 			if (gloTrees[k + j][4] == 0.0)
 			{
-				gloTrees[k + j][4] = tree_texture_ID_bounds[0]; // texture id number
+				gloTrees[k + j][4] = gloTreeTextureIDBounds[0]; // texture id number
 				gloTrees[k + j][3] = 3;
 			}
 			else if (gloTrees[k + j][4] == 1.0)
 			{
-				gloTrees[k + j][4] = tree_texture_ID_bounds[0] + 2;
+				gloTrees[k + j][4] = gloTreeTextureIDBounds[0] + 2;
 				gloTrees[k + j][3] = 1; // texture id number
 			}
 		}
@@ -1823,7 +1680,7 @@ void initPhysicsVars()
 	for (i = 0; i < 3; i++)
 	{
 		Fcm[i] = 0.0;
-		torque_tot[i] = 0.0;
+		gloTtlTorque[i] = 0.0;
 	}
 
 	for (j = 0; j < 3; j++)
@@ -2076,7 +1933,7 @@ void drawTerrain() {
 
 	lv = 12;
 
-	if (low_graphics == 1)
+	if (gloUsingLowResolution == 1)
 	{
 		lv = 6;
 	}
@@ -2168,6 +2025,81 @@ void drawTerrain() {
 } // end function drawTerrain
 
 // ####################################################################################################################
+// Function drawAirplane
+// ####################################################################################################################
+void drawAirplane(float h) 
+{
+	int i;
+	// Le coordinate dei punti della pista, nel sistema di riferimento del paracadutista
+	// The coordinates of the runway points, in the parachutist's reference system
+	float x1, y1, z1, x2, y2, z2; 
+	float x1a, y1a, z1a;
+	float x2a, y2a, z2a;
+	float x3a, y3a, z3a;
+	float x3, y3, z3;
+	float color[4] = {0.0, 0.0, 0.0, 1.0};
+
+	// Disegna solo lo aereo / Draw only the plane
+	color[0] = 1.0;
+	color[1] = 1.0;
+	color[2] = 1.0;
+
+	for (i = 0; i < ntris; i++)
+	{ // AIRPLANE...
+		x1a = Pa[0] * gloPunti[tris[i][0]][0] + Qa[0] * gloPunti[tris[i][0]][1] + Ra[0] * gloPunti[tris[i][0]][2];
+		y1a = Pa[1] * gloPunti[tris[i][0]][0] + Qa[1] * gloPunti[tris[i][0]][1] + Ra[1] * gloPunti[tris[i][0]][2];
+		z1a = Pa[2] * gloPunti[tris[i][0]][0] + Qa[2] * gloPunti[tris[i][0]][1] + Ra[2] * gloPunti[tris[i][0]][2];
+
+		x2a = Pa[0] * gloPunti[tris[i][1]][0] + Qa[0] * gloPunti[tris[i][1]][1] + Ra[0] * gloPunti[tris[i][1]][2];
+		y2a = Pa[1] * gloPunti[tris[i][1]][0] + Qa[1] * gloPunti[tris[i][1]][1] + Ra[1] * gloPunti[tris[i][1]][2];
+		z2a = Pa[2] * gloPunti[tris[i][1]][0] + Qa[2] * gloPunti[tris[i][1]][1] + Ra[2] * gloPunti[tris[i][1]][2];
+
+		x3a = Pa[0] * gloPunti[tris[i][2]][0] + Qa[0] * gloPunti[tris[i][2]][1] + Ra[0] * gloPunti[tris[i][2]][2];
+		y3a = Pa[1] * gloPunti[tris[i][2]][0] + Qa[1] * gloPunti[tris[i][2]][1] + Ra[1] * gloPunti[tris[i][2]][2];
+		z3a = Pa[2] * gloPunti[tris[i][2]][0] + Qa[2] * gloPunti[tris[i][2]][1] + Ra[2] * gloPunti[tris[i][2]][2];
+
+		// estremo 1 / extreme 1
+		x1 = P[0] * (x1a + xp - x) + P[1] * (y1a + yp - y) + P[2] * (z1a + zp - z);
+		y1 = Q[0] * (x1a + xp - x) + Q[1] * (y1a + yp - y) + Q[2] * (z1a + zp - z);
+		z1 = R[0] * (x1a + xp - x) + R[1] * (y1a + yp - y) + R[2] * (z1a + zp - z);
+
+		// estremo 2 / extreme 2
+		x2 = P[0] * (x2a + xp - x) + P[1] * (y2a + yp - y) + P[2] * (z2a + zp - z);
+		y2 = Q[0] * (x2a + xp - x) + Q[1] * (y2a + yp - y) + Q[2] * (z2a + zp - z);
+		z2 = R[0] * (x2a + xp - x) + R[1] * (y2a + yp - y) + R[2] * (z2a + zp - z);
+
+		// vertex 3 
+		x3 = P[0] * (x3a + xp - x) + P[1] * (y3a + yp - y) + P[2] * (z3a + zp - z);
+		y3 = Q[0] * (x3a + xp - x) + Q[1] * (y3a + yp - y) + Q[2] * (z3a + zp - z);
+		z3 = R[0] * (x3a + xp - x) + R[1] * (y3a + yp - y) + R[2] * (z3a + zp - z);
+
+		// col_tris holds the airplane's colors
+		color[0] = col_tris[i][0];
+		color[1] = col_tris[i][1];
+		color[2] = col_tris[i][2];
+
+		if (gloUsingLowResolution == 0)
+		{
+			xaddftriang_persp(x1, y1, -z1,
+								x2, y2, -z2,
+								x3, y3, -z3, 1, color, WIDTH, HEIGHT);
+		}
+		else
+		{
+			xaddftriang_persp(x1, y1, -z1,
+								x2, y2, -z2,
+								x3, y3, -z3, 1, color, WIDTH, HEIGHT);
+		}
+	}
+
+	if (gloUsingLowResolution == 0)
+	{
+		addfrantumation_wsim(x1, y1, z1, h, 0);	// we must make special effect sequences go on. 
+		projectile_launch(10, 10, 10, 20, 10, -0.1, h, 0); // idem / ditto
+	}
+} // end drawAirplane function
+
+// ####################################################################################################################
 // Function loadAirplaneModel
 // ####################################################################################################################
 void loadAirplaneModel()
@@ -2188,7 +2120,8 @@ void loadAirplaneModel()
 } // end loadAirplaneModel function
 
 // ####################################################################################################################
-// Function checkForPlaneCollision
+// Function checkForPlaneCollision checks if the airplane has crashed against the ground, and if so, 
+// models its bounce off of the ground.
 // ####################################################################################################################
 void checkForPlaneCollision()
 {
@@ -2201,9 +2134,9 @@ void checkForPlaneCollision()
 		// AIRPLANE...
 		// coordinates of plane's vertices in the "Game World"'s reference frame.
 		double xw, yw, zw; 
-		xw = gloPunti[i][0] * axis_1[0] + gloPunti[i][1] * axis_2[0] + gloPunti[i][2] * axis_3[0];
-		yw = gloPunti[i][0] * axis_1[1] + gloPunti[i][1] * axis_2[1] + gloPunti[i][2] * axis_3[1];
-		zw = gloPunti[i][0] * axis_1[2] + gloPunti[i][1] * axis_2[2] + gloPunti[i][2] * axis_3[2];
+		xw = gloPunti[i][0] * gloAxis1[0] + gloPunti[i][1] * gloAxis2[0] + gloPunti[i][2] * gloAxis3[0];
+		yw = gloPunti[i][0] * gloAxis1[1] + gloPunti[i][1] * gloAxis2[1] + gloPunti[i][2] * gloAxis3[1];
+		zw = gloPunti[i][0] * gloAxis1[2] + gloPunti[i][1] * gloAxis2[2] + gloPunti[i][2] * gloAxis3[2];
 
 		double he_id = say_terrain_height(&terrain1, xp + xw, yp + yw);
 		if (zp + zw < he_id)
@@ -2216,6 +2149,148 @@ void checkForPlaneCollision()
 		}
 	}
 } // end checkForPlaneCollision function
+
+// ####################################################################################################################
+// Function updateTorque
+// ####################################################################################################################
+void updateTorque(int plane_up, int plane_down, int plane_inclleft, int plane_inclright)
+{
+	if (plane_up == 1)
+	{
+		gloTtlTorque[0] += 2620.0 * gloAxis3[0];
+		gloTtlTorque[1] += 2620.0 * gloAxis3[1];
+		gloTtlTorque[2] += 2620.0 * gloAxis3[2];
+	}
+	if (plane_down == 1)
+	{
+		gloTtlTorque[0] += -2621.0 * gloAxis3[0];
+		gloTtlTorque[1] += -2621.0 * gloAxis3[1];
+		gloTtlTorque[2] += -2621.0 * gloAxis3[2];
+	}
+	if (plane_inclleft == 1)
+	{
+		gloTtlTorque[0] += -2620.0 * gloAxis1[0];
+		gloTtlTorque[1] += -2620.0 * gloAxis1[1];
+		gloTtlTorque[2] += -2620.0 * gloAxis1[2];
+	}
+	if (plane_inclright == 1)
+	{
+		gloTtlTorque[0] += 2621.0 * gloAxis1[0];
+		gloTtlTorque[1] += 2621.0 * gloAxis1[1];
+		gloTtlTorque[2] += 2621.0 * gloAxis1[2];
+	}
+} // end updateTorque function
+
+// ####################################################################################################################
+// Function updatePQRAxes
+// ####################################################################################################################
+void updatePQRAxes(float theta, float fi)
+{
+	// scenario inquadrature 3D / 3D shot scenery
+	if (gloView == 1)
+	{
+		P[0] = -sin(theta);
+		P[1] = cos(theta);
+		P[2] = 0.0;
+
+		Q[0] = -cos(theta) * cos(fi);
+		Q[1] = -sin(theta) * cos(fi);
+		Q[2] = sin(fi);
+
+		R[0] = cos(theta) * sin(fi);
+		R[1] = sin(theta) * sin(fi);
+		R[2] = cos(fi);
+	}
+	else if (gloView == 2)
+	{
+		// I know this negative index stuff is awkward but in the prototype stage 
+		// it was good to have 1 and -1. now just extend this to support more views.
+		P[0] = -Pa[0]; // had to be mirrored sorry
+		P[1] = -Pa[1];
+		P[2] = -Pa[2];
+
+		Q[0] = Ra[0];
+		Q[1] = Ra[1];
+		Q[2] = Ra[2];
+
+		R[0] = Qa[0];
+		R[1] = Qa[1];
+		R[2] = Qa[2];
+	}
+	else if (gloView == 3)
+	{
+		P[0] = Pa[0]; // had to be mirrored sorry
+		P[1] = Pa[1];
+		P[2] = Pa[2];
+
+		R[0] = Ra[0];
+		R[1] = Ra[1];
+		R[2] = Ra[2];
+
+		Q[0] = Qa[0];
+		Q[1] = Qa[1];
+		Q[2] = Qa[2];
+	}
+	else if (gloView == 4)
+	{ 
+		// INTERNAL VIEW COCKPIT
+		float Pp[3], Qp[3], Rp[3];
+
+		Rp[0] = -Pa[0]; // had to be mirrored sorry
+		Rp[1] = -Pa[1];
+		Rp[2] = -Pa[2];
+
+		Pp[0] = Ra[0];
+		Pp[1] = Ra[1];
+		Pp[2] = Ra[2];
+
+		Qp[0] = Qa[0];
+		Qp[1] = Qa[1];
+		Qp[2] = Qa[2];
+
+		// Ri, Pi, Qi - this is most practical axis-order.
+		P[0] = Rp[0] * (-sin(theta)) + Pp[0] * (cos(theta)) + Qp[0] * 0.0;
+		P[1] = Rp[1] * (-sin(theta)) + Pp[1] * (cos(theta)) + Qp[1] * 0.0;
+		P[2] = Rp[2] * (-sin(theta)) + Pp[2] * (cos(theta)) + Qp[2] * 0.0;
+
+		Q[0] = Rp[0] * (-cos(theta) * cos(fi)) + Pp[0] * (-sin(theta) * cos(fi)) + Qp[0] * sin(fi);
+		Q[1] = Rp[1] * (-cos(theta) * cos(fi)) + Pp[1] * (-sin(theta) * cos(fi)) + Qp[1] * sin(fi);
+		Q[2] = Rp[2] * (-cos(theta) * cos(fi)) + Pp[2] * (-sin(theta) * cos(fi)) + Qp[2] * sin(fi);
+
+		R[0] = Rp[0] * (cos(theta) * sin(fi)) + Pp[0] * (sin(theta) * sin(fi)) + Qp[0] * cos(fi);
+		R[1] = Rp[1] * (cos(theta) * sin(fi)) + Pp[1] * (sin(theta) * sin(fi)) + Qp[1] * cos(fi);
+		R[2] = Rp[2] * (cos(theta) * sin(fi)) + Pp[2] * (sin(theta) * sin(fi)) + Qp[2] * cos(fi);
+	}
+} // end updatePQRAxes function
+
+// ####################################################################################################################
+// Function updateVirtualCameraPos
+// ####################################################################################################################
+void updateVirtualCameraPos(float RR)
+{
+	// moving plane's CM 
+	if (aboard == 1)
+	{
+		x = xp + RR * R[0];
+		y = yp + RR * R[1];
+		z = zp + RR * R[2];
+
+		if (gloView == 4)
+		{ 
+			// INTERNAL VIEW COCKPIT
+			// now: here the camera position is very important.
+			x = xp + z_cockpit_view * P[0] + y_cockpit_view * Q[0] + x_cockpit_view * R[0];
+			y = yp + z_cockpit_view * P[1] + y_cockpit_view * Q[1] + x_cockpit_view * R[1];
+			z = zp + z_cockpit_view * P[2] + y_cockpit_view * Q[2] + x_cockpit_view * R[2];
+		}
+	}
+	else
+	{
+		x = x_pilot;
+		y = y_pilot;
+		z = say_terrain_height(&terrain1, x_pilot, y_pilot) + 1.75;
+	}
+} // end updateVirtualCameraPos function
 
 // ####################################################################################################################
 // Function xclearpixboard
@@ -2422,7 +2497,7 @@ void xaddpoint_persp(float x1, float y1, float z1, float color[3],
 void xaddline_persp(float x1, float y1, float z1, 
 					float x2, float y2, float z2, float color[3],
 					int pbwidth,  // parameter pbwidth is not used
-					int pbheight) // parameter pbheight is no used
+					int pbheight) // parameter pbheight is not used
 {
 	glColor3f(color[0], color[1], color[2]);
 
