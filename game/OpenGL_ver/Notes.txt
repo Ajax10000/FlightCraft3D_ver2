@@ -1,14 +1,16 @@
 Notes.txt 
 
-The c and v keys, which rotate the viewpoint around the plane, only appear to work when view = 0
-The r and f keys, which also rotate the viewpoint around the plane, only appear to work when view = 0.
+The c and v keys, which rotate the viewpoint around the plane, only appear to work when view = 0 or 4.
+The r and f keys, which also rotate the viewpoint around the plane, only appear to work when view = 0 or 4.
 
+// ####################################################################################################################
 It appears that the facets on the plane are made up of triangles, hence the variables 
 col_tris (which hold the airplane's colors)
 Note that the author loads data into col_tris from a file named "facecolors.txt". 
 So this implies to me that the faces (facets?) are made up of triangles, and each triangle has a color 
 specified in col_tris.
 
+// ####################################################################################################################
 The author refers to global variables as "extern" values or "extern" variables. See functions 
 projectile_launch, mat3x3_mult, inv, load_textures_wOpenGL, and load_textures96x96_SEMITRANSPARENT_wOpenGL
 From projectile_launch: 
@@ -23,6 +25,7 @@ From load_textures96x96_SEMITRANSPARENT_wOpenGL:
 From mat3x3_mult (referring to variable result_matrix):
     result_matrix[im][jm] = sum; // EXTERN VALUE!!! It's an easy way to implement all this.
 
+// ####################################################################################################################
 Notes on global variables
 punti = points on plane
 L = angular momentum
@@ -66,6 +69,18 @@ From function main:
 		yp = yp + v[1] * h;
 		zp = zp + v[2] * h;
 
+
+// ####################################################################################################################
+Notes on local variables in function main 
+fi is referred to as the camera reference system's fi angle 
+From main:
+	fi = fi - turncv * 0.02; // rotate camera's reference system's fi angle
+
+theta is referred to as the camera reference system's theta angle
+From main: 
+	theta = theta + turnch * 0.02; // rotate camera's reference system's theta angle 
+
+// ####################################################################################################################
 Notes on Units
 From function main:
 	for (i = 0; i < NVERTEXES; i++)
@@ -92,6 +107,7 @@ From function main:
 From function make_inertia_tensor:
     double std_vxmass = 10.0;			 // 10 Kg
 
+// ####################################################################################################################
 Unused function parameters
 There are several functions that contain unused parameters:
 sdldislay (parameters sw and sh are not used)
