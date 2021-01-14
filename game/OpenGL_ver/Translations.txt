@@ -44,7 +44,11 @@ a simulation step that gives a not too disastrous result.
 idem
 ditto 
 
+effetto coda verticale: decente...
+vertical tail effect: decent ...
+
 CANCELLA SCHERMATA/ LAVAGNA.
+CLEAR SCREEN / BOARD
 
 scenario inquadrature 3D
 3D shot scenery
