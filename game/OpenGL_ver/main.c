@@ -17,12 +17,37 @@
 #define TERRAIN_SIZE 300
 struct subterrain
 {
+	// Set in function initTerrain twice. 
+	// At the top of initTerrain, it is set to 300. 
+	// At the bottom of initTerrain, it is set to the return value of a call to load_hmap_from_bitmap.
+	// Used (read) in functions drawTerrain and say_terrain_height
 	int map_size;
+
+	// Set in function initTerrain to 50.
+	// Used (read) in functions initTerrain, drawTerrain, projectile_launch, say_terrain_height
 	float GPunit;
+
+	// Set in function initTerrain to a random value.
+	// Set in functions load_hmap_from_bitmap and projectile_launch.
+	// Used (read) in functions drawTerrain and say_terrain_height.
 	float shmap[TERRAIN_SIZE][TERRAIN_SIZE];
-	float scol[TERRAIN_SIZE][TERRAIN_SIZE][3];
-	int map_texture_indexes[TERRAIN_SIZE][TERRAIN_SIZE];
-	float auxnormal[3];
+
+	// Field scol holds color data (see function drawTerrain)
+	// Set in function initTerrain and projectile_launch
+	// Used (read) in function drawTerrain
+	float scol[TERRAIN_SIZE][TERRAIN_SIZE][3]; 
+
+	// Set in functions initTerrain and load_maptex_from_bitmap
+	// Used as an index into global array gloTexIds in function drawTerrain
+	int map_texture_indexes[TERRAIN_SIZE][TERRAIN_SIZE]; 
+
+	// Set in function say_terrain_height (this field is often set)
+	// Used (read) in function drawTerrain, after calling function say_terrain_height
+	// Used (read) in function checkForPlaneCollision, after calling function say_terrain_height
+	// Used (read) in function addsmoke_wsim, after calling function say_terrain_height
+	// Used (read) in function addfrantumation_wsim, after calling function say_terrain_height
+	// Used (read) in function projectile_launch, after calling function say_terrain_height
+	float auxnormal[3]; 
 };
 
 // ####################################################################################################################
@@ -143,6 +168,9 @@ void checkForPlaneCollision(void);
 void updateTorque(int plane_up, int plane_down, int plane_inclleft, int plane_inclright);
 void updatePQRAxes(float theta, float fi);
 void updateVirtualCameraPos(float RR);
+void reorientAxes(void);
+void simulatePhysics(int plane_up, int plane_down, int plane_inclleft, int plane_inclright, float h, double g);
+void displayStatusInfo(int cycles, float h, float theta, float fi);
 
 // #                                                                                                                  #
 // # End function prototypes                                                                                          #
@@ -224,20 +252,24 @@ float xp = 200.0, yp = 200.0, zp = 400.0;
 
 // versori dei 3 assi della telecamera virtuale 
 // versors of the 3 axes of the virtual camera
+//
 // Updated in function updatePQRAxes.
 float P[3], Q[3], R[3];
 
 // versori dei 3 assi del sistema di riferimento rispetto cui sono dati i vertici dello aeroplano 
 // versors of the 3 axes of the reference system with respect to which the vertices of the airplane are given
+//
+// Set/reset in function reorientAxes
+// Used in functions drawTerrain, drawAirplane, and updatePQRAxes
 float Pa[3], Qa[3], Ra[3]; 
 
-struct subterrain terrain1;
+struct subterrain gloTerrain;
 
 #define NTRIS 610
 
-// texid is used only to store id number to reall... NTRIS is a worst-case consideration in which
+// gloTexIds is used only to store id number to reall... NTRIS is a worst-case consideration in which
 // each triangular face has a different texture. It is filled at texture load-in at first call to GLaddpoly
-int texid[NTRIS]; 
+int gloTexIds[NTRIS]; 
 
 // face_texid is defined but not used
 // which of pre-loaded textures to apply on triangular face? they can also be randomly-generated of course
@@ -679,9 +711,10 @@ double inv_It_now[3][3] = {
 	{0.0, 0.0, 1.0}
 };
 
-double axis1_orig[3] = {1.0, 0.0, 0.0};
-double axis2_orig[3] = {0.0, 1.0, 0.0};
-double axis3_orig[3] = {0.0, 0.0, 1.0};
+
+double gloOrigAxis1[3] = {1.0, 0.0, 0.0};
+double gloOrigAxis2[3] = {0.0, 1.0, 0.0};
+double gloOrigAxis3[3] = {0.0, 0.0, 1.0};
 
 // according to present orientation: 3 principal axes of inertia.
 // Used in function checkForPlaneCollision.
@@ -758,10 +791,13 @@ int main()
 	float h = 0.01; 
 
 	// x1, y1 and z1 are defined here as doubles, but later in function main they are defined as floats
+	// Their redefiniton as floats was moved to function drawAirplane. So now, variables x1, y1, and z1 
+	// here are not used.
 	double x1, y1, z1;
 
 	double g = -9.81; // positive +++++ assumed!!
 
+	// Now that function main has been broken up into many functions, local variable color is no longer used.
 	float color[4] = {0.0, 0.0, 0.0, 1.0};
 
 	initSDL();
@@ -784,7 +820,7 @@ int main()
 
 	xclearpixboard(WIDTH, HEIGHT);
 
-	// initTerrain initializes global variable terrain1 with random values
+	// initTerrain initializes global variable gloTerrain with random values
 	initTerrain();
 
 	// initAirplaneColors initializes global variable col_tris with random values
@@ -833,277 +869,18 @@ int main()
 			th_add = th_add + turnch * 0.01;
 		}
 
-		updateTorque(plane_up, plane_down, plane_inclleft, plane_inclright);
-
-		// ===========PHYSICS PROCEDURE=============
-		// Sembra tutto OK / Everything seems OK
-		// now calculate axes in their new 'orientation', using the orientation matrix.
-
-		//R:
-		gloAxis1[0] = Rm[0][0] * axis1_orig[0] +
-					  Rm[0][1] * axis1_orig[1] +
-					  Rm[0][2] * axis1_orig[2];
-
-		gloAxis1[1] = Rm[1][0] * axis1_orig[0] +
-					  Rm[1][1] * axis1_orig[1] +
-					  Rm[1][2] * axis1_orig[2];
-
-		gloAxis1[2] = Rm[2][0] * axis1_orig[0] +
-					  Rm[2][1] * axis1_orig[1] +
-					  Rm[2][2] * axis1_orig[2];
-
-		gloAxis2[0] = Rm[0][0] * axis2_orig[0] +
-					  Rm[0][1] * axis2_orig[1] +
-					  Rm[0][2] * axis2_orig[2];
-
-		gloAxis2[1] = Rm[1][0] * axis2_orig[0] +
-					  Rm[1][1] * axis2_orig[1] +
-					  Rm[1][2] * axis2_orig[2];
-
-		gloAxis2[2] = Rm[2][0] * axis2_orig[0] +
-					  Rm[2][1] * axis2_orig[1] +
-					  Rm[2][2] * axis2_orig[2];
-
-		gloAxis3[0] = Rm[0][0] * axis3_orig[0] +
-					  Rm[0][1] * axis3_orig[1] +
-					  Rm[0][2] * axis3_orig[2];
-
-		gloAxis3[1] = Rm[1][0] * axis3_orig[0] +
-					  Rm[1][1] * axis3_orig[1] +
-					  Rm[1][2] * axis3_orig[2];
-
-		gloAxis3[2] = Rm[2][0] * axis3_orig[0] +
-					  Rm[2][1] * axis3_orig[1] +
-					  Rm[2][2] * axis3_orig[2];
-
-		Pa[0] = gloAxis1[0];
-		Pa[1] = gloAxis1[1];
-		Pa[2] = gloAxis1[2];
-
-		Qa[0] = gloAxis2[0];
-		Qa[1] = gloAxis2[1];
-		Qa[2] = gloAxis2[2];
-
-		Ra[0] = gloAxis3[0];
-		Ra[1] = gloAxis3[1];
-		Ra[2] = gloAxis3[2];
-		// =======END OF AXES REORIENTATION DONE============
-
-		// Calulate total Fcm and total torque, starting from external forces applied to vertices 
-		// NOTE: g is already done below... so it's no bother----forces  of ultrasimple flight model
-
-		// NOT needed for dynamics, it's only in this game: some approx of force on CM 
-		// and torque due to a rudimental plane aerodynamical forces' consideration
-		float vpar;
-		float vlat;
-
-		float rot1;
-		float rot2;
-		float rot3;
-
-		vlat = gloAxis3[0] * v[0] + gloAxis3[1] * v[1] + gloAxis3[2] * v[2]; // dot product calculated directly
-
-		vperp = gloAxis2[0] * v[0] + gloAxis2[1] * v[1] + gloAxis2[2] * v[2]; // dot product calculated directly
-
-		vpar = gloAxis1[0] * v[0] + gloAxis1[1] * v[1] + gloAxis1[2] * v[2];
-
-		rot1 = gloAxis1[0] * w[0] + gloAxis1[1] * w[1] + gloAxis1[2] * w[2]; // how much it rotates around axis 1 (nose--> back)
-
-		rot2 = gloAxis2[0] * w[0] + gloAxis2[1] * w[1] + gloAxis2[2] * w[2]; // how much it rotates around axis 2 (perp to wings)
-
-		rot3 = gloAxis3[0] * w[0] + gloAxis3[1] * w[1] + gloAxis3[2] * w[2]; // how much it rotates around axis 3 (parallel to wings)
-		// effect (IN A VERY RUDIMENTAL CONCEPTION OF AERODYNAMICS, NOT SCIENTIFIC AT ALL) of air friction on the motion of Center of Mass directly.
-
-		Fcm[0] += -k_visc * vperp * gloAxis2[0] - k_visc2 * vlat * gloAxis3[0] - k_visc3 * vpar * gloAxis1[0] + Pforce * gloAxis1[0];
-		Fcm[1] += -k_visc * vperp * gloAxis2[1] - k_visc2 * vlat * gloAxis3[1] - k_visc3 * vpar * gloAxis1[1] + Pforce * gloAxis1[1];
-		Fcm[2] += -k_visc * vperp * gloAxis2[2] - k_visc2 * vlat * gloAxis3[2] - k_visc3 * vpar * gloAxis1[2] + Pforce * gloAxis1[2];
-
-		// same for the rotational motion. other effects are not considered.
-		// if you're an expert of aeromobilism, you can write better, just substitute these weak formulas for better ones.
-
-		// generic stabilization (very poor approximation)
-		gloTtlTorque[0] += -vpar * k_visc_rot_STABILIZE * w[0];
-		gloTtlTorque[1] += -vpar * k_visc_rot_STABILIZE * w[1];
-		gloTtlTorque[2] += -vpar * k_visc_rot_STABILIZE * w[2];
-
-		double boh = gloAxis3[0] * v[0] + gloAxis3[1] * v[1] + gloAxis3[2] * v[2];
-
-		// effetto coda verticale: decente...
-		// vertical tail effect: decent ...
-		gloTtlTorque[0] += -k_visc_rot3 * (boh)*gloAxis2[0];
-		gloTtlTorque[1] += -k_visc_rot3 * (boh)*gloAxis2[1];
-		gloTtlTorque[2] += -k_visc_rot3 * (boh)*gloAxis2[2];
-
-		// =======tota Fcm and toal torque DONE=============
-
-		// ===UPDATE VELOCITY, LINEAR AND ANGULAR TOO===
-		// momentum p (linear quantity)
-		p[0] = MASS * v[0];
-		p[1] = MASS * v[1];
-		p[2] = MASS * v[2];
-
-		p[0] = p[0] + Fcm[0] * h;
-		p[1] = p[1] + Fcm[1] * h; // we model gravity as a force given by: g*MASS, downward 
-		p[2] = p[2] + Fcm[2] * h + g * MASS * h;
-
-		v[0] = p[0] / MASS;
-		v[1] = p[1] / MASS;
-		v[2] = p[2] / MASS;
-
-		L[0] = L[0] + gloTtlTorque[0] * h;
-		L[1] = L[1] + gloTtlTorque[1] * h;
-		L[2] = L[2] + gloTtlTorque[2] * h;
-
-		// now we get the updated velocity, component by component.
-		w[0] = inv_It_now[0][0] * L[0] + inv_It_now[0][1] * L[1] + inv_It_now[0][2] * L[2];
-
-		w[1] = inv_It_now[1][0] * L[0] + inv_It_now[1][1] * L[1] + inv_It_now[1][2] * L[2];
-
-		w[2] = inv_It_now[2][0] * L[0] + inv_It_now[2][1] * L[1] + inv_It_now[2][2] * L[2];
-
-		// angular momentum (angular/rotational quantity)
-
-		// reset forces to 0.0 
-		for (i = 0; i < 3; i++)
-		{
-			Fcm[i] = 0.0;
-			gloTtlTorque[i] = 0.0;
-		}
-
-		// update position and orientation
-		// xp, yp, zp give the location of the airplane
-		xp = xp + v[0] * h;
-		yp = yp + v[1] * h;
-		zp = zp + v[2] * h;
-
-		// update orientation 
-		w_abs = sqrt(w[0] * w[0] + w[1] * w[1] + w[2] * w[2]);
-
-		if (w_abs > 0.0000001)
-		{
-			u1 = w[0] / w_abs;
-			u2 = w[1] / w_abs;
-			u3 = w[2] / w_abs;
-
-			dAng = w_abs * h;
-		}
-		else
-		{
-			u1 = 1.0;
-			u2 = 0.0;
-			u3 = 0.0;
-
-			dAng = 0.0;
-		}
-
-		// explicitly writing the Skew(w_vector) ... and also D_vector's square 
-		SD[0][0] = 0.0;
-		SD[0][1] = -u3;
-		SD[0][2] = u2;
-		SD[1][0] = u3;
-		SD[1][1] = 0.0;
-		SD[1][2] = -u1;
-		SD[2][0] = -u2;
-		SD[2][1] = u1;
-		SD[2][2] = 0.0;
-
-		// multiply SD times SD and place the product in the global variable gloResultMatrix
-		mat3x3_mult(SD, SD); 
-
-		// Copy gloResultMatrix to matrix SD2
-		for (j = 0; j < 3; j++)
-		{
-			for (i = 0; i < 3; i++)
-			{
-				SD2[j][i] = gloResultMatrix[j][i];
-			}
-		}
-
-		for (j = 0; j < 3; j++)
-		{
-			for (i = 0; i < 3; i++)
-			{
-				dR[j][i] = Id[j][i] + sin(dAng) * SD[j][i] + (1.0 - cos(dAng)) * SD2[j][i];
-			}
-		}
-
-		// Multiply dR times Rm and place the product in the global variable gloResultMatrix
-		mat3x3_mult(dR, Rm); 
-
-		for (j = 0; j < 3; j++)
-		{
-			for (i = 0; i < 3; i++)
-			{
-				Rm[j][i] = gloResultMatrix[j][i];
-			}
-		}
-
-		// update inertia tensor according to new orientation: It_now = R*It_init*transpose(R) 
-		// we build the transpose matrix of R_3x3 matrix, just here 
-		for (i = 0; i < 3; i++)
-		{
-			for (j = 0; j < 3; j++)
-			{
-				R_T[i][j] = Rm[j][i];
-			}
-		}
-
-		// we perform the 2 matrix products 
-		mat3x3_mult(Rm, It_init);
-
-		for (j = 0; j < 3; j++)
-		{
-			for (i = 0; i < 3; i++)
-			{
-				gloTempMatrix[j][i] = gloResultMatrix[j][i]; //SAFE COPY!!! PASSING EXTERN VARIABLE AND THEN MODIFYING IT IS NOT SAFE... COMPILERS MAY FAIL TO DO IT CORRECTLY!!!
-				//SAFEST SIMPLE METHOD --> BEST METHOD.
-			}
-		}
-
-		mat3x3_mult(gloTempMatrix, R_T);
-
-		// and put result into "It_now" 
-		for (j = 0; j < 3; j++)
-		{
-			for (i = 0; i < 3; i++)
-			{
-				It_now[j][i] = gloResultMatrix[j][i];
-			}
-		}
-
-		// its inverse too, since it's needed: 
-		// we perform the 2 matrix products 
-		mat3x3_mult(Rm, It_initINV);
-
-		for (j = 0; j < 3; j++)
-		{
-			for (i = 0; i < 3; i++)
-			{
-				gloTempMatrix[j][i] = gloResultMatrix[j][i]; //SAFE COPY!!! PASSING EXTERN VARIABLE AND THEN MODIFYING IT IS NOT SAFE... COMPILERS MAY FAIL TO DO IT CORRECTLY!!!
-				//SAFEST SIMPLE METHOD --> BEST METHOD.
-			}
-		}
-		mat3x3_mult(gloTempMatrix, R_T);
-
-		// we copy it into "inv_It_now"... 
-		for (j = 0; j < 3; j++)
-		{
-			for (i = 0; i < 3; i++)
-			{
-				inv_It_now[j][i] = gloResultMatrix[j][i];
-			}
-		}
-
-		//=================DONE UPDATE OF ORIENTATION MATRIX and intertia tensor=================
-		//====END PHYSICALLY SIMULATED UPDATE OF AIRPLANE POS AND ROTATION, ORIENTAION=====
+		// None of the parameters passed to simulatePhysics is modified
+		simulatePhysics(plane_up, plane_down, plane_inclleft, plane_inclright, h, g);
 
 		checkForPlaneCollision();
 
-		// representation and graphics perocedure
-		xclearpixboard(WIDTH, HEIGHT); // CANCELLA SCHERMATA/ LAVAGNA.
+		// Cancella schermata/lavagna
+		// Clear screen/board
+		xclearpixboard(WIDTH, HEIGHT); 
 
 		updatePQRAxes(theta, fi);
 
+		// Update the virtual camera position x, y, z
 		updateVirtualCameraPos(RR);
 
 		if (gloUsingLowResolution == 0)
@@ -1136,27 +913,16 @@ int main()
 		if (cycles % 10 == 0)
 		{
 			// Display status/debugging information
-			printf("GAME TIME [sec] =  %f \n", cycles * h);
-			printf("GOING ON...game cycle %i : plane position: x = %f, y = %f, z = %f \n theta = %3.2f, fi = %f3.2\n", cycles, x, y, z, theta, fi);
-			// printf("Xi =  %i , Yi = %i \n", Xi, Yi); // Xi and Yi were moved to function drawTerrain
-
-			for (j = 0; j < 10; j++)
-			{
-				for (i = 0; i < 10; i++)
-				{
-					printf("%2i|", texid[terrain1.map_texture_indexes[j][i]]);
-				}
-				printf("\n");
-			}
+			displayStatusInfo(cycles, h, theta, fi);
 		}
 
 		SDL_Delay(10);
 		cycles++;
 
 		//===============================|SDL's real-time interactivity|=============================
+		// Loop until there are no events left on the queue 
 		while (SDL_PollEvent(&gloEvent))
 		{ 
-			// Loop until there are no events left on the queue 
 			if (gloEvent.type == SDL_KEYDOWN)
 			{ 
 				// condition: keypress event detected 
@@ -1283,7 +1049,6 @@ int main()
 
 				if (gloEvent.key.keysym.sym == SDLK_5)
 				{
-
 					h = h - 0.002;
 				}
 				if (gloEvent.key.keysym.sym == SDLK_6)
@@ -1359,7 +1124,7 @@ int main()
 					plane_inclright = 0;
 				}
 			}
-
+			
 			// extra case: if graphic window is closed, terminate program 
 			if (gloEvent.type == SDL_QUIT)
 			{ 
@@ -1506,7 +1271,7 @@ void initTrees()
 		// random x and y coordinates within a rectangular area
 		gloTrees[k][0] = 5000 * ((double)-0 * RAND_MAX / 2 + rand()) / ((double)RAND_MAX);
 		gloTrees[k][1] = 5000 * ((double)-0 * RAND_MAX / 2 + rand()) / ((double)RAND_MAX);
-		gloTrees[k][2] = say_terrain_height(&terrain1, gloTrees[k][0], gloTrees[k][1]);
+		gloTrees[k][2] = say_terrain_height(&gloTerrain, gloTrees[k][0], gloTrees[k][1]);
 
 		gloTrees[k][4] = floor(2.0 * ((double)rand()) / ((double)RAND_MAX));
 
@@ -1526,7 +1291,7 @@ void initTrees()
 			// MACCHIA attorno ad un punto / STRAIN around a point...
 			gloTrees[k + j][0] = gloTrees[k][0] + 100 * ((double)-0 * RAND_MAX / 2 + rand()) / ((double)RAND_MAX);
 			gloTrees[k + j][1] = gloTrees[k][1] + 100 * ((double)-0 * RAND_MAX / 2 + rand()) / ((double)RAND_MAX);
-			gloTrees[k + j][2] = say_terrain_height(&terrain1, gloTrees[k + j][0], gloTrees[k + j][1]);
+			gloTrees[k + j][2] = say_terrain_height(&gloTerrain, gloTrees[k + j][0], gloTrees[k + j][1]);
 
 			gloTrees[k + j][4] = floor(2.0 * ((double)rand()) / ((double)RAND_MAX));
 
@@ -1555,8 +1320,8 @@ void initTerrain()
 	// Game terrain initial values
 	// BE CAREFUL!!! says how many meters per side, if seen from above, because inclined sides obey
 	// sqrt(x^2 + z^2) but this is referred to the case when it's seen **FROM ABOVE**
-	terrain1.GPunit = 50.0; 
-	terrain1.map_size = 300;
+	gloTerrain.GPunit = 50.0; 
+	gloTerrain.map_size = 300;
 
 	// test... the pseudorandom num sequence gotten using the rand() function is the same. 
 	// on the same system so... it's not random.
@@ -1572,12 +1337,12 @@ void initTerrain()
 	{
 		for (i = 0; i < TERRAIN_SIZE; i++)
 		{
-			terrain1.shmap[j][i] = 0.2 * (((double)rand()) / ((double)RAND_MAX));
+			gloTerrain.shmap[j][i] = 0.2 * (((double)rand()) / ((double)RAND_MAX));
 
-			terrain1.scol[j][i][0] = (float)0.1 * rand() / (float)RAND_MAX;
-			terrain1.scol[j][i][1] = (float)0.6 * rand() / (float)RAND_MAX;
-			terrain1.scol[j][i][2] = (float)0.0 * rand() / (float)RAND_MAX;
-			terrain1.map_texture_indexes[j][i] = 1; // BULK TEXTURE... DEFAULT TEXTURE.
+			gloTerrain.scol[j][i][0] = (float)0.1 * rand() / (float)RAND_MAX;
+			gloTerrain.scol[j][i][1] = (float)0.6 * rand() / (float)RAND_MAX;
+			gloTerrain.scol[j][i][2] = (float)0.0 * rand() / (float)RAND_MAX;
+			gloTerrain.map_texture_indexes[j][i] = 1; // BULK TEXTURE... DEFAULT TEXTURE.
 		}
 	}
 
@@ -1600,11 +1365,11 @@ void initTerrain()
 			{
 				for (x = i; x < i + s_y && x < TERRAIN_SIZE; x++)
 				{
-					terrain1.shmap[y][x] = terrain1.shmap[y][x] + 0.2;
+					gloTerrain.shmap[y][x] = gloTerrain.shmap[y][x] + 0.2;
 
-					terrain1.scol[y][x][0] = terrain1.scol[y][x][0] * 0.98;
-					terrain1.scol[y][x][1] = terrain1.scol[y][x][1] * 0.99;
-					terrain1.map_texture_indexes[y][x] = 4 + k % 3;
+					gloTerrain.scol[y][x][0] = gloTerrain.scol[y][x][0] * 0.98;
+					gloTerrain.scol[y][x][1] = gloTerrain.scol[y][x][1] * 0.99;
+					gloTerrain.map_texture_indexes[y][x] = 4 + k % 3;
 				}
 			}
 		} // end for k
@@ -1620,27 +1385,30 @@ void initTerrain()
 
 		// x= 200 meters + 20*some  [meters]
 		// y= 200 meters + 100*some [meters]
-		airport_x = (200 + (int)20 * ((float)rand() / (float)RAND_MAX)) / terrain1.GPunit;
-		airport_y = (200 + (int)500 * ((float)rand() / (float)RAND_MAX)) / terrain1.GPunit;
+		airport_x = (200 + (int)20 * ((float)rand() / (float)RAND_MAX)) / gloTerrain.GPunit;
+		airport_y = (200 + (int)500 * ((float)rand() / (float)RAND_MAX)) / gloTerrain.GPunit;
 
 		for (y = j; y < j + airport_x && y < TERRAIN_SIZE; y++)
 		{
 			for (x = i; x < i + airport_y && x < TERRAIN_SIZE; x++)
 			{
-				terrain1.shmap[y][x] = terrain1.shmap[j][i] + 1.0;
+				gloTerrain.shmap[y][x] = gloTerrain.shmap[j][i] + 1.0;
 
-				terrain1.scol[y][x][0] = 0.4;
-				terrain1.scol[y][x][1] = 0.4;
-				terrain1.map_texture_indexes[y][x] = 3;
+				gloTerrain.scol[y][x][0] = 0.4;
+				gloTerrain.scol[y][x][1] = 0.4;
+				gloTerrain.map_texture_indexes[y][x] = 3;
 			}
 		}
 	}
 
-	terrain1.map_size = load_hmap_from_bitmap("terrain_data/hmap_300x300.bmp");
+	gloTerrain.map_size = load_hmap_from_bitmap("terrain_data/hmap_300x300.bmp");
 } // end initTerrain function
 
 // ####################################################################################################################
 // Function initPhysicsVars 
+//
+// Assumptions:
+//    Vectors v and w have already been initialized.
 // ####################################################################################################################
 void initPhysicsVars()
 {
@@ -1702,8 +1470,8 @@ void drawLogo()
 	int i, j;
 
 	glColor3f(1.0, 1.0, 1.0);
-
 	glPointSize(2);
+
 	for (j = 0; j < 8; j++)
 	{
 		for (i = 0; i < 120; i++)
@@ -1726,7 +1494,7 @@ void drawAxes()
 	float color[4] = {0.0, 0.0, 0.0, 1.0};
 
 	// test asse perpendiclare allo 'schermo' grafica 3D
-	// test axis perpendicular to the 3D graphics 'screen':
+	// test axis perpendicular to the 3D graphics 'screen'
 	color[0] = 1.0;
 	color[1] = 0.0;
 	color[2] = 0.0;
@@ -1805,7 +1573,7 @@ void drawTrees()
 			Yo[4] = yctree;
 			Zo[4] = zctree + 2.0;
 
-			glBindTexture(GL_TEXTURE_2D, texid[(int)gloTrees[k][4]]);
+			glBindTexture(GL_TEXTURE_2D, gloTexIds[(int)gloTrees[k][4]]);
 
 			// calcola lecoordinate di questi 3 punti nel sistema P-Q-R del paracadutista/pilota 
 			// calculates the coordinates of these 3 points in the parachutist / pilot's P-Q-R system
@@ -1819,10 +1587,13 @@ void drawTrees()
 			glBegin(GL_QUADS);
 				glTexCoord2f(0.0, 0.0);
 				glVertex3f(x_c[0], y_c[0], z_c[0]); // point 1
+
 				glTexCoord2f(1.0, 0.0);
 				glVertex3f(x_c[1], y_c[1], z_c[1]); // point 2
+
 				glTexCoord2f(1.0, 1.0);
 				glVertex3f(x_c[2], y_c[2], z_c[2]); // point 3
+
 				glTexCoord2f(0.0, 1.0);
 				glVertex3f(x_c[3], y_c[3], z_c[3]); // point 4
 			glEnd();
@@ -1858,10 +1629,13 @@ void drawTrees()
 			glBegin(GL_QUADS);
 				glTexCoord2f(0.0, 0.0);
 				glVertex3f(x_c[0], y_c[0], z_c[0]); // point 1
+
 				glTexCoord2f(1.0, 0.0);
 				glVertex3f(x_c[1], y_c[1], z_c[1]); // point 2
+
 				glTexCoord2f(1.0, 1.0);
 				glVertex3f(x_c[2], y_c[2], z_c[2]); // point 3
+
 				glTexCoord2f(0.0, 1.0);
 				glVertex3f(x_c[3], y_c[3], z_c[3]); // point 4
 			glEnd();
@@ -1884,7 +1658,7 @@ void drawTerrain() {
 	float GPunit;
 	int xi, yi, Xi, Yi;
 
-	GPunit = terrain1.GPunit;
+	GPunit = gloTerrain.GPunit;
 
 	Xo[3] = xp;
 	Yo[3] = yp;
@@ -1917,7 +1691,9 @@ void drawTerrain() {
 		color[1] = i / 3.0;
 		color[2] = i / 3.0;
 
-		xaddline_persp(x_c[i], y_c[i], -z_c[i], x_c[3], y_c[3], -z_c[3], color, WIDTH, HEIGHT);
+		xaddline_persp(x_c[i], y_c[i], -z_c[i], 
+					   x_c[3], y_c[3], -z_c[3], 
+					   color, WIDTH, HEIGHT);
 	}
 
 	// DISEGNA IL TERRENO IN MODO ALGORITMICO, UNA GRIGILIA RETTANGOLARE COME AL SOLITO,
@@ -1928,8 +1704,8 @@ void drawTerrain() {
 	// Draw only near triangles, in order to avoid overloading graphics computational heavyness 
 	int lv = 6;
 
-	Xi = floor(xp / (terrain1.GPunit));
-	Yi = floor(yp / (terrain1.GPunit));
+	Xi = floor(xp / (gloTerrain.GPunit));
+	Yi = floor(yp / (gloTerrain.GPunit));
 
 	lv = 12;
 
@@ -1969,25 +1745,25 @@ void drawTerrain() {
 			Yo[4] = 1;
 			Zo[4] = 1;
 
-			if (Xi + lv < terrain1.map_size && Yi + lv < terrain1.map_size)
+			if (Xi + lv < gloTerrain.map_size && Yi + lv < gloTerrain.map_size)
 			{
 				// escamotage (trick) for a 0-terrain outside sampled limit. but sampled within, good 
-				Zo[0] = GPunit * terrain1.shmap[xi][yi];		 // the height sample 
-				Zo[1] = GPunit * terrain1.shmap[xi + 1][yi];	 // the height sample 
-				Zo[2] = GPunit * terrain1.shmap[xi][yi + 1];	 // the height sample 
-				Zo[3] = GPunit * terrain1.shmap[xi + 1][yi + 1]; // the height sample 
+				Zo[0] = GPunit * gloTerrain.shmap[xi]    [yi];     // the height sample 
+				Zo[1] = GPunit * gloTerrain.shmap[xi + 1][yi];     // the height sample 
+				Zo[2] = GPunit * gloTerrain.shmap[xi]    [yi + 1]; // the height sample 
+				Zo[3] = GPunit * gloTerrain.shmap[xi + 1][yi + 1]; // the height sample 
 
-				color[0] = terrain1.scol[xi][yi][0];
-				color[1] = terrain1.scol[xi][yi][1];
-				color[2] = terrain1.scol[xi][yi][2];
+				color[0] = gloTerrain.scol[xi][yi][0];
+				color[1] = gloTerrain.scol[xi][yi][1];
+				color[2] = gloTerrain.scol[xi][yi][2];
 
 				// now prepare a freshly calculated normal vector and then we draw it. 
 				// it's fundamental that normals are ok for rebounce 
-				say_terrain_height(&terrain1, Xo[0] + 0.01, Yo[0] + 0.01); // check what is the local normal 
+				say_terrain_height(&gloTerrain, Xo[0] + 0.01, Yo[0] + 0.01); // check what is the local normal 
 
-				Xo[4] = Xo[0] + 20.0 * terrain1.auxnormal[0];
-				Yo[4] = Yo[0] + 20.0 * terrain1.auxnormal[1];
-				Zo[4] = Zo[0] + 20.0 * terrain1.auxnormal[2]; // the height sample 
+				Xo[4] = Xo[0] + 20.0 * gloTerrain.auxnormal[0];
+				Yo[4] = Yo[0] + 20.0 * gloTerrain.auxnormal[1];
+				Zo[4] = Zo[0] + 20.0 * gloTerrain.auxnormal[2]; // the height sample 
 			}
 
 			// calcola lecoordinate di questi 3 punti nel sistema P-Q-R del paracadutista/pilota 
@@ -1999,6 +1775,7 @@ void drawTerrain() {
 				z_c[i] = R[0] * (Xo[i] - x) + R[1] * (Yo[i] - y) + R[2] * (Zo[i] - z);
 			}
 
+			// This next statement will draw a line perpendicular to the terrain
 			xaddline_persp(x_c[0], y_c[0], -z_c[0],
 							x_c[4], y_c[4], -z_c[4], color, WIDTH, HEIGHT);
 
@@ -2008,7 +1785,7 @@ void drawTerrain() {
 				GLaddftriang_perspTEXTURED(x_c[0], y_c[0], z_c[0],
 											x_c[1], y_c[1], z_c[1],
 											x_c[2], y_c[2], z_c[2],
-											texid[terrain1.map_texture_indexes[xi][yi]], texcoords_gnd_tri1,
+											gloTexIds[gloTerrain.map_texture_indexes[xi][yi]], texcoords_gnd_tri1,
 											color, WIDTH, HEIGHT);
 
 				// Triangolo 2 / Triangle 2 (change color a little bit)
@@ -2017,7 +1794,7 @@ void drawTerrain() {
 				GLaddftriang_perspTEXTURED(x_c[1], y_c[1], z_c[1],
 											x_c[2], y_c[2], z_c[2],
 											x_c[3], y_c[3], z_c[3],
-											texid[terrain1.map_texture_indexes[xi][yi]], texcoords_gnd_tri2,
+											gloTexIds[gloTerrain.map_texture_indexes[xi][yi]], texcoords_gnd_tri2,
 											color, WIDTH, HEIGHT);
 			}
 		}
@@ -2044,16 +1821,20 @@ void drawAirplane(float h)
 	color[1] = 1.0;
 	color[2] = 1.0;
 
+	// For each triangular facet defined ...
 	for (i = 0; i < ntris; i++)
 	{ // AIRPLANE...
+		// Set x1a, y1a, z1a to the first point in the triangular facet
 		x1a = Pa[0] * gloPunti[tris[i][0]][0] + Qa[0] * gloPunti[tris[i][0]][1] + Ra[0] * gloPunti[tris[i][0]][2];
 		y1a = Pa[1] * gloPunti[tris[i][0]][0] + Qa[1] * gloPunti[tris[i][0]][1] + Ra[1] * gloPunti[tris[i][0]][2];
 		z1a = Pa[2] * gloPunti[tris[i][0]][0] + Qa[2] * gloPunti[tris[i][0]][1] + Ra[2] * gloPunti[tris[i][0]][2];
 
+		// Set x2a, y2a, z2a to the second point in the triangular facet
 		x2a = Pa[0] * gloPunti[tris[i][1]][0] + Qa[0] * gloPunti[tris[i][1]][1] + Ra[0] * gloPunti[tris[i][1]][2];
 		y2a = Pa[1] * gloPunti[tris[i][1]][0] + Qa[1] * gloPunti[tris[i][1]][1] + Ra[1] * gloPunti[tris[i][1]][2];
 		z2a = Pa[2] * gloPunti[tris[i][1]][0] + Qa[2] * gloPunti[tris[i][1]][1] + Ra[2] * gloPunti[tris[i][1]][2];
 
+		// Set x3a, y3a, z3a to the third point in the triangular facet
 		x3a = Pa[0] * gloPunti[tris[i][2]][0] + Qa[0] * gloPunti[tris[i][2]][1] + Ra[0] * gloPunti[tris[i][2]][2];
 		y3a = Pa[1] * gloPunti[tris[i][2]][0] + Qa[1] * gloPunti[tris[i][2]][1] + Ra[1] * gloPunti[tris[i][2]][2];
 		z3a = Pa[2] * gloPunti[tris[i][2]][0] + Qa[2] * gloPunti[tris[i][2]][1] + Ra[2] * gloPunti[tris[i][2]][2];
@@ -2078,14 +1859,17 @@ void drawAirplane(float h)
 		color[1] = col_tris[i][1];
 		color[2] = col_tris[i][2];
 
+		// If we are not using low resolution ...
 		if (gloUsingLowResolution == 0)
 		{
+			// Draw a perspective, filled triangle using the three points in our triangular facet
 			xaddftriang_persp(x1, y1, -z1,
 								x2, y2, -z2,
 								x3, y3, -z3, 1, color, WIDTH, HEIGHT);
 		}
 		else
 		{
+			// Draw a perspective, filled triangle using the three points in our triangular facet
 			xaddftriang_persp(x1, y1, -z1,
 								x2, y2, -z2,
 								x3, y3, -z3, 1, color, WIDTH, HEIGHT);
@@ -2098,6 +1882,27 @@ void drawAirplane(float h)
 		projectile_launch(10, 10, 10, 20, 10, -0.1, h, 0); // idem / ditto
 	}
 } // end drawAirplane function
+
+// ####################################################################################################################
+// Function displayStatusInfo
+// ####################################################################################################################
+void displayStatusInfo(int cycles, float h, float theta, float fi)
+{
+	int i, j;
+
+	// Display status/debugging information
+	printf("GAME TIME [sec] =  %f \n", cycles * h);
+	printf("GOING ON...game cycle %i : plane position: x = %f, y = %f, z = %f \n theta = %3.2f, fi = %f3.2\n", cycles, x, y, z, theta, fi);
+
+	for (j = 0; j < 10; j++)
+	{
+		for (i = 0; i < 10; i++)
+		{
+			printf("%2i|", gloTexIds[gloTerrain.map_texture_indexes[j][i]]);
+		}
+		printf("\n");
+	}
+} // end displayStatusInfo function
 
 // ####################################################################################################################
 // Function loadAirplaneModel
@@ -2138,11 +1943,11 @@ void checkForPlaneCollision()
 		yw = gloPunti[i][0] * gloAxis1[1] + gloPunti[i][1] * gloAxis2[1] + gloPunti[i][2] * gloAxis3[1];
 		zw = gloPunti[i][0] * gloAxis1[2] + gloPunti[i][1] * gloAxis2[2] + gloPunti[i][2] * gloAxis3[2];
 
-		double he_id = say_terrain_height(&terrain1, xp + xw, yp + yw);
+		double he_id = say_terrain_height(&gloTerrain, xp + xw, yp + yw);
 		if (zp + zw < he_id)
 		{ 
 			// just as any vertex of airplane touches ground and tries to go below 
-			body_rebounce(xw, yw, zw, terrain1.auxnormal[0], terrain1.auxnormal[1], terrain1.auxnormal[2], 0.06, 0);
+			body_rebounce(xw, yw, zw, gloTerrain.auxnormal[0], gloTerrain.auxnormal[1], gloTerrain.auxnormal[2], 0.06, 0);
 			printf("TOUCH GND \n");
 			zp = zp + (he_id - zp - zw);
 			// check is normal < 0 and eventually calculated and assigns new velocities and so.
@@ -2264,6 +2069,321 @@ void updatePQRAxes(float theta, float fi)
 } // end updatePQRAxes function
 
 // ####################################################################################################################
+// Function simulatePhysics
+// ####################################################################################################################
+void simulatePhysics(int plane_up, int plane_down, int plane_inclleft, int plane_inclright, float h, double g)
+{
+	int i, j;
+
+	updateTorque(plane_up, plane_down, plane_inclleft, plane_inclright);
+
+	// ===========PHYSICS PROCEDURE=============
+	// Sembra tutto OK / Everything seems OK
+	reorientAxes();
+
+	// Calulate total Fcm and total torque, starting from external forces applied to vertices 
+	// NOTE: g is already done below... so it's no bother----forces  of ultrasimple flight model
+
+	// NOT needed for dynamics, it's only in this game: some approx of force on CM 
+	// and torque due to a rudimental plane aerodynamical forces' consideration
+	float vpar;
+	float vlat;
+
+	float rot1;
+	float rot2;
+	float rot3;
+
+	vlat = gloAxis3[0] * v[0] + gloAxis3[1] * v[1] + gloAxis3[2] * v[2]; // dot product calculated directly
+
+	vperp = gloAxis2[0] * v[0] + gloAxis2[1] * v[1] + gloAxis2[2] * v[2]; // dot product calculated directly
+
+	vpar = gloAxis1[0] * v[0] + gloAxis1[1] * v[1] + gloAxis1[2] * v[2];
+
+	rot1 = gloAxis1[0] * w[0] + gloAxis1[1] * w[1] + gloAxis1[2] * w[2]; // how much it rotates around axis 1 (nose--> back)
+
+	rot2 = gloAxis2[0] * w[0] + gloAxis2[1] * w[1] + gloAxis2[2] * w[2]; // how much it rotates around axis 2 (perp to wings)
+
+	rot3 = gloAxis3[0] * w[0] + gloAxis3[1] * w[1] + gloAxis3[2] * w[2]; // how much it rotates around axis 3 (parallel to wings)
+	// effect (IN A VERY RUDIMENTAL CONCEPTION OF AERODYNAMICS, NOT SCIENTIFIC AT ALL) of air friction on the motion of Center of Mass directly.
+
+	Fcm[0] += -k_visc * vperp * gloAxis2[0] - k_visc2 * vlat * gloAxis3[0] - k_visc3 * vpar * gloAxis1[0] + Pforce * gloAxis1[0];
+	Fcm[1] += -k_visc * vperp * gloAxis2[1] - k_visc2 * vlat * gloAxis3[1] - k_visc3 * vpar * gloAxis1[1] + Pforce * gloAxis1[1];
+	Fcm[2] += -k_visc * vperp * gloAxis2[2] - k_visc2 * vlat * gloAxis3[2] - k_visc3 * vpar * gloAxis1[2] + Pforce * gloAxis1[2];
+
+	// same for the rotational motion. other effects are not considered.
+	// if you're an expert of aeromobilism, you can write better, just substitute these weak formulas for better ones.
+
+	// generic stabilization (very poor approximation)
+	gloTtlTorque[0] += -vpar * k_visc_rot_STABILIZE * w[0];
+	gloTtlTorque[1] += -vpar * k_visc_rot_STABILIZE * w[1];
+	gloTtlTorque[2] += -vpar * k_visc_rot_STABILIZE * w[2];
+
+	double boh = gloAxis3[0] * v[0] + gloAxis3[1] * v[1] + gloAxis3[2] * v[2];
+
+	// effetto coda verticale: decente...
+	// vertical tail effect: decent ...
+	gloTtlTorque[0] += -k_visc_rot3 * (boh)*gloAxis2[0];
+	gloTtlTorque[1] += -k_visc_rot3 * (boh)*gloAxis2[1];
+	gloTtlTorque[2] += -k_visc_rot3 * (boh)*gloAxis2[2];
+
+	// =======tota Fcm and toal torque DONE=============
+
+	// ===UPDATE VELOCITY, LINEAR AND ANGULAR TOO===
+	// momentum p (linear quantity)
+	p[0] = MASS * v[0];
+	p[1] = MASS * v[1];
+	p[2] = MASS * v[2];
+
+	p[0] = p[0] + Fcm[0] * h;
+	p[1] = p[1] + Fcm[1] * h; // we model gravity as a force given by: g*MASS, downward 
+	p[2] = p[2] + Fcm[2] * h + g * MASS * h;
+
+	v[0] = p[0] / MASS;
+	v[1] = p[1] / MASS;
+	v[2] = p[2] / MASS;
+
+	L[0] = L[0] + gloTtlTorque[0] * h;
+	L[1] = L[1] + gloTtlTorque[1] * h;
+	L[2] = L[2] + gloTtlTorque[2] * h;
+
+	// now we get the updated velocity, component by component.
+	w[0] = inv_It_now[0][0] * L[0] + inv_It_now[0][1] * L[1] + inv_It_now[0][2] * L[2];
+
+	w[1] = inv_It_now[1][0] * L[0] + inv_It_now[1][1] * L[1] + inv_It_now[1][2] * L[2];
+
+	w[2] = inv_It_now[2][0] * L[0] + inv_It_now[2][1] * L[1] + inv_It_now[2][2] * L[2];
+
+	// angular momentum (angular/rotational quantity)
+
+	// reset forces to 0.0 
+	for (i = 0; i < 3; i++)
+	{
+		Fcm[i] = 0.0;
+		gloTtlTorque[i] = 0.0;
+	}
+
+	// update position and orientation
+	// xp, yp, zp give the location of the airplane
+	xp = xp + v[0] * h;
+	yp = yp + v[1] * h;
+	zp = zp + v[2] * h;
+
+	// update orientation 
+	w_abs = sqrt(w[0] * w[0] + w[1] * w[1] + w[2] * w[2]);
+
+	if (w_abs > 0.0000001)
+	{
+		u1 = w[0] / w_abs;
+		u2 = w[1] / w_abs;
+		u3 = w[2] / w_abs;
+
+		dAng = w_abs * h;
+	}
+	else
+	{
+		u1 = 1.0;
+		u2 = 0.0;
+		u3 = 0.0;
+
+		dAng = 0.0;
+	}
+
+	// explicitly writing the Skew(w_vector) ... and also D_vector's square 
+	SD[0][0] = 0.0;
+	SD[0][1] = -u3;
+	SD[0][2] = u2;
+	SD[1][0] = u3;
+	SD[1][1] = 0.0;
+	SD[1][2] = -u1;
+	SD[2][0] = -u2;
+	SD[2][1] = u1;
+	SD[2][2] = 0.0;
+
+	// -----------------------------------------------------------
+	// Calculate SD2 = SD*SD
+	// Multiply SD times SD and place the product in the global variable gloResultMatrix
+	mat3x3_mult(SD, SD); 
+
+	// Copy gloResultMatrix to matrix SD2
+	for (j = 0; j < 3; j++)
+	{
+		for (i = 0; i < 3; i++)
+		{
+			SD2[j][i] = gloResultMatrix[j][i];
+		}
+	}
+	// Done calculating SD2
+	// -----------------------------------------------------------
+
+	// Set matrix dR
+	for (j = 0; j < 3; j++)
+	{
+		for (i = 0; i < 3; i++)
+		{
+			dR[j][i] = Id[j][i] + sin(dAng) * SD[j][i] + (1.0 - cos(dAng)) * SD2[j][i];
+		}
+	}
+
+	// -----------------------------------------------------------
+	// Calculate Rm = dR*Rm
+	// Multiply dR times Rm and place the product in the global variable gloResultMatrix
+	mat3x3_mult(dR, Rm); 
+
+	// Copy glResultMatrix into Rm
+	for (j = 0; j < 3; j++)
+	{
+		for (i = 0; i < 3; i++)
+		{
+			Rm[j][i] = gloResultMatrix[j][i];
+		}
+	}
+	// Done calculating Rm = dR*Rm
+	// -----------------------------------------------------------
+
+	// -----------------------------------------------------------
+	// Set matrix R_T
+	// update inertia tensor according to new orientation: It_now = R*It_init*transpose(R) 
+	// we build the transpose matrix of R_3x3 matrix, just here 
+	for (i = 0; i < 3; i++)
+	{
+		for (j = 0; j < 3; j++)
+		{
+			R_T[i][j] = Rm[j][i];
+		}
+	}
+	// Done setting matrix R_T
+	// -----------------------------------------------------------
+
+	// -----------------------------------------------------------
+	// Calculate It_now = Rm*It_init*R_T
+	// by first calculating gloTempMatrix = Rm*It_init
+	// and then calculating gloResultMatrix = gloTempMatrix*R_T
+	// and then copying gloResultMatrix into It_now
+	//
+	// we perform the 2 matrix products 
+	// gloResultMatrix = Rm*It_Init
+	mat3x3_mult(Rm, It_init);
+
+	// Now copy gloResultMatrix into gloTempMatrix
+	for (j = 0; j < 3; j++)
+	{
+		for (i = 0; i < 3; i++)
+		{
+			gloTempMatrix[j][i] = gloResultMatrix[j][i]; //SAFE COPY!!! PASSING EXTERN VARIABLE AND THEN MODIFYING IT IS NOT SAFE... COMPILERS MAY FAIL TO DO IT CORRECTLY!!!
+			//SAFEST SIMPLE METHOD --> BEST METHOD.
+		}
+	}
+
+	// Now calculate gloResultMatrix = gloTempMatrix * R_T
+	mat3x3_mult(gloTempMatrix, R_T);
+
+	// and copy gloResultMatrix into It_now
+	for (j = 0; j < 3; j++)
+	{
+		for (i = 0; i < 3; i++)
+		{
+			It_now[j][i] = gloResultMatrix[j][i];
+		}
+	}
+	// Done calculating It_now
+	// -----------------------------------------------------------
+
+	// -----------------------------------------------------------
+	// Calculate inv_It_now = Rm * It_initINV * R_T 
+	// by first calculating gloTempMatrix = Rm*It_initINV
+	// and then calculating gloResultMatrix = gloTempMatrix*R_T
+	// and then copying gloResultMatrix into inv_It_now
+	//
+	// its inverse too, since it's needed: 
+	// we perform the 2 matrix products 
+	mat3x3_mult(Rm, It_initINV);
+
+	for (j = 0; j < 3; j++)
+	{
+		for (i = 0; i < 3; i++)
+		{
+			gloTempMatrix[j][i] = gloResultMatrix[j][i]; //SAFE COPY!!! PASSING EXTERN VARIABLE AND THEN MODIFYING IT IS NOT SAFE... COMPILERS MAY FAIL TO DO IT CORRECTLY!!!
+			//SAFEST SIMPLE METHOD --> BEST METHOD.
+		}
+	}
+
+	// Calculate gloResultMatrix = gloTempMatrix*R_T
+	mat3x3_mult(gloTempMatrix, R_T);
+
+	// we copy gloResultMatrix into inv_It_now
+	for (j = 0; j < 3; j++)
+	{
+		for (i = 0; i < 3; i++)
+		{
+			inv_It_now[j][i] = gloResultMatrix[j][i];
+		}
+	}
+	// Done calculating inv_It_now
+	// -----------------------------------------------------------
+
+	//=================DONE UPDATE OF ORIENTATION MATRIX and intertia tensor=================
+	//====END PHYSICALLY SIMULATED UPDATE OF AIRPLANE POS AND ROTATION, ORIENTAION=====	
+} // end simulatePhysics function 
+
+// ####################################################################################################################
+// Function reorientAxes
+// ####################################################################################################################
+void reorientAxes()
+{
+		// now calculate axes in their new 'orientation', using the orientation matrix.
+
+		//R:
+		gloAxis1[0] = Rm[0][0] * gloOrigAxis1[0] +
+					  Rm[0][1] * gloOrigAxis1[1] +
+					  Rm[0][2] * gloOrigAxis1[2];
+
+		gloAxis1[1] = Rm[1][0] * gloOrigAxis1[0] +
+					  Rm[1][1] * gloOrigAxis1[1] +
+					  Rm[1][2] * gloOrigAxis1[2];
+
+		gloAxis1[2] = Rm[2][0] * gloOrigAxis1[0] +
+					  Rm[2][1] * gloOrigAxis1[1] +
+					  Rm[2][2] * gloOrigAxis1[2];
+
+		gloAxis2[0] = Rm[0][0] * gloOrigAxis2[0] +
+					  Rm[0][1] * gloOrigAxis2[1] +
+					  Rm[0][2] * gloOrigAxis2[2];
+
+		gloAxis2[1] = Rm[1][0] * gloOrigAxis2[0] +
+					  Rm[1][1] * gloOrigAxis2[1] +
+					  Rm[1][2] * gloOrigAxis2[2];
+
+		gloAxis2[2] = Rm[2][0] * gloOrigAxis2[0] +
+					  Rm[2][1] * gloOrigAxis2[1] +
+					  Rm[2][2] * gloOrigAxis2[2];
+
+		gloAxis3[0] = Rm[0][0] * gloOrigAxis3[0] +
+					  Rm[0][1] * gloOrigAxis3[1] +
+					  Rm[0][2] * gloOrigAxis3[2];
+
+		gloAxis3[1] = Rm[1][0] * gloOrigAxis3[0] +
+					  Rm[1][1] * gloOrigAxis3[1] +
+					  Rm[1][2] * gloOrigAxis3[2];
+
+		gloAxis3[2] = Rm[2][0] * gloOrigAxis3[0] +
+					  Rm[2][1] * gloOrigAxis3[1] +
+					  Rm[2][2] * gloOrigAxis3[2];
+
+		Pa[0] = gloAxis1[0];
+		Pa[1] = gloAxis1[1];
+		Pa[2] = gloAxis1[2];
+
+		Qa[0] = gloAxis2[0];
+		Qa[1] = gloAxis2[1];
+		Qa[2] = gloAxis2[2];
+
+		Ra[0] = gloAxis3[0];
+		Ra[1] = gloAxis3[1];
+		Ra[2] = gloAxis3[2];
+		// =======END OF AXES REORIENTATION DONE============
+} // end reorientAxes function
+
+// ####################################################################################################################
 // Function updateVirtualCameraPos
 // ####################################################################################################################
 void updateVirtualCameraPos(float RR)
@@ -2288,7 +2408,7 @@ void updateVirtualCameraPos(float RR)
 	{
 		x = x_pilot;
 		y = y_pilot;
-		z = say_terrain_height(&terrain1, x_pilot, y_pilot) + 1.75;
+		z = say_terrain_height(&gloTerrain, x_pilot, y_pilot) + 1.75;
 	}
 } // end updateVirtualCameraPos function
 
@@ -2519,9 +2639,9 @@ void addsmoke_wsim(double x0, double y0, double z0, double dft, int option)
 #define NPS 800
 #define NAUTSM 44
 	static int count[NAUTSM], LT = 900; // sequence lifetime
-	// coefficient of viscous force 
+	// visc = coefficient of viscous force 
 	static int visc = 3.9; // why is visc given the value 3.9 when it is defined as an int?
-	static int MAXN , N_as = 1;
+	static int MAXN, N_as = 1;
 	static double xc, yc, zc, radius[NAUTSM][NPS], Vix = 0.0, Viy = 0.0, Viz = 2.0;
 	int i, j, k;
 	static double xm[NAUTSM][NPS], ym[NAUTSM][NPS], zm[NAUTSM][NPS], vx[NAUTSM][NPS], vy[NAUTSM][NPS], vz[NAUTSM][NPS];
@@ -2639,14 +2759,14 @@ void addsmoke_wsim(double x0, double y0, double z0, double dft, int option)
 				// NOT accelerated by classical gravity because it would not be believable... its like a Brownian motion 
 				vz[j][i] = vz[j][i] - visc * vz[j][i] * dft + 0.1 * rand_F * dft + F_pullup * dft; 
 
-				if (zm[j][i] < say_terrain_height(&terrain1, xm[j][i], ym[j][i]))
+				if (zm[j][i] < say_terrain_height(&gloTerrain, xm[j][i], ym[j][i]))
 				{
 					double je;
-					je = terrain1.auxnormal[0] * vx[j][i] + terrain1.auxnormal[1] * vy[j][i] + terrain1.auxnormal[2] * vz[j][i];
+					je = gloTerrain.auxnormal[0] * vx[j][i] + gloTerrain.auxnormal[1] * vy[j][i] + gloTerrain.auxnormal[2] * vz[j][i];
 
-					vx[j][i] = vx[j][i] - (1.0 + 0.95) * je * terrain1.auxnormal[0] / 1.0; 
-					vy[j][i] = vy[j][i] - (1.0 + 0.95) * je * terrain1.auxnormal[1] / 1.0;
-					vz[j][i] = vz[j][i] - (1.0 + 0.95) * je * terrain1.auxnormal[2] / 1.0;
+					vx[j][i] = vx[j][i] - (1.0 + 0.95) * je * gloTerrain.auxnormal[0] / 1.0; 
+					vy[j][i] = vy[j][i] - (1.0 + 0.95) * je * gloTerrain.auxnormal[1] / 1.0;
+					vz[j][i] = vz[j][i] - (1.0 + 0.95) * je * gloTerrain.auxnormal[2] / 1.0;
 				}
 
 				xt = P[0] * (xm[j][i] - x) + P[1] * (ym[j][i] - y) + P[2] * (zm[j][i] - z);
@@ -2772,17 +2892,17 @@ void addfrantumation_wsim(float x0, float y0, float z0, double dft, int option)
 		// update positions and draw, at the same time
 		for (i = 0; i < 27; i++)
 		{ // SO: -1, 0 , 1
-			if (zm[i] < say_terrain_height(&terrain1, xm[i], ym[i]))
+			if (zm[i] < say_terrain_height(&gloTerrain, xm[i], ym[i]))
 			{
 				double je;
-				je = terrain1.auxnormal[0] * vx[i] + terrain1.auxnormal[1] * vy[i] + terrain1.auxnormal[2] * vz[i];
+				je = gloTerrain.auxnormal[0] * vx[i] + gloTerrain.auxnormal[1] * vy[i] + gloTerrain.auxnormal[2] * vz[i];
 
 				if (je < 0.0)
 				{
 					visca = visc;
-					vx[i] = vx[i] - (1.0 + 0.8) * je * terrain1.auxnormal[0] / 1.0; 
-					vy[i] = vy[i] - (1.0 + 0.8) * je * terrain1.auxnormal[1] / 1.0;
-					vz[i] = vz[i] - (1.0 + 0.8) * je * terrain1.auxnormal[2] / 1.0;
+					vx[i] = vx[i] - (1.0 + 0.8) * je * gloTerrain.auxnormal[0] / 1.0; 
+					vy[i] = vy[i] - (1.0 + 0.8) * je * gloTerrain.auxnormal[1] / 1.0;
+					vz[i] = vz[i] - (1.0 + 0.8) * je * gloTerrain.auxnormal[2] / 1.0;
 					printf(">>>>>>>>>IMPACT \n");
 				}
 			}
@@ -2899,21 +3019,21 @@ void projectile_launch(float xpr, float ypr, float zpr,
 			vels[i][1] = vels[i][1] + 0.0;
 			vels[i][2] = vels[i][2] - 9.81 * dft; // classical gravity 
 
-			if (poss[i][2] < say_terrain_height(&terrain1, poss[i][0], poss[i][1]))
+			if (poss[i][2] < say_terrain_height(&gloTerrain, poss[i][0], poss[i][1]))
 			{
 				double je;
-				je = terrain1.auxnormal[0] * vels[i][0] + terrain1.auxnormal[1] * vels[i][1] + terrain1.auxnormal[2] * vels[i][2];
+				je = gloTerrain.auxnormal[0] * vels[i][0] + gloTerrain.auxnormal[1] * vels[i][1] + gloTerrain.auxnormal[2] * vels[i][2];
 				printf(">>>>IMPACT??? j = %3.3f \n", je);
 
 				if (je < 0.0)
 				{
-					vels[i][0] = vels[i][0] - (1.0 + 0.1) * je * terrain1.auxnormal[0] / 1.0; 
-					vels[i][1] = vels[i][1] - (1.0 + 0.1) * je * terrain1.auxnormal[1] / 1.0;
-					vels[i][2] = vels[i][2] - (1.0 + 0.1) * je * terrain1.auxnormal[2] / 1.0;
+					vels[i][0] = vels[i][0] - (1.0 + 0.1) * je * gloTerrain.auxnormal[0] / 1.0; 
+					vels[i][1] = vels[i][1] - (1.0 + 0.1) * je * gloTerrain.auxnormal[1] / 1.0;
+					vels[i][2] = vels[i][2] - (1.0 + 0.1) * je * gloTerrain.auxnormal[2] / 1.0;
 					life[i] = 0; // put its lifetime near the end.... so soon explosion cycle will start 
 
-					terrain1.shmap[(int)(poss[i][0] / terrain1.GPunit)][(int)(poss[i][1] / terrain1.GPunit)] = terrain1.shmap[(int)(poss[i][0] / terrain1.GPunit)][(int)(poss[i][1] / terrain1.GPunit)] - 0.02;
-					terrain1.scol[(int)(poss[i][0] / terrain1.GPunit)][(int)(poss[i][1] / terrain1.GPunit)][1] = 0.8 * terrain1.scol[(int)(poss[i][0] / terrain1.GPunit)][(int)(poss[i][1] / terrain1.GPunit)][1];
+					gloTerrain.shmap[(int)(poss[i][0] / gloTerrain.GPunit)][(int)(poss[i][1] / gloTerrain.GPunit)] = gloTerrain.shmap[(int)(poss[i][0] / gloTerrain.GPunit)][(int)(poss[i][1] / gloTerrain.GPunit)] - 0.02;
+					gloTerrain.scol[(int)(poss[i][0] / gloTerrain.GPunit)][(int)(poss[i][1] / gloTerrain.GPunit)][1] = 0.8 * gloTerrain.scol[(int)(poss[i][0] / gloTerrain.GPunit)][(int)(poss[i][1] / gloTerrain.GPunit)][1];
 
 					printf(">>>>>>>>>IMPACT \n");
 					addsmoke_wsim(poss[i][0], poss[i][1], poss[i][2], dft, 1);		  // add a smoke sequence at disappeared point.
@@ -3752,11 +3872,11 @@ void load_textures_wOpenGL()
 
 				glGenTextures(1, &texName);
 
-				texid[texn - 1] = (int)texName; // [texn-1] because startd fron 1, be careful
+				gloTexIds[texn - 1] = (int)texName; // [texn-1] because started fron 1, be careful
 
-				printf("teName %i\n", texid[texn - 1]);
+				printf("teName %i\n", gloTexIds[texn - 1]);
 
-				glBindTexture(GL_TEXTURE_2D, texid[texn - 1]); // [texn-1] because startd fron 1, be careful
+				glBindTexture(GL_TEXTURE_2D, gloTexIds[texn - 1]); // [texn-1] because startd fron 1, be careful
 
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); // what OpgnGL should do when texture is magnified GL_NEAREST: non-smoothed texture | GL_LINEAR: smoothed
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);	// ...when texture is miniaturized because far; GL_NEAREST: non-smoothed tecture
@@ -3887,9 +4007,9 @@ void load_textures96x96_SEMITRANSPARENT_wOpenGL()
 
 				glGenTextures(1, &texName);
 
-				texid[gloTexturesAvailable + texn - 1] = texName; // [texn-1] because started from 1, be careful
+				gloTexIds[gloTexturesAvailable + texn - 1] = texName; // [texn-1] because started from 1, be careful
 
-				glBindTexture(GL_TEXTURE_2D, texid[gloTexturesAvailable + texn - 1]); // [texn-1] because started from 1, be careful
+				glBindTexture(GL_TEXTURE_2D, gloTexIds[gloTexturesAvailable + texn - 1]); // [texn-1] because started from 1, be careful
 
 				// what OpenGL should do when texture is magnified GL_NEAREST: non-smoothed texture | GL_LINEAR: smoothed
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST ); 
@@ -3920,7 +4040,7 @@ void load_textures96x96_SEMITRANSPARENT_wOpenGL()
 } // end load_textures96x96_SEMITRANSPARENT_wOpenGL function
 
 // ####################################################################################################################
-// Function load_hmap_from_bitmap populates field shmap of structure terrain1.
+// Function load_hmap_from_bitmap populates field shmap of structure gloTerrain.
 // ####################################################################################################################
 int load_hmap_from_bitmap(char *filename)
 {
@@ -3936,7 +4056,7 @@ int load_hmap_from_bitmap(char *filename)
 	{
 		for (i = 0; i < TERRAIN_SIZE; i++)
 		{
-			terrain1.shmap[j][i] = (float)rand() / (float)RAND_MAX;
+			gloTerrain.shmap[j][i] = (float)rand() / (float)RAND_MAX;
 		}
 	}
 
@@ -3955,7 +4075,7 @@ int load_hmap_from_bitmap(char *filename)
 				color_to_convert = getpixel(image, i, TERRAIN_SIZE - 1 - j);
 				SDL_GetRGB(color_to_convert, image->format, &red, &green, &blue);
 
-				terrain1.shmap[i][j] = ((float)red + 256.0 * ((float)green)) / (256.0); // simplified way
+				gloTerrain.shmap[i][j] = ((float)red + 256.0 * ((float)green)) / (256.0); // simplified way
 			}
 		}
 		printf("HEIGHTMAP LOADED FROM FILE: %s\n", filename);
@@ -3996,17 +4116,17 @@ int load_maptex_from_bitmap(char *filename)
 				color_to_convert = getpixel(sdl_image, i, j);
 				SDL_GetRGB(color_to_convert, sdl_image->format, &red, &green, &blue);
 
-				terrain1.map_texture_indexes[i][299 - j] = -0 + (int)red + ((int)green) * 256; 
-				if (terrain1.map_texture_indexes[i][299 - j] >= gloTexturesAvailable)
+				gloTerrain.map_texture_indexes[i][299 - j] = -0 + (int)red + ((int)green) * 256; 
+				if (gloTerrain.map_texture_indexes[i][299 - j] >= gloTexturesAvailable)
 				{
 					// if index is superior to the number of total loaded textures, put it to some 
 					// default number within the number of available textures.
-					terrain1.map_texture_indexes[i][299 - j] = 0; // default.
+					gloTerrain.map_texture_indexes[i][299 - j] = 0; // default.
 				}
 
 				if (i < 14 && i < 22)
 				{
-					printf("%2i|", terrain1.map_texture_indexes[i][299 - j]);
+					printf("%2i|", gloTerrain.map_texture_indexes[i][299 - j]);
 				}
 			}
 			printf("\n");
