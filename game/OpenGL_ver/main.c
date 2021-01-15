@@ -42,8 +42,8 @@ struct subterrain
 	// Set in function getTerrainHeight (this field is often set)
 	// Used (read) in function drawTerrain, after calling function getTerrainHeight
 	// Used (read) in function checkForPlaneCollision, after calling function getTerrainHeight
-	// Used (read) in function addsmoke_wsim, after calling function getTerrainHeight
-	// Used (read) in function addfrantumation_wsim, after calling function getTerrainHeight
+	// Used (read) in function addSmokeAtPoint, after calling function getTerrainHeight
+	// Used (read) in function addExplosionAtPoint, after calling function getTerrainHeight
 	// Used (read) in function launchProjectiles, after calling function getTerrainHeight
 	float auxnormal[3]; 
 };
@@ -86,11 +86,11 @@ void xaddftriang_perspTEXTURED_pp(float x1, float y1, float z1,
 								  int step,
 								  float color[3]);
 
-void GLaddftriang_perspTEXTURED(float x1, float y1, float z1,
-								float x2, float y2, float z2,
-								float x3, float y3, float z3,
-								int texId, float texcoords[3][2],
-								float color[3]);
+void drawTexturedTriangle(float x1, float y1, float z1,
+						  float x2, float y2, float z2,
+						  float x3, float y3, float z3,
+						  int texId, float texcoords[3][2],
+						  float color[3]);
 
 void loadTerrainTextures();
 void loadTreeTextures(); // similarly but wwww alpha values transparency info too, etc.
@@ -103,10 +103,10 @@ void xaddline_persp(float x1, float y1, float z1, float x2, float y2, float z2, 
 
 // basic special effects in videogames
 // add new explosion or just process those already started 
-void addfrantumation_wsim(float x0, float y0, float z0, double dft, int option);
+void addExplosionAtPoint(float x0, float y0, float z0, double dft, int option);
 
 // add new explosion or just process those already started 
-void addsmoke_wsim(double x0, double y0, double z0, double dft, int option);
+void addSmokeAtPoint(double x0, double y0, double z0, double dft, int option);
 
 void launchProjectiles(float x, float y, float z, float vx, float vy, float vz, double dft, int do_add);
 
@@ -118,15 +118,15 @@ void getFloatsInFile(char filename[], float floatsRead[], long int maxsize);
 // does same for face definition and colors and texture orderting if needed.
 void importAirplanePolyhedron(void); 
 
-int waitdt_ms(double tt_ms);
+int waitMs(double tt_ms);
 
 double getTerrainHeight(struct subterrain *ite, double x, double z);
 
-// mat3x3_mult multiplies two 3x3 matrixes 3x3, placing result in global variable gloResultMatrix
-void mat3x3_mult(double mat1[3][3], double mat2[3][3]);
+// multTwo3x3Matrices multiplies two 3x3 matrixes 3x3, placing result in global variable gloResultMatrix
+void multTwo3x3Matrices(double mat1[3][3], double mat2[3][3]);
 
-// inv calculates the inverse of a 3x3 matrix (used for obtaining the inverse of the inertia tensor)
-void inv(double in_3x3_matrix[3][3]);
+// invert3x3Matrix calculates the inverse of a 3x3 matrix (used for obtaining the inverse of the inertia tensor)
+void invert3x3Matrix(double in_3x3_matrix[3][3]);
 
 double bounceAirplane(double rx, double ry, double rz,
 					  double nx, double ny, double nz, double e);
@@ -300,7 +300,7 @@ float treeR1 = 0.5;
 // quadrangular texture image / color-matrix onto some triangles into which all 3D objects 
 // in the simplest case are divided.
 //
-// Used in function drawTerrain, where it is used as a parameter to GLaddftriang_perspTEXTURED.
+// Used in function drawTerrain, where it is used as a parameter to drawTexturedTriangle.
 // It would be better to declare this variable as a local variable in drawTerrain.
 float texcoords_gnd_tri1[3][2] = {
 	{0.0, 0.0},
@@ -308,7 +308,7 @@ float texcoords_gnd_tri1[3][2] = {
 	{0.0, 1.0}
 };
 
-// Used in function drawTerrain, where it is used as a parameter to GLaddftriang_perspTEXTURED.
+// Used in function drawTerrain, where it is used as a parameter to drawTexturedTriangle.
 // It would be better to declare this variable as a local variable in drawTerrain.
 float texcoords_gnd_tri2[3][2] = {
 	{1.0, 0.0},
@@ -737,7 +737,7 @@ int main()
 	if (gloUsingLowResolution == 0)
 	{
 		// Add smoke effect at plane location xp, yp, zp
-		addsmoke_wsim(xp, yp, zp, h, 1); // commented out for testing
+		addSmokeAtPoint(xp, yp, zp, h, 1); // commented out for testing
 	}
 
 	// initPhysicsVars will set global variables It_init, p, L, It_initINV, Fcm and gloTtlTorque
@@ -781,7 +781,7 @@ int main()
 		if (gloUsingLowResolution == 0)
 		{
 			// Add smoke effect at plane location xp, yp, zp
-			addsmoke_wsim(xp, yp, zp, h, 2); // DEACTIVATED TO TEST
+			addSmokeAtPoint(xp, yp, zp, h, 2); // DEACTIVATED TO TEST
 		}
 
 		drawAxes();
@@ -796,7 +796,7 @@ int main()
 		if (gloUsingLowResolution == 0)
 		{
 			// Why are we adding smoke effect at coordinates (x, y, z) = (1, 2, 3)?
-			addsmoke_wsim(1, 2, 3, h, 0); // we must make special effect sequences go on. 
+			addSmokeAtPoint(1, 2, 3, h, 0); // we must make special effect sequences go on. 
 		}
 
 		drawAirplane(h);
@@ -1022,7 +1022,7 @@ void initTerrain()
 	// except system time reset of overflow the num is always different.
 	srand((long int)time(NULL));
 	printf("TIME number used to generate random environment: %li\n\n", (long int)time(NULL));
-	waitdt_ms(1000.0);
+	waitMs(1000.0);
 
 	// generate random height samples 
 	for (j = 0; j < TERRAIN_SIZE; j++)
@@ -1125,7 +1125,7 @@ void initPhysicsVars()
 	L[1] = It_now[1][0] * w[0] + It_now[1][1] * w[1] + It_now[1][2] * w[2];
 	L[2] = It_now[2][0] * w[0] + It_now[2][1] * w[1] + It_now[2][2] * w[2];
 
-	inv(It_init); // puts the inverse matrix into the "gloResultMatrix" global variable. 
+	invert3x3Matrix(It_init); // puts the inverse matrix into the "gloResultMatrix" global variable. 
 
 	// we copy it (the gloResultMatrix) into "R_INV"... 
 	for (j = 0; j < 3; j++)
@@ -1474,20 +1474,20 @@ void drawTerrain() {
 			if (xi >= 0 && yi >= 0)
 			{
 				// Triangolo 1 / Triangle 1
-				GLaddftriang_perspTEXTURED(x_c[0], y_c[0], z_c[0],
-											x_c[1], y_c[1], z_c[1],
-											x_c[2], y_c[2], z_c[2],
-											gloTexIds[gloTerrain.map_texture_indexes[xi][yi]], texcoords_gnd_tri1,
-											color);
+				drawTexturedTriangle(x_c[0], y_c[0], z_c[0],
+									 x_c[1], y_c[1], z_c[1],
+									 x_c[2], y_c[2], z_c[2],
+									 gloTexIds[gloTerrain.map_texture_indexes[xi][yi]], texcoords_gnd_tri1,
+									 color);
 
 				// Triangolo 2 / Triangle 2 (change color a little bit)
 				color[1] = color[1] + 0.1; // draw with slightly different color... 
 
-				GLaddftriang_perspTEXTURED(x_c[1], y_c[1], z_c[1],
-											x_c[2], y_c[2], z_c[2],
-											x_c[3], y_c[3], z_c[3],
-											gloTexIds[gloTerrain.map_texture_indexes[xi][yi]], texcoords_gnd_tri2,
-											color);
+				drawTexturedTriangle(x_c[1], y_c[1], z_c[1],
+									 x_c[2], y_c[2], z_c[2],
+									 x_c[3], y_c[3], z_c[3],
+									 gloTexIds[gloTerrain.map_texture_indexes[xi][yi]], texcoords_gnd_tri2,
+									 color);
 			}
 		}
 	}
@@ -1570,7 +1570,7 @@ void drawAirplane(float h)
 
 	if (gloUsingLowResolution == 0)
 	{
-		addfrantumation_wsim(x1, y1, z1, h, 0);	// we must make special effect sequences go on. 
+		addExplosionAtPoint(x1, y1, z1, h, 0);	// we must make special effect sequences go on. 
 		launchProjectiles(10, 10, 10, 20, 10, -0.1, h, 0); // idem / ditto
 	}
 } // end drawAirplane function
@@ -1894,7 +1894,7 @@ void simulatePhysics(int plane_up, int plane_down, int plane_inclleft, int plane
 	// -----------------------------------------------------------
 	// Calculate SD2 = SD*SD
 	// Multiply SD times SD and place the product in the global variable gloResultMatrix
-	mat3x3_mult(SD, SD); 
+	multTwo3x3Matrices(SD, SD); 
 
 	// Copy gloResultMatrix to matrix SD2
 	for (j = 0; j < 3; j++)
@@ -1919,7 +1919,7 @@ void simulatePhysics(int plane_up, int plane_down, int plane_inclleft, int plane
 	// -----------------------------------------------------------
 	// Calculate Rm = dR*Rm
 	// Multiply dR times Rm and place the product in the global variable gloResultMatrix
-	mat3x3_mult(dR, Rm); 
+	multTwo3x3Matrices(dR, Rm); 
 
 	// Copy glResultMatrix into Rm
 	for (j = 0; j < 3; j++)
@@ -1954,7 +1954,7 @@ void simulatePhysics(int plane_up, int plane_down, int plane_inclleft, int plane
 	//
 	// we perform the 2 matrix products 
 	// gloResultMatrix = Rm*It_Init
-	mat3x3_mult(Rm, It_init);
+	multTwo3x3Matrices(Rm, It_init);
 
 	// Now copy gloResultMatrix into gloTempMatrix
 	for (j = 0; j < 3; j++)
@@ -1967,7 +1967,7 @@ void simulatePhysics(int plane_up, int plane_down, int plane_inclleft, int plane
 	}
 
 	// Now calculate gloResultMatrix = gloTempMatrix * R_T
-	mat3x3_mult(gloTempMatrix, R_T);
+	multTwo3x3Matrices(gloTempMatrix, R_T);
 
 	// and copy gloResultMatrix into It_now
 	for (j = 0; j < 3; j++)
@@ -1988,7 +1988,7 @@ void simulatePhysics(int plane_up, int plane_down, int plane_inclleft, int plane
 	//
 	// its inverse too, since it's needed: 
 	// we perform the 2 matrix products 
-	mat3x3_mult(Rm, It_initINV);
+	multTwo3x3Matrices(Rm, It_initINV);
 
 	for (j = 0; j < 3; j++)
 	{
@@ -2000,7 +2000,7 @@ void simulatePhysics(int plane_up, int plane_down, int plane_inclleft, int plane
 	}
 
 	// Calculate gloResultMatrix = gloTempMatrix*R_T
-	mat3x3_mult(gloTempMatrix, R_T);
+	multTwo3x3Matrices(gloTempMatrix, R_T);
 
 	// we copy gloResultMatrix into inv_It_now
 	for (j = 0; j < 3; j++)
@@ -2210,7 +2210,7 @@ void processEvent(float *turnch, float *turncv, float *RR,
 
 		if (gloEvent.key.keysym.sym == SDLK_e)
 		{
-			addfrantumation_wsim(20, 20, 20, *h, 1);
+			addExplosionAtPoint(20, 20, 20, *h, 1);
 		}
 
 		if (gloEvent.key.keysym.sym == SDLK_m)
@@ -2347,10 +2347,10 @@ void sdldisplay()
 } // end sdldisplay function
 
 // ####################################################################################################################
-// Function waitdt_ms is a timer function.
+// Function waitMs is a timer function.
 // A timer function to pause to regulate FPS is a good utility to have...
 // ####################################################################################################################
-int waitdt_ms(double tt_ms)
+int waitMs(double tt_ms)
 {
 	// declare variables used specifically to measure time and a normal double 
 	clock_t time1, time2;
@@ -2366,7 +2366,7 @@ int waitdt_ms(double tt_ms)
 		dt_ms = (time2 - time1) / (CLOCKS_PER_SEC / 1000.0);
 	}
 	return 1;
-} // end waitdt_ms() function 
+} // end waitMs function 
 
 // ####################################################################################################################
 // Function xaddline
@@ -2532,12 +2532,12 @@ void xaddline_persp(float x1, float y1, float z1,
 } // end xaddline_persp function
 
 // ####################################################################################################################
-// Function addsmoke_wsim draws smoke at the point (x0, y0, z0)
+// Function addSmokeAtPoint draws smoke at the point (x0, y0, z0)
 //
 // point frantumation sequence function (a special effect)
 // add new explosion or just process those already started
 // ####################################################################################################################
-void addsmoke_wsim(double x0, double y0, double z0, double dft, int option)
+void addSmokeAtPoint(double x0, double y0, double z0, double dft, int option)
 {
 #define NPS 800
 #define NAUTSM 44
@@ -2736,15 +2736,15 @@ void addsmoke_wsim(double x0, double y0, double z0, double dft, int option)
 	} // NAUTSM count
 
 	glEnable(GL_DEPTH_TEST);
-} // end addsmoke_wsim function
+} // end addSmokeAtPoint function
 
 // ####################################################################################################################
-// Function addfrantumation_wsim
+// Function addExplosionAtPoint
 // Gli effetti speciali di base nei games / the basic special effects in the games
 // point frantumation sequence function (a special effect)
 // add new explosion or just process those already started
 // ####################################################################################################################
-void addfrantumation_wsim(float x0, float y0, float z0, double dft, int option)
+void addExplosionAtPoint(float x0, float y0, float z0, double dft, int option)
 {
 #define NP 100
 	static int count = 0, LT = 400; // sequence lifetime
@@ -2845,7 +2845,7 @@ void addfrantumation_wsim(float x0, float y0, float z0, double dft, int option)
 
 		count--;
 	}
-} // end addfrantumation_wsim function
+} // end addExplosionAtPoint function
 
 // ####################################################################################################################
 // Function launchProjectiles
@@ -2926,8 +2926,8 @@ void launchProjectiles(float xpr, float ypr, float zpr,
 					gloTerrain.scol [(int)(poss[i][0] / gloTerrain.GPunit)][(int)(poss[i][1] / gloTerrain.GPunit)][1] = 0.8 * gloTerrain.scol [(int)(poss[i][0] / gloTerrain.GPunit)][(int)(poss[i][1] / gloTerrain.GPunit)][1];
 
 					printf(">>>>>>>>>IMPACT \n");
-					addsmoke_wsim(poss[i][0], poss[i][1], poss[i][2], dft, 1);		  // add a smoke sequence at disappeared point.
-					addfrantumation_wsim(poss[i][0], poss[i][1], poss[i][2], dft, 1); // add a frantumation sequance at disappeared point.
+					addSmokeAtPoint(poss[i][0], poss[i][1], poss[i][2], dft, 1);		  // add a smoke sequence at disappeared point.
+					addExplosionAtPoint(poss[i][0], poss[i][1], poss[i][2], dft, 1); // add a frantumation sequance at disappeared point.
 				}
 			}
 		}
@@ -3126,15 +3126,15 @@ void xaddftriang_persp(float x1, float y1, float z1,
 } // end xaddftriang_persp function
 
 // ####################################################################################################################
-// Function GLaddftriang_perspTEXTURED
+// Function drawTexturedTriangle
 //
 // Called only from function drawTerrain.
 // ####################################################################################################################
-void GLaddftriang_perspTEXTURED(float x1, float y1, float z1,
-								float x2, float y2, float z2,
-								float x3, float y3, float z3,
-								int texId, float texcoords[3][2],
-								float color[3])
+void drawTexturedTriangle(float x1, float y1, float z1,
+						  float x2, float y2, float z2,
+						  float x3, float y3, float z3,
+						  int texId, float texcoords[3][2],
+						  float color[3])
 {
 	glBindTexture(GL_TEXTURE_2D, texId);
 	glEnable(GL_TEXTURE_2D); 
@@ -3153,10 +3153,12 @@ void GLaddftriang_perspTEXTURED(float x1, float y1, float z1,
 
 	glFlush();
 	glDisable(GL_TEXTURE_2D);
-} // end GLaddftriang_perspTEXTURED function
+} // end drawTexturedTriangle function
 
 // ####################################################################################################################
 // Function xaddftriang_perspTEXTURED_pp
+//
+// This function is not called.
 // ####################################################################################################################
 void xaddftriang_perspTEXTURED_pp(float x1, float y1, float z1,
 								  float x2, float y2, float z2,
@@ -3336,9 +3338,9 @@ struct mystruct
 };
 
 // ####################################################################################################################
-// Function mat3x3_mult multiplies two 3x3 matrices and places the result in global variable gloResultMatrix.
+// Function multTwo3x3Matrices multiplies two 3x3 matrices and places the result in global variable gloResultMatrix.
 // ####################################################################################################################
-void mat3x3_mult(double mat1[3][3], double mat2[3][3])
+void multTwo3x3Matrices(double mat1[3][3], double mat2[3][3])
 {
 	double sum;
 	int im, jm, k;
@@ -3355,12 +3357,12 @@ void mat3x3_mult(double mat1[3][3], double mat2[3][3])
 			gloResultMatrix[im][jm] = sum; // EXTERN VALUE!!! It's an easy way to implement all this.
 		}
 	}
-} // end mat3x3_mult function
+} // end multTwo3x3Matrices function
 
 // ####################################################################################################################
-// Function inv calculates the inverse of a 3x3 matrix (used for obtaining the inverse of the inertia tensor).
+// Function invert3x3Matrix calculates the inverse of a 3x3 matrix (used for obtaining the inverse of the inertia tensor).
 // ####################################################################################################################
-void inv(double in_3x3_matrix[3][3])
+void invert3x3Matrix(double in_3x3_matrix[3][3])
 {
 	double A[3][3]; // the matrix that is entered by user 
 	double B[3][3]; // the transpose of a matrix A 
@@ -3438,7 +3440,7 @@ void inv(double in_3x3_matrix[3][3])
 			gloResultMatrix[i][j] = C[i][j] * x; // EXTERN VALUE!!!
 		}
 	}
-} // end inv function
+} // end invert3x3Matrix function
 
 // ####################################################################################################################
 // Function bounceAirplane bounces the airplane off of the ground (i.e., terrain).
