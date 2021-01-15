@@ -2,8 +2,6 @@
 #include <math.h>
 #include <time.h>
 
-// include SDL library's header and declare external 5 spec variables 
-//=====================|SDL CODE BLOCK 1| =====================================
 #define GL_GLEXT_PROTOTYPES
 // include SDL library's header
 #include <SDL2/SDL.h>
@@ -72,14 +70,6 @@ void xadd1pix(int x, int y, float color[3],
 void xaddline(int x1, int y1,
 			  int x2, int y2, float color[3], // change this to int color[3] 
 			  int xlimit, int ylimit);
-
-// Function xaddftriang is defined but not called. 
-// Also, it does not actually draw a filled triangle. It doesn't draw anything.
-// draw a filled triangle to pixel matrix 
-void xaddftriang(int x1, int y1,
-				 int x2, int y2,
-				 int x3, int y3,
-				 float color[3]);
 
 // now we define the function which, given 2 points in 3D, calculates where they end up on the
 // virtual camera pointing toward positive z-axis and passes them to the 2D line drawing function. 
@@ -691,25 +681,11 @@ int main()
 	int plane_inclleft = 0;
 	int plane_inclright = 0;
 
-	// All non-SDL program code here
-	// auxillary integer variables
-	// With the addition of several functions, and the code from main that was put placed in those new 
-	// functions, variables i, j and k are now unused.
-	int i = 0;
-	int j = 0;
-	int k = 0;
-
 	float RR = 20.0;
 
-	// per ora non lo usiamo / for now we don't use it
 	// 3 angoli che indicano la orientazione del sistema di riferimento della telecaera virtuale, per dire 
 	// 3 angles that indicate the orientation of the reference system of the virtual camera, so to speak
 	float theta = 4.2, fi = 1.2, psi = 0.0; 
-
-	// per ora non lo usiamo / for now we don't use it
-	// 3 angoli che indicano la orientazione del sistema di riferimento dello aeroplano di questo game 
-	// 3 angles that indicate the orientation of the reference system of the airplane of this game
-	float thp = 0.2, fip = 0.2, psip = 0.0; 
 
 	// For internal view!!! cockpit view
 	float th_add = 0.1, fi_add = 0.1, psi_add = 0.0; 
@@ -826,8 +802,6 @@ int main()
 		drawAirplane(h);
 
 		// call function which displays the matrix of pixels in a true graphics window 
-
-		// ==================|SDL CODE BLOCK 4|=============================
 		sdldisplay();
 
 		// Every ten cycles ...
@@ -871,10 +845,7 @@ int main()
 // ####################################################################################################################
 void initSDL()
 {
-	// code to start SDL graphics system: 
-	//==========================|SDL CODE BLOCK 2|=========================
 	// Initialize SDL 
-
 	if (SDL_Init(SDL_INIT_VIDEO) != 0)
 	{
 		printf("Unable to initialize SDL: %s\n", SDL_GetError());
@@ -2348,7 +2319,6 @@ void processEvent(float *turnch, float *turncv, float *RR,
 // ####################################################################################################################
 void xclearpixboard(int xlimit, int ylimit)
 {
-	int i, j;
 	GLdouble fW, fH;
 	double aspect;
 
@@ -2369,8 +2339,7 @@ void xclearpixboard(int xlimit, int ylimit)
 } // end xclearpixboard function
 
 // ####################################################################################################################
-// THE SDL graphics function: ALL SDL DRAW COMMANDS HERE... 
-// ===============================|SDL CODE BLOCK 3|==================================
+// Function sdldisplay
 // ####################################################################################################################
 void sdldisplay() 
 {
@@ -2526,7 +2495,8 @@ void xadd1pix(int x, int y, float color[3],
 } // end xadd1pix function
 
 // ####################################################################################################################
-// Function xaddpoint_persp
+// Function xaddpoint_persp draws a (perspective) point in 3D space.
+//
 // now we define the function which, given 1 point in 3D, calculates where it ends up on the
 // virtual camera pointing toward positive z-axis and passes them to the failsafe pixel drawing function. 
 // ####################################################################################################################
@@ -2543,7 +2513,8 @@ void xaddpoint_persp(float x1, float y1, float z1, float color[3])
 } // end xaddpoint_persp function
 
 // ####################################################################################################################
-// Function xaddline_persp
+// Function xaddline_persp draws a (perspective) line in 3D space.
+//
 // now we define the function which, given 2 points in 3D, calculates where they end up on the
 // virtual camera pointing toward positive z-axis and passes them to the 2D line drawing function. 
 // ####################################################################################################################
@@ -2561,7 +2532,8 @@ void xaddline_persp(float x1, float y1, float z1,
 } // end xaddline_persp function
 
 // ####################################################################################################################
-// Function addsmoke_wsim
+// Function addsmoke_wsim draws smoke at the point (x0, y0, z0)
+//
 // point frantumation sequence function (a special effect)
 // add new explosion or just process those already started
 // ####################################################################################################################
@@ -2889,7 +2861,6 @@ void projectile_launch(float xpr, float ypr, float zpr,
 	float th_sph; // theta or spherical coordinated, used for a spherical 'explosion' 
 	static int life[100];
 	float xm, ym, zm, xt, yt, zt;
-	float x1, y1, z1, x2, y2, z2;
 	int i, k;
 
 	if (do_add == 1)
@@ -2905,9 +2876,6 @@ void projectile_launch(float xpr, float ypr, float zpr,
 		life[n] = 1; // do not set to 0 because it mekes start the explosion cycle.
 
 		n++;
-	}
-	if (life[0] > 0)
-	{
 	}
 
 	// draw projectiles
@@ -2925,15 +2893,6 @@ void projectile_launch(float xpr, float ypr, float zpr,
 			zt = R[0] * (xm - x) + R[1] * (ym - y) + R[2] * (zm - z);
 
 			xaddpoint_persp(xt, yt, -zt, color); // draw points in 3D scenario Z NEGATIVE!!!!!! 
-
-			// "x is an extern variable!!! be careful!!" 
-			x1 = P[0] * (-x) + P[1] * (ym - y) + P[2] * (zm - z);
-			y1 = Q[0] * (-x) + Q[1] * (ym - y) + Q[2] * (zm - z);
-			z1 = R[0] * (-x) + R[1] * (ym - y) + R[2] * (zm - z);
-
-			x2 = P[0] * (xm - x) + P[1] * (-y) + P[2] * (zm - z);
-			y2 = Q[0] * (xm - x) + Q[1] * (-y) + Q[2] * (zm - z);
-			z2 = R[0] * (xm - x) + R[1] * (-y) + R[2] * (zm - z);
 		}
 	}
 
@@ -2963,8 +2922,8 @@ void projectile_launch(float xpr, float ypr, float zpr,
 					vels[i][2] = vels[i][2] - (1.0 + 0.1) * je * gloTerrain.auxnormal[2] / 1.0;
 					life[i] = 0; // put its lifetime near the end.... so soon explosion cycle will start 
 
-					gloTerrain.shmap[(int)(poss[i][0] / gloTerrain.GPunit)][(int)(poss[i][1] / gloTerrain.GPunit)] = gloTerrain.shmap[(int)(poss[i][0] / gloTerrain.GPunit)][(int)(poss[i][1] / gloTerrain.GPunit)] - 0.02;
-					gloTerrain.scol[(int)(poss[i][0] / gloTerrain.GPunit)][(int)(poss[i][1] / gloTerrain.GPunit)][1] = 0.8 * gloTerrain.scol[(int)(poss[i][0] / gloTerrain.GPunit)][(int)(poss[i][1] / gloTerrain.GPunit)][1];
+					gloTerrain.shmap[(int)(poss[i][0] / gloTerrain.GPunit)][(int)(poss[i][1] / gloTerrain.GPunit)]    =       gloTerrain.shmap[(int)(poss[i][0] / gloTerrain.GPunit)][(int)(poss[i][1] / gloTerrain.GPunit)] - 0.02;
+					gloTerrain.scol [(int)(poss[i][0] / gloTerrain.GPunit)][(int)(poss[i][1] / gloTerrain.GPunit)][1] = 0.8 * gloTerrain.scol [(int)(poss[i][0] / gloTerrain.GPunit)][(int)(poss[i][1] / gloTerrain.GPunit)][1];
 
 					printf(">>>>>>>>>IMPACT \n");
 					addsmoke_wsim(poss[i][0], poss[i][1], poss[i][2], dft, 1);		  // add a smoke sequence at disappeared point.
@@ -3145,36 +3104,8 @@ double say_terrain_height(struct subterrain *ite, double x, double z)
 } // end say_terrain_height function
 
 // ####################################################################################################################
-// Function xaddftriang draws a filled triangle to pixel matrix (actually it doesn't draw anything!)
-// This function is not called.
-// ####################################################################################################################
-void xaddftriang(int x1, int y1, // parameters x1 and y1 are not used
-				 int x2, int y2, // parameters x2 and y2 are not used
-				 int x3, int y3, // parameters x3 and y3 are not used
-				 float color[3])
-{
-	// convert RGB color intensities, call the allocate/activate function provided by Xlib,
-	// and then call the function that puts it into use.
-	int color_index = 0; // local variable color_index is not used
-
-	if (color[0] > 1.0)
-	{
-		color[0] = 1.0;
-	}
-
-	if (color[1] > 1.0)
-	{
-		color[1] = 1.0;
-	}
-
-	if (color[2] > 1.0)
-	{
-		color[2] = 1.0;
-	}
-} // end xaddftriang function
-
-// ####################################################################################################################
-// Function xaddftriang_persp
+// Function xaddftriang_persp draws a (perspective) triangle in 3D space.
+//
 // now we define the function which, given 3 points in 3D, calculates where they end up on the
 // virtual camera pointing toward positive z-s and passes them to the 3D line drawing function. 
 // ####################################################################################################################
@@ -3405,47 +3336,6 @@ struct mystruct
 };
 
 // ####################################################################################################################
-// Function swap
-// Interchange *px and *py  STRUCT 
-//
-// Called only from function shellsort_struct, but shellsort_struct is not called.
-// ####################################################################################################################
-void swap(struct mystruct *px, struct mystruct *py)
-{
-	// we clone a structure of the kind needed, it will be used as a temporary store.
-	struct mystruct temp;
-
-	temp = *px;
-	*px = *py;
-	*py = temp;
-} // end function swap
-
-// ####################################################################################################################
-// Function shellsort_struct
-// Shell Sort STRUCT 
-// shellsort: sort v[0]...v[n-1] into increasing order, with respect to some element of the struct.
-// Calls swap(). 
-//
-// This function is not called.
-// ####################################################################################################################
-void shellsort_struct(struct mystruct *v, int n)
-{
-	int gap, i, j;
-
-	for (gap = n / 2; gap > 0; gap /= 2)
-	{
-		for (i = gap; i < n; i++)
-		{
-			for (j = i - gap; j >= 0 && (v[j].z) > (v[j + gap].z); j -= gap)
-			{
-				// sort with respect to d
-				swap(&v[j], &v[j + gap]); 
-			}
-		}
-	}
-} // end shellsort_struct function
-
-// ####################################################################################################################
 // Function mat3x3_mult multiplies two 3x3 matrices and places the result in global variable gloResultMatrix.
 // ####################################################################################################################
 void mat3x3_mult(double mat1[3][3], double mat2[3][3])
@@ -3655,7 +3545,7 @@ void make_inertia_tensor(int n_vertexs)
 {
 // be very careful to assign storage space correctly!!!! otherwise it brings to 0 all elements!!!
 #define ne 1000
-	int i, j, k;
+	int i, k;
 	double Ixxe[ne], Iyye[ne], Izze[ne]; // those  'principal moments of inertia'....
 	double Ixye[ne], Ixze[ne], Iyze[ne]; // those  'products of inertia'....
 	double Ixx = 0, Iyy = 0, Izz = 0;	 // the total principal moments of inertia to put into the diagonals of the 3x3 tensor matrix. 
@@ -3693,7 +3583,7 @@ void make_inertia_tensor(int n_vertexs)
 	It_init[1][1] = Iyy;
 	It_init[2][2] = Izz;
 
-	// put inertia products in gloResultMatrix tensor
+	// put inertia products in It_init tensor
 	It_init[0][1] = -Ixy;
 	It_init[1][0] = -Ixy;
 
@@ -3702,13 +3592,6 @@ void make_inertia_tensor(int n_vertexs)
 
 	It_init[1][2] = -Iyz;
 	It_init[2][1] = -Iyz;
-
-	for (i = 0; i < 3; i++)
-	{
-		for (j = 0; j < 3; j++)
-		{
-		}
-	}
 } // end make_inertia_tensor function
 
 // ####################################################################################################################
@@ -4124,7 +4007,6 @@ void import_airplane_polyheron(void)
 	// read in poly definition from file
 	float auxxv[3 * NVERTEXES];
 	int nelem = 0, i, j;
-	FILE *FilePtr; // pointer to input file
 
 	printf("TRYING TO IMPORT VERTEX LIST OF 3D MODEL\n");
 
