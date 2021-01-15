@@ -17,34 +17,34 @@ struct subterrain
 {
 	// Set in function initTerrain twice. 
 	// At the top of initTerrain, it is set to 300. 
-	// At the bottom of initTerrain, it is set to the return value of a call to load_hmap_from_bitmap.
-	// Used (read) in functions drawTerrain and say_terrain_height
+	// At the bottom of initTerrain, it is set to the return value of a call to loadHeightMap.
+	// Used (read) in functions drawTerrain and getTerrainHeight
 	int map_size;
 
 	// Set in function initTerrain to 50.
-	// Used (read) in functions initTerrain, drawTerrain, projectile_launch, say_terrain_height
+	// Used (read) in functions initTerrain, drawTerrain, launchProjectiles, getTerrainHeight
 	float GPunit;
 
 	// Set in function initTerrain to a random value.
-	// Set in functions load_hmap_from_bitmap and projectile_launch.
-	// Used (read) in functions drawTerrain and say_terrain_height.
+	// Set in functions loadHeightMap and launchProjectiles.
+	// Used (read) in functions drawTerrain and getTerrainHeight.
 	float shmap[TERRAIN_SIZE][TERRAIN_SIZE];
 
 	// Field scol holds color data (see function drawTerrain)
-	// Set in function initTerrain and projectile_launch
+	// Set in function initTerrain and launchProjectiles
 	// Used (read) in function drawTerrain
 	float scol[TERRAIN_SIZE][TERRAIN_SIZE][3]; 
 
-	// Set in functions initTerrain and load_maptex_from_bitmap
+	// Set in functions initTerrain and loadMapTextureIndices
 	// Used as an index into global array gloTexIds in function drawTerrain
 	int map_texture_indexes[TERRAIN_SIZE][TERRAIN_SIZE]; 
 
-	// Set in function say_terrain_height (this field is often set)
-	// Used (read) in function drawTerrain, after calling function say_terrain_height
-	// Used (read) in function checkForPlaneCollision, after calling function say_terrain_height
-	// Used (read) in function addsmoke_wsim, after calling function say_terrain_height
-	// Used (read) in function addfrantumation_wsim, after calling function say_terrain_height
-	// Used (read) in function projectile_launch, after calling function say_terrain_height
+	// Set in function getTerrainHeight (this field is often set)
+	// Used (read) in function drawTerrain, after calling function getTerrainHeight
+	// Used (read) in function checkForPlaneCollision, after calling function getTerrainHeight
+	// Used (read) in function addsmoke_wsim, after calling function getTerrainHeight
+	// Used (read) in function addfrantumation_wsim, after calling function getTerrainHeight
+	// Used (read) in function launchProjectiles, after calling function getTerrainHeight
 	float auxnormal[3]; 
 };
 
@@ -52,8 +52,8 @@ struct subterrain
 // # Function prototypes                                                                                              #
 // #                                                                                                                  #
 
-// getpixel is used for bitmap conversion to RGB value matrix (usual stuff)
-Uint32 getpixel(SDL_Surface *surface, int x, int y);
+// getPixel is used for bitmap conversion to RGB value matrix (usual stuff)
+Uint32 getPixel(SDL_Surface *surface, int x, int y);
 
 // this is the prototype of the function which will draw the pixel.
 void sdldisplay();
@@ -92,10 +92,10 @@ void GLaddftriang_perspTEXTURED(float x1, float y1, float z1,
 								int texId, float texcoords[3][2],
 								float color[3]);
 
-void load_textures_wOpenGL();
-void load_textures96x96_SEMITRANSPARENT_wOpenGL(); // similarly but wwww alpha values transparency info too, etc.
-int load_hmap_from_bitmap(char *filename); // ...description at definition
-int load_maptex_from_bitmap(char *filename); // ...description at definition
+void loadTerrainTextures();
+void loadTreeTextures(); // similarly but wwww alpha values transparency info too, etc.
+int loadHeightMap(char *filename); // ...description at definition
+int loadMapTextureIndices(char *filename); // ...description at definition
 
 void xaddpoint_persp(float x1, float y1, float z1, float color[3]);
 
@@ -108,19 +108,19 @@ void addfrantumation_wsim(float x0, float y0, float z0, double dft, int option);
 // add new explosion or just process those already started 
 void addsmoke_wsim(double x0, double y0, double z0, double dft, int option);
 
-void projectile_launch(float x, float y, float z, float vx, float vy, float vz, double dft, int do_add);
+void launchProjectiles(float x, float y, float z, float vx, float vy, float vz, double dft, int do_add);
 
 // misc for import 3D models.
-long int check_vector_elements(char filename[]);
-void read_vector(char filename[], float dest_string[], long int maxsize);
+long int countNumbersInFile(char filename[]);
+void getFloatsInFile(char filename[], float floatsRead[], long int maxsize);
 
 // polyherdron definition importing from simple text file containing list of coordinate triplets. 
 // does same for face definition and colors and texture orderting if needed.
-void import_airplane_polyheron(void); 
+void importAirplanePolyhedron(void); 
 
 int waitdt_ms(double tt_ms);
 
-double say_terrain_height(struct subterrain *ite, double x, double z);
+double getTerrainHeight(struct subterrain *ite, double x, double z);
 
 // mat3x3_mult multiplies two 3x3 matrixes 3x3, placing result in global variable gloResultMatrix
 void mat3x3_mult(double mat1[3][3], double mat2[3][3]);
@@ -128,8 +128,8 @@ void mat3x3_mult(double mat1[3][3], double mat2[3][3]);
 // inv calculates the inverse of a 3x3 matrix (used for obtaining the inverse of the inertia tensor)
 void inv(double in_3x3_matrix[3][3]);
 
-double body_rebounce(double rx, double ry, double rz,
-					 double nx, double ny, double nz, double e);
+double bounceAirplane(double rx, double ry, double rz,
+					  double nx, double ny, double nz, double e);
 
 void make_inertia_tensor(int n_vertexs); 
 
@@ -193,8 +193,8 @@ int gloUsingLowResolution = 1;
 float pixmatrix[HEIGHT][WIDTH][3];
 
 // gloTexturesAvailable indicates how many textures are loaded or randomly-generated
-// Set in function load_textures_wOpenGL and load_textures96x96_SEMITRANSPARENT_wOpenGL.
-// Used (read) in functions main, load_textures96x96_SEMITRANSPARENT_wOpenGL, and load_maptex_from_bitmap.
+// Set in function loadTerrainTextures and loadTreeTextures.
+// Used (read) in functions main, loadTreeTextures, and loadMapTextureIndices.
 int gloTexturesAvailable = 0; 
 
 // MAG is used in function xclearpixboard.
@@ -323,7 +323,7 @@ float texcoords_gnd_tri2[3][2] = {
 // Plane: Definition of the vertexes
 //
 // Used in functions main and make_inertia_tensor.
-// Set in function import_airplane_polyheron.
+// Set in function importAirplanePolyhedron.
 float gloPunti[NVERTEXES][3] = {// scatola  / box
 	{  74,   76,  -57},
 	{  74,   76,   57},
@@ -499,7 +499,7 @@ int tris[NTRIS][3] = {
 // ovvio a cosa serve... / obvious what it's for ...
 // col_tris holds the airplane's colors
 // Initialized with random colors in initAirplaneColors
-// Loaded with data from file input/facecolor.txt in function import_airplane_polyheron
+// Loaded with data from file input/facecolor.txt in function importAirplanePolyhedron
 float col_tris[NTRIS][3] = {
 	{0.9, 0.9, 0.3}, // 0
 	{0.9, 0.9, 0.3},
@@ -532,12 +532,12 @@ float col_tris[NTRIS][3] = {
 	{0.4, 0.4, 0.3}
 };
 
-// nvertexes is set in function import_airplane_polyheron to the number of rows set in array gloPunti 
+// nvertexes is set in function importAirplanePolyhedron to the number of rows set in array gloPunti 
 // with data read from file input/vertexes.txt.
 int nvertexes = 100; // default value
 
 // ntris is used in function drawAirplane.
-// It is set in function import_airplane_polyheron to the number of rows set in array tris 
+// It is set in function importAirplanePolyhedron to the number of rows set in array tris 
 // with data read from file input/triangulation.txt.
 int ntris = 33;		 // default value
 
@@ -719,16 +719,16 @@ int main()
 	initAirplaneColors();
 
 	// load textures in
-	load_textures_wOpenGL(); 
+	loadTerrainTextures(); 
 	gloTreeTextureIDBounds[0] = gloTexturesAvailable; // at what ID do tree textures begin (and end also...)
 
 	// ditto but with "bitmap" image files with alpha value for transparency information on each pixel... 
 	// this is mainly used for drawing trees in a quick, nice and simple way.
-	load_textures96x96_SEMITRANSPARENT_wOpenGL(); 
+	loadTreeTextures(); 
 
 	// this comes after, because so during loading we can check if no texture index superior to the number 
 	// of available textures is inserted... .
-	load_maptex_from_bitmap("terrain_data/maptex_300x300.bmp"); 
+	loadMapTextureIndices("terrain_data/maptex_300x300.bmp"); 
 
 	// initTrees initializes global variable gloTrees
 	initTrees();
@@ -963,7 +963,7 @@ void initTrees()
 		// random x and y coordinates within a rectangular area
 		gloTrees[k][0] = 5000 * ((double)-0 * RAND_MAX / 2 + rand()) / ((double)RAND_MAX);
 		gloTrees[k][1] = 5000 * ((double)-0 * RAND_MAX / 2 + rand()) / ((double)RAND_MAX);
-		gloTrees[k][2] = say_terrain_height(&gloTerrain, gloTrees[k][0], gloTrees[k][1]);
+		gloTrees[k][2] = getTerrainHeight(&gloTerrain, gloTrees[k][0], gloTrees[k][1]);
 
 		gloTrees[k][4] = floor(2.0 * ((double)rand()) / ((double)RAND_MAX));
 
@@ -983,7 +983,7 @@ void initTrees()
 			// MACCHIA attorno ad un punto / STRAIN around a point...
 			gloTrees[k + j][0] = gloTrees[k][0] + 100 * ((double)-0 * RAND_MAX / 2 + rand()) / ((double)RAND_MAX);
 			gloTrees[k + j][1] = gloTrees[k][1] + 100 * ((double)-0 * RAND_MAX / 2 + rand()) / ((double)RAND_MAX);
-			gloTrees[k + j][2] = say_terrain_height(&gloTerrain, gloTrees[k + j][0], gloTrees[k + j][1]);
+			gloTrees[k + j][2] = getTerrainHeight(&gloTerrain, gloTrees[k + j][0], gloTrees[k + j][1]);
 
 			gloTrees[k + j][4] = floor(2.0 * ((double)rand()) / ((double)RAND_MAX));
 
@@ -1093,7 +1093,7 @@ void initTerrain()
 		}
 	}
 
-	gloTerrain.map_size = load_hmap_from_bitmap("terrain_data/hmap_300x300.bmp");
+	gloTerrain.map_size = loadHeightMap("terrain_data/hmap_300x300.bmp");
 } // end initTerrain function
 
 // ####################################################################################################################
@@ -1451,7 +1451,7 @@ void drawTerrain() {
 
 				// now prepare a freshly calculated normal vector and then we draw it. 
 				// it's fundamental that normals are ok for rebounce 
-				say_terrain_height(&gloTerrain, Xo[0] + 0.01, Yo[0] + 0.01); // check what is the local normal 
+				getTerrainHeight(&gloTerrain, Xo[0] + 0.01, Yo[0] + 0.01); // check what is the local normal 
 
 				Xo[4] = Xo[0] + 20.0 * gloTerrain.auxnormal[0];
 				Yo[4] = Yo[0] + 20.0 * gloTerrain.auxnormal[1];
@@ -1571,7 +1571,7 @@ void drawAirplane(float h)
 	if (gloUsingLowResolution == 0)
 	{
 		addfrantumation_wsim(x1, y1, z1, h, 0);	// we must make special effect sequences go on. 
-		projectile_launch(10, 10, 10, 20, 10, -0.1, h, 0); // idem / ditto
+		launchProjectiles(10, 10, 10, 20, 10, -0.1, h, 0); // idem / ditto
 	}
 } // end drawAirplane function
 
@@ -1612,7 +1612,7 @@ void loadAirplaneModel()
 	}
 	else
 	{
-		import_airplane_polyheron();
+		importAirplanePolyhedron();
 	}
 } // end loadAirplaneModel function
 
@@ -1635,11 +1635,11 @@ void checkForPlaneCollision()
 		yw = gloPunti[i][0] * gloAxis1[1] + gloPunti[i][1] * gloAxis2[1] + gloPunti[i][2] * gloAxis3[1];
 		zw = gloPunti[i][0] * gloAxis1[2] + gloPunti[i][1] * gloAxis2[2] + gloPunti[i][2] * gloAxis3[2];
 
-		double he_id = say_terrain_height(&gloTerrain, xp + xw, yp + yw);
+		double he_id = getTerrainHeight(&gloTerrain, xp + xw, yp + yw);
 		if (zp + zw < he_id)
 		{ 
 			// just as any vertex of airplane touches ground and tries to go below 
-			body_rebounce(xw, yw, zw, gloTerrain.auxnormal[0], gloTerrain.auxnormal[1], gloTerrain.auxnormal[2], 0.06);
+			bounceAirplane(xw, yw, zw, gloTerrain.auxnormal[0], gloTerrain.auxnormal[1], gloTerrain.auxnormal[2], 0.06);
 			printf("TOUCH GND \n");
 			zp = zp + (he_id - zp - zw);
 			// check is normal < 0 and eventually calculated and assigns new velocities and so.
@@ -2100,7 +2100,7 @@ void updateVirtualCameraPos(float RR)
 	{
 		x = x_pilot;
 		y = y_pilot;
-		z = say_terrain_height(&gloTerrain, x_pilot, y_pilot) + 1.75;
+		z = getTerrainHeight(&gloTerrain, x_pilot, y_pilot) + 1.75;
 	}
 } // end updateVirtualCameraPos function
 
@@ -2204,7 +2204,7 @@ void processEvent(float *turnch, float *turncv, float *RR,
 			}
 			else
 			{
-				import_airplane_polyheron();
+				importAirplanePolyhedron();
 			}
 		}
 
@@ -2247,7 +2247,7 @@ void processEvent(float *turnch, float *turncv, float *RR,
 		if (gloEvent.key.keysym.sym == SDLK_s)
 		{
 			// velocity of plane's CM + velocity of projectile... rotation ignored.
-			projectile_launch(xp, yp, zp, v[0] + 100.0 * Pa[0], v[1] + 100.0 * Pa[1], v[2] + 100.0 * Pa[2], *h, 1);
+			launchProjectiles(xp, yp, zp, v[0] + 100.0 * Pa[0], v[1] + 100.0 * Pa[1], v[2] + 100.0 * Pa[2], *h, 1);
 		}
 
 		if (gloEvent.key.keysym.sym == SDLK_UP || gloEvent.key.keysym.sym == SDLK_w)
@@ -2662,7 +2662,7 @@ void addsmoke_wsim(double x0, double y0, double z0, double dft, int option)
 				// NOT accelerated by classical gravity because it would not be believable... its like a Brownian motion 
 				vz[j][i] = vz[j][i] - visc * vz[j][i] * dft + 0.1 * rand_F * dft + F_pullup * dft; 
 
-				if (zm[j][i] < say_terrain_height(&gloTerrain, xm[j][i], ym[j][i]))
+				if (zm[j][i] < getTerrainHeight(&gloTerrain, xm[j][i], ym[j][i]))
 				{
 					double je;
 					je = gloTerrain.auxnormal[0] * vx[j][i] + gloTerrain.auxnormal[1] * vy[j][i] + gloTerrain.auxnormal[2] * vz[j][i];
@@ -2795,7 +2795,7 @@ void addfrantumation_wsim(float x0, float y0, float z0, double dft, int option)
 		// update positions and draw, at the same time
 		for (i = 0; i < 27; i++)
 		{ // SO: -1, 0 , 1
-			if (zm[i] < say_terrain_height(&gloTerrain, xm[i], ym[i]))
+			if (zm[i] < getTerrainHeight(&gloTerrain, xm[i], ym[i]))
 			{
 				double je;
 				je = gloTerrain.auxnormal[0] * vx[i] + gloTerrain.auxnormal[1] * vy[i] + gloTerrain.auxnormal[2] * vz[i];
@@ -2848,9 +2848,9 @@ void addfrantumation_wsim(float x0, float y0, float z0, double dft, int option)
 } // end addfrantumation_wsim function
 
 // ####################################################################################################################
-// Function projectile_launch
+// Function launchProjectiles
 // ####################################################################################################################
-void projectile_launch(float xpr, float ypr, float zpr, 
+void launchProjectiles(float xpr, float ypr, float zpr, 
 					   float vx, float vy, float vz, 
 					   double dft, int do_add)
 {
@@ -2909,7 +2909,7 @@ void projectile_launch(float xpr, float ypr, float zpr,
 			vels[i][1] = vels[i][1] + 0.0;
 			vels[i][2] = vels[i][2] - 9.81 * dft; // classical gravity 
 
-			if (poss[i][2] < say_terrain_height(&gloTerrain, poss[i][0], poss[i][1]))
+			if (poss[i][2] < getTerrainHeight(&gloTerrain, poss[i][0], poss[i][1]))
 			{
 				double je;
 				je = gloTerrain.auxnormal[0] * vels[i][0] + gloTerrain.auxnormal[1] * vels[i][1] + gloTerrain.auxnormal[2] * vels[i][2];
@@ -2979,12 +2979,12 @@ void projectile_launch(float xpr, float ypr, float zpr,
 			} // for k
 		}
 	}
-} // end projectile_launch function
+} // end launchProjectiles function
 
 // ####################################################################################################################
-// Function say_terrain_height
+// Function getTerrainHeight
 // ####################################################################################################################
-double say_terrain_height(struct subterrain *ite, double x, double z)
+double getTerrainHeight(struct subterrain *ite, double x, double z)
 {
 	double apl, bpl, cpl, dpl, Xtri, Ytri, Ztri, dist_fp1, dist_fp2, Xf, Zf;
 	int Xi, Yi, col;
@@ -3101,7 +3101,7 @@ double say_terrain_height(struct subterrain *ite, double x, double z)
 	ite[0].auxnormal[2] = s_nloc[1];
 
 	return y;
-} // end say_terrain_height function
+} // end getTerrainHeight function
 
 // ####################################################################################################################
 // Function xaddftriang_persp draws a (perspective) triangle in 3D space.
@@ -3441,11 +3441,11 @@ void inv(double in_3x3_matrix[3][3])
 } // end inv function
 
 // ####################################################################################################################
-// Function body_rebounce
+// Function bounceAirplane bounces the airplane off of the ground (i.e., terrain).
 // ####################################################################################################################
-double body_rebounce(double rx, double ry, double rz,
-					 double nx, double ny, double nz, 
-					 double e)
+double bounceAirplane(double rx, double ry, double rz,
+					  double nx, double ny, double nz, 
+					  double e)
 {
 	double jelf = 0, jel = 300.0;
 	double vector0[3], vector1[3], axis[3];
@@ -3536,7 +3536,7 @@ double body_rebounce(double rx, double ry, double rz,
 	}
 
 	return jel;
-} // end body_rebounce function
+} // end bounceAirplane function
 
 // ####################################################################################################################
 // Function make_inertia_tensor
@@ -3595,9 +3595,9 @@ void make_inertia_tensor(int n_vertexs)
 } // end make_inertia_tensor function
 
 // ####################################################################################################################
-// Function load_textures_wOpenGL
+// Function loadTerrainTextures
 // ####################################################################################################################
-void load_textures_wOpenGL()
+void loadTerrainTextures()
 {
 	static int texture_generated = 0; // at first call of this function, a 32x32 texture sample will be generated 
 
@@ -3663,7 +3663,7 @@ void load_textures_wOpenGL()
 				{ // vertical
 					for (i = 0; i < txtRES; i++)
 					{ // horizontal
-						color_to_convert = getpixel(image, i, txtRES - 1 - j);
+						color_to_convert = getPixel(image, i, txtRES - 1 - j);
 						SDL_GetRGB(color_to_convert, image->format, &red, &green, &blue);
 
 						txt1[j][i][0] = (GLubyte)red;
@@ -3714,12 +3714,12 @@ void load_textures_wOpenGL()
 			}
 		}
 	}
-} // end load_textures_wOpenGL function
+} // end loadTerrainTextures function
 
 // ####################################################################################################################
-// Function load_textures96x96_SEMITRANSPARENT_wOpenGL
+// Function loadTreeTextures
 // ####################################################################################################################
-void load_textures96x96_SEMITRANSPARENT_wOpenGL()
+void loadTreeTextures()
 {
 	static int texture_generated = 0; // at first call of this function, a 32x32 texture sample will be generated 
 
@@ -3754,7 +3754,7 @@ void load_textures96x96_SEMITRANSPARENT_wOpenGL()
 			}
 		}
 
-		//=================GROUND TEXTURE PERSONALISED...=====================
+		//=================TREE TEXTURE PERSONALISED...=====================
 		int texn = 1; // > 0 ABSOLUTELY!!!
 
 		while (texn > 0)
@@ -3787,7 +3787,7 @@ void load_textures96x96_SEMITRANSPARENT_wOpenGL()
 				{ // vertical
 					for (i = 0; i < txtRES2; i++)
 					{ // horizontal
-						color_to_convert = getpixel(image, i, j);
+						color_to_convert = getPixel(image, i, j);
 						SDL_GetRGBA(color_to_convert, image->format, &red, &green, &blue, &alpha);
 
 						txt1[j][i][0] = (GLubyte)red;
@@ -3849,12 +3849,12 @@ void load_textures96x96_SEMITRANSPARENT_wOpenGL()
 			}
 		} // end while
 	}
-} // end load_textures96x96_SEMITRANSPARENT_wOpenGL function
+} // end loadTreeTextures function
 
 // ####################################################################################################################
-// Function load_hmap_from_bitmap populates field shmap of structure gloTerrain.
+// Function loadHeightMap populates field shmap of structure gloTerrain.
 // ####################################################################################################################
-int load_hmap_from_bitmap(char *filename)
+int loadHeightMap(char *filename)
 {
 	int i, j, isz;
 	SDL_Surface *image; // This pointer will reference our bitmap.
@@ -3884,7 +3884,7 @@ int load_hmap_from_bitmap(char *filename)
 		{
 			for (i = 0; i < TERRAIN_SIZE; i++)
 			{
-				color_to_convert = getpixel(image, i, TERRAIN_SIZE - 1 - j);
+				color_to_convert = getPixel(image, i, TERRAIN_SIZE - 1 - j);
 				SDL_GetRGB(color_to_convert, image->format, &red, &green, &blue);
 
 				gloTerrain.shmap[i][j] = ((float)red + 256.0 * ((float)green)) / (256.0); // simplified way
@@ -3897,14 +3897,14 @@ int load_hmap_from_bitmap(char *filename)
 	SDL_FreeSurface(image);
 
 	return isz;
-} // end load_hmap_from_bitmap function
+} // end loadHeightMap function
 
 // ####################################################################################################################
-// Function load_maptex_from_bitmap
+// Function loadMapTextureIndices
 // load texture ID map from a bitmap deviced by an editor (or with a graphics editor program, but 
 // that would be RATHER UNPRACTICAL... )
 // ####################################################################################################################
-int load_maptex_from_bitmap(char *filename)
+int loadMapTextureIndices(char *filename)
 {
 	Uint8 red, green, blue;
 	Uint32 color_to_convert;
@@ -3925,7 +3925,7 @@ int load_maptex_from_bitmap(char *filename)
 		{ // vertical
 			for (i = 0; i < 300; i++)
 			{ // horizontal
-				color_to_convert = getpixel(sdl_image, i, j);
+				color_to_convert = getPixel(sdl_image, i, j);
 				SDL_GetRGB(color_to_convert, sdl_image->format, &red, &green, &blue);
 
 				gloTerrain.map_texture_indexes[i][299 - j] = -0 + (int)red + ((int)green) * 256; 
@@ -3954,55 +3954,55 @@ int load_maptex_from_bitmap(char *filename)
 	}
 
 	return 1;
-} // end load_maptex_from_bitmap function
+} // end loadMapTextureIndices function
 
 // ####################################################################################################################
-// Function check_vector_elements
+// Function countNumbersInFile
 // leggi file e controlla quanti numeri ci sono / read file and check how many numbers there are
 // N.B.: numeri separati da spazi o da a-capo. Con virgole o altro si blocca. 
 // N.B.: numbers separated by spaces or by a-line. With commas or other it blocks.
 // ####################################################################################################################
-long int check_vector_elements(char filename[])
+long int countNumbersInFile(char filename[])
 {
-	FILE *InFilePtr; // pointer to input file
-	InFilePtr = fopen(filename, "r");
+	FILE *filePtr; // pointer to input file
+	filePtr = fopen(filename, "r");
 	long int i = 0;
 	float test;
 
-	while (fscanf(InFilePtr, "%f", &test) != EOF)
+	while (fscanf(filePtr, "%f", &test) != EOF)
 	{
 		i++;
 		printf("%f  \n", test);
 	}
 
-	fclose(InFilePtr); 
+	fclose(filePtr); 
 	return i;
-} // end check_vector_elements function
+} // end countNumbersInFile function
 
 // ####################################################################################################################
-// Function read_vector
+// Function getFloatsInFile
 // Read in numeric vector from file
 // only space-separated or newline-separated numbers!! else goes error
 // ####################################################################################################################
-void read_vector(char filename[], float dest_string[], long int maxsize)
+void getFloatsInFile(char filename[], float floatsRead[], long int maxsize)
 {
-	FILE *FilePtr; // pointer to input file 
-	FilePtr = fopen(filename, "r");
-	long int i = 0; // MUST put it = 0 
+	FILE *filePtr; // pointer to input file 
+	filePtr = fopen(filename, "r");
+	long int i = 0; 
 
-	while (fscanf(FilePtr, "%f", &dest_string[i]) != EOF && i < maxsize)
+	while (fscanf(filePtr, "%f", &floatsRead[i]) != EOF && i < maxsize)
 	{
-		i++; // augment index of casel in dest_string[]
-		printf("%f . \n", dest_string[i]);
+		i++; 
+		printf("%f . \n", floatsRead[i]);
 	}
-	fclose(FilePtr); 
-	printf("\nFILE FOUND & READ IN. LENGHT LIMIT WAS FIXED TO: %li . \n", maxsize);
-} // end read_vector function
+	fclose(filePtr); 
+	printf("\nFILE FOUND & READ IN. LENGTH LIMIT WAS FIXED TO: %li . \n", maxsize);
+} // end getFloatsInFile function
 
 // ####################################################################################################################
-// Function import_airplane_polyheron
+// Function importAirplanePolyhedron
 // ####################################################################################################################
-void import_airplane_polyheron(void)
+void importAirplanePolyhedron(void)
 {
 	// read in poly definition from file
 	float auxxv[3 * NVERTEXES];
@@ -4010,8 +4010,8 @@ void import_airplane_polyheron(void)
 
 	printf("TRYING TO IMPORT VERTEX LIST OF 3D MODEL\n");
 
-	nelem = check_vector_elements("input/vertexes.txt");
-	read_vector("input/vertexes.txt", auxxv, nelem); // read file and values in the auxxv array.
+	nelem = countNumbersInFile("input/vertexes.txt");
+	getFloatsInFile("input/vertexes.txt", auxxv, nelem); // read file and values in the auxxv array.
 
 	// feed into 'the' array used for this
 	for (j = 0; j < nelem / 3; j++)
@@ -4025,8 +4025,8 @@ void import_airplane_polyheron(void)
 
 	printf("TRYING TO IMPORT TRIANGULATION OF 3D MODEL\n");
 
-	nelem = check_vector_elements("input/triangulation.txt");
-	read_vector("input/triangulation.txt", auxxv, nelem); // read file and values into the auxxv array.
+	nelem = countNumbersInFile("input/triangulation.txt");
+	getFloatsInFile("input/triangulation.txt", auxxv, nelem); // read file and values into the auxxv array.
 
 	// feed into 'the' array used for this
 	for (j = 0; j < nelem / 3; j++)
@@ -4040,8 +4040,8 @@ void import_airplane_polyheron(void)
 
 	printf("TRYING TO IMPORT TRIANGULATION OF 3D MODEL\n");
 
-	nelem = check_vector_elements("input/facecolor.txt");
-	read_vector("input/facecolor.txt", auxxv, nelem); // read file and values into the auxxv array.
+	nelem = countNumbersInFile("input/facecolor.txt");
+	getFloatsInFile("input/facecolor.txt", auxxv, nelem); // read file and values into the auxxv array.
 
 	// feed into 'the' array used for this
 	for (j = 0; j < nelem / 3; j++)
@@ -4051,13 +4051,13 @@ void import_airplane_polyheron(void)
 			col_tris[j][i] = auxxv[j * 3 + i];
 		}
 	}
-} // end import_airplane_polyheron function
+} // end importAirplanePolyhedron function
 
 // ####################################################################################################################
-// Function getpixel
+// Function getPixel
 // If you want to understand all color and pixel info in SDL, go to http://sdl.beuc.net/sdl.wiki/Pixel_Access
 // ####################################################################################################################
-Uint32 getpixel(SDL_Surface *surface, int x, int y)
+Uint32 getPixel(SDL_Surface *surface, int x, int y)
 {
 	int bpp = surface->format->BytesPerPixel;
 	// Here p is the address to the pixel we want to retrieve 
@@ -4087,4 +4087,4 @@ Uint32 getpixel(SDL_Surface *surface, int x, int y)
 	default:
 		return 0; // shouldn't happen, but avoids warnings 
 	}
-} // end getpixel function
+} // end getPixel function
