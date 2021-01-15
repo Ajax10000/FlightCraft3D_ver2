@@ -62,10 +62,12 @@ void sdldisplay(int sw, int sh);
 
 void xclearpixboard(int xlimit, int ylimit);
 
+// Function xadd1pix is not called.
 // add 1 pixel to output image but in a failsafe manner: no accidental segfaults. 
 void xadd1pix(int x, int y, float color[3],
 			  int xlimit, int ylimit);
 
+// Function xaddline is not called.
 // interpolate 2 points graphically 
 void xaddline(int x1, int y1,
 			  int x2, int y2, float color[3], // change this to int color[3] 
@@ -89,6 +91,7 @@ void xaddftriang_persp(float x1, float y1, float z1,
 					   int step,
 					   float color[3], int pbwidth, int pbheight);
 
+// Function xaddftriang_perspTEXTURED_pp is not used; it is not called
 // textured triangles, drawn exactly, no approximations
 void xaddftriang_perspTEXTURED_pp(float x1, float y1, float z1,
 								  float x2, float y2, float z2,
@@ -96,6 +99,7 @@ void xaddftriang_perspTEXTURED_pp(float x1, float y1, float z1,
 								  int step,
 								  float color[3], int pbwidth, int pbheight);
 
+// The prototype for function xaddftriang_perspTEXTURED is defined, but the actual function itself is not.
 void xaddftriang_perspTEXTURED(float x1, float y1, float z1,
 							   float x2, float y2, float z2,
 							   float x3, float y3, float z3,
@@ -171,6 +175,7 @@ void updateVirtualCameraPos(float RR);
 void reorientAxes(void);
 void simulatePhysics(int plane_up, int plane_down, int plane_inclleft, int plane_inclright, float h, double g);
 void displayStatusInfo(int cycles, float h, float theta, float fi);
+void processEvent(float *turnch, float *turncv, float *RR, int *plane_up, int *plane_down, int *plane_inclleft, int *plane_inclright, float *h);
 
 // #                                                                                                                  #
 // # End function prototypes                                                                                          #
@@ -206,6 +211,7 @@ const GLdouble pi = 3.1415926535897932384626433832795;
 int gloUsingLowResolution = 1;
 
 // pixmatrix is populated in functions xaddline and xadd1pix
+// However neither xaddline nor xadd1pix is called.
 float pixmatrix[HEIGHT][WIDTH][3];
 
 // best_dt_ms is defined but not used
@@ -265,10 +271,11 @@ float Pa[3], Qa[3], Ra[3];
 
 struct subterrain gloTerrain;
 
+// NTRIS indicates the maximum number of triangular facets we will support.
+// NTRIS is a worst-case consideration in which each triangular face has a different texture.
 #define NTRIS 610
 
-// gloTexIds is used only to store id number to reall... NTRIS is a worst-case consideration in which
-// each triangular face has a different texture. It is filled at texture load-in at first call to GLaddpoly
+// gloTexIds is used only to store id number to reall...  It is filled at texture load-in at first call to GLaddpoly
 int gloTexIds[NTRIS]; 
 
 // face_texid is defined but not used
@@ -313,6 +320,7 @@ int face_texord[NTRIS][3] = {
 const int texcoord_x[4] = {0, 1, 0, 1}; //...x
 const int texcoord_y[4] = {0, 0, 1, 1}; //...y
 
+// NTREES is the maximum number of trees we will support
 #define NTREES 10000
 
 // 4 data define a tree: 
@@ -818,6 +826,7 @@ int main()
 
 	cycles = 0;
 
+	// clear the screen
 	xclearpixboard(WIDTH, HEIGHT);
 
 	// initTerrain initializes global variable gloTerrain with random values
@@ -841,8 +850,10 @@ int main()
 	// initTrees initializes global variable gloTrees
 	initTrees();
 
+	// If we're not using low resolution ...
 	if (gloUsingLowResolution == 0)
 	{
+		// Add smoke effect at plane location xp, yp, zp
 		addsmoke_wsim(xp, yp, zp, h, 1); // commented out for testing
 	}
 
@@ -883,8 +894,10 @@ int main()
 		// Update the virtual camera position x, y, z
 		updateVirtualCameraPos(RR);
 
+		// If we are not using low resolution ...
 		if (gloUsingLowResolution == 0)
 		{
+			// Add smoke effect at plane location xp, yp, zp
 			addsmoke_wsim(xp, yp, zp, h, 2); // DEACTIVATED TO TEST
 		}
 
@@ -896,9 +909,10 @@ int main()
 
 		drawTrees();
 
+		// If we're not using low resolution ...
 		if (gloUsingLowResolution == 0)
 		{
-			// Why are we adding smoke at coordinates (x, y, z) = (1, 2, 3)?
+			// Why are we adding smoke effect at coordinates (x, y, z) = (1, 2, 3)?
 			addsmoke_wsim(1, 2, 3, h, 0); // we must make special effect sequences go on. 
 		}
 
@@ -920,210 +934,10 @@ int main()
 		cycles++;
 
 		//===============================|SDL's real-time interactivity|=============================
-		// Loop until there are no events left on the queue 
+		
 		while (SDL_PollEvent(&gloEvent))
 		{ 
-			if (gloEvent.type == SDL_KEYDOWN)
-			{ 
-				// condition: keypress event detected 
-				if (gloEvent.key.keysym.sym == SDLK_ESCAPE)
-				{
-					printf("ESC KEY PRESSED: PROGRAM TERMINATED\n");
-					SDL_Quit();
-					exit(1); 
-				}
-
-				if (gloEvent.key.keysym.sym == SDLK_c)
-				{
-					turnch = -1.0; 
-				}
-				if (gloEvent.key.keysym.sym == SDLK_v)
-				{
-					turnch = 1.0; 
-				}
-
-				if (gloEvent.key.keysym.sym == SDLK_r)
-				{
-					turncv = 1.0; 
-				}
-				if (gloEvent.key.keysym.sym == SDLK_f)
-				{
-					turncv = -1.0; 
-				}
-
-				if (gloEvent.key.keysym.sym == SDLK_9)
-				{
-					Pforce = Pforce + 5000.0; 
-				}
-				if (gloEvent.key.keysym.sym == SDLK_8)
-				{
-					Pforce = Pforce - 4000.0; 
-					if (Pforce <= 0.0)
-					{
-						Pforce = 0.0;
-					}
-				}
-
-				if (gloEvent.key.keysym.sym == SDLK_1)
-				{
-					RR = RR - 2.0; 
-					if (gloView == 4)
-					{
-						x_cockpit_view = x_cockpit_view - 0.1;
-					}
-				}
-				if (gloEvent.key.keysym.sym == SDLK_2)
-				{
-					RR = RR + 2.0;
-					if (gloView == 4)
-					{
-						x_cockpit_view = x_cockpit_view + 0.1;
-					}
-				}
-
-				if (gloEvent.key.keysym.sym == SDLK_3)
-				{
-					y_cockpit_view = y_cockpit_view + 0.1;
-					if (y_cockpit_view > 2.0)
-					{
-						y_cockpit_view = -2.0;
-					}
-				}
-				if (gloEvent.key.keysym.sym == SDLK_4)
-				{
-					z_cockpit_view = z_cockpit_view + 0.1;
-					if (z_cockpit_view > 2.0)
-					{
-						z_cockpit_view = -2.0;
-					}
-				}
-
-				if (gloEvent.key.keysym.sym == SDLK_t)
-				{
-					MAG = MAG + 10.0; 
-				}
-				if (gloEvent.key.keysym.sym == SDLK_i)
-				{
-					FILE *FilePtr; // pointer to input file 
-
-					printf("TRYING TO IMPORT VERTEX LIST OF 3D MODEL\n");
-
-					FilePtr = fopen("input/vertexes.txt", "r");
-					if (FilePtr < 0)
-					{
-						printf("NO FILE TO IMPORT VERTEX LIST...USING DEFAULT...\n");
-						fclose(FilePtr);
-					}
-					else
-					{
-						import_airplane_polyheron();
-					}
-				}
-
-				if (gloEvent.key.keysym.sym == SDLK_e)
-				{
-					addfrantumation_wsim(20, 20, 20, h, 1);
-				}
-
-				if (gloEvent.key.keysym.sym == SDLK_m)
-				{
-					gloUsingLowResolution = 1; // LOW GRAPHICS MODE for slow computers 
-				}
-
-				if (gloEvent.key.keysym.sym == SDLK_o)
-				{
-					gloView = gloView + 1; // change view
-					if (gloView == 5)
-					{
-						gloView = 1; // restore to view 1 (normal external)
-					}
-				}
-
-				if (gloEvent.key.keysym.sym == SDLK_p)
-				{
-					aboard = -1 * aboard;
-					x_pilot = xp;
-					y_pilot = yp;
-					RR = 1.5;
-				}
-
-				if (gloEvent.key.keysym.sym == SDLK_5)
-				{
-					h = h - 0.002;
-				}
-				if (gloEvent.key.keysym.sym == SDLK_6)
-				{
-					h = h + 0.001;
-				}
-
-				if (gloEvent.key.keysym.sym == SDLK_s)
-				{
-					// velocity of plane's CM + velocity of projectile... rotation ignored.
-					projectile_launch(xp, yp, zp, v[0] + 100.0 * Pa[0], v[1] + 100.0 * Pa[1], v[2] + 100.0 * Pa[2], h, 1);
-				}
-
-				if (gloEvent.key.keysym.sym == SDLK_UP || gloEvent.key.keysym.sym == SDLK_w)
-				{
-					x_pilot = x_pilot - 2.0 * R[0];
-					y_pilot = y_pilot - 2.0 * R[1];
-
-					plane_down = 1;
-				}
-				if (gloEvent.key.keysym.sym == SDLK_DOWN || gloEvent.key.keysym.sym == SDLK_z)
-				{
-					plane_up = 1;
-				}
-				if (gloEvent.key.keysym.sym == SDLK_LEFT || gloEvent.key.keysym.sym == SDLK_a)
-				{
-					// test
-					plane_inclleft = 1;
-				}
-				if (gloEvent.key.keysym.sym == SDLK_RIGHT || gloEvent.key.keysym.sym == SDLK_d)
-				{
-					// test
-					plane_inclright = 1;
-				}
-			} // end condition of if-keypress-is-detected 
-
-			if (gloEvent.type == SDL_KEYUP)
-			{ 
-				// condition: key-RELEASE event detected 
-				if (gloEvent.key.keysym.sym == SDLK_c)
-				{
-					turnch = 0.0; 
-				}
-				if (gloEvent.key.keysym.sym == SDLK_v)
-				{
-					turnch = 0.0; 
-				}
-
-				if (gloEvent.key.keysym.sym == SDLK_r)
-				{
-					turncv = 0.0; 
-				}
-				if (gloEvent.key.keysym.sym == SDLK_f)
-				{
-					turncv = 0.0; 
-				}
-
-				if (gloEvent.key.keysym.sym == SDLK_DOWN || gloEvent.key.keysym.sym == SDLK_z)
-				{
-					plane_up = 0;
-				}
-				if (gloEvent.key.keysym.sym == SDLK_UP || gloEvent.key.keysym.sym == SDLK_w)
-				{
-					plane_down = 0;
-				}
-
-				if (gloEvent.key.keysym.sym == SDLK_LEFT || gloEvent.key.keysym.sym == SDLK_a)
-				{
-					plane_inclleft = 0;
-				}
-				if (gloEvent.key.keysym.sym == SDLK_RIGHT || gloEvent.key.keysym.sym == SDLK_d)
-				{
-					plane_inclright = 0;
-				}
-			}
+			processEvent(&turnch, &turncv, &RR, &plane_up, &plane_down, &plane_inclleft, &plane_inclright, &h);
 			
 			// extra case: if graphic window is closed, terminate program 
 			if (gloEvent.type == SDL_QUIT)
@@ -2413,6 +2227,216 @@ void updateVirtualCameraPos(float RR)
 } // end updateVirtualCameraPos function
 
 // ####################################################################################################################
+// Function processEvent
+// ####################################################################################################################
+void processEvent(float *turnch, float *turncv, float *RR, 
+				  int *plane_up, int *plane_down, int *plane_inclleft, int *plane_inclright, float *h)
+{
+	// Loop until there are no events left on the queue 
+	if (gloEvent.type == SDL_KEYDOWN)
+	{ 
+		// condition: keypress event detected 
+		if (gloEvent.key.keysym.sym == SDLK_ESCAPE)
+		{
+			printf("ESC KEY PRESSED: PROGRAM TERMINATED\n");
+			SDL_Quit();
+			exit(1); 
+		}
+
+		if (gloEvent.key.keysym.sym == SDLK_c)
+		{
+			*turnch = -1.0; 
+		}
+		if (gloEvent.key.keysym.sym == SDLK_v)
+		{
+			*turnch = 1.0; 
+		}
+
+		if (gloEvent.key.keysym.sym == SDLK_r)
+		{
+			*turncv = 1.0; 
+		}
+		if (gloEvent.key.keysym.sym == SDLK_f)
+		{
+			*turncv = -1.0; 
+		}
+
+		if (gloEvent.key.keysym.sym == SDLK_9)
+		{
+			Pforce = Pforce + 5000.0; 
+		}
+		if (gloEvent.key.keysym.sym == SDLK_8)
+		{
+			Pforce = Pforce - 4000.0; 
+			if (Pforce <= 0.0)
+			{
+				Pforce = 0.0;
+			}
+		}
+
+		if (gloEvent.key.keysym.sym == SDLK_1)
+		{
+			*RR = *RR - 2.0; 
+			if (gloView == 4)
+			{
+				x_cockpit_view = x_cockpit_view - 0.1;
+			}
+		}
+		if (gloEvent.key.keysym.sym == SDLK_2)
+		{
+			*RR = *RR + 2.0;
+			if (gloView == 4)
+			{
+				x_cockpit_view = x_cockpit_view + 0.1;
+			}
+		}
+
+		if (gloEvent.key.keysym.sym == SDLK_3)
+		{
+			y_cockpit_view = y_cockpit_view + 0.1;
+			if (y_cockpit_view > 2.0)
+			{
+				y_cockpit_view = -2.0;
+			}
+		}
+		if (gloEvent.key.keysym.sym == SDLK_4)
+		{
+			z_cockpit_view = z_cockpit_view + 0.1;
+			if (z_cockpit_view > 2.0)
+			{
+				z_cockpit_view = -2.0;
+			}
+		}
+
+		if (gloEvent.key.keysym.sym == SDLK_t)
+		{
+			MAG = MAG + 10.0; 
+		}
+		if (gloEvent.key.keysym.sym == SDLK_i)
+		{
+			FILE *FilePtr; // pointer to input file 
+
+			printf("TRYING TO IMPORT VERTEX LIST OF 3D MODEL\n");
+
+			FilePtr = fopen("input/vertexes.txt", "r");
+			if (FilePtr < 0)
+			{
+				printf("NO FILE TO IMPORT VERTEX LIST...USING DEFAULT...\n");
+				fclose(FilePtr);
+			}
+			else
+			{
+				import_airplane_polyheron();
+			}
+		}
+
+		if (gloEvent.key.keysym.sym == SDLK_e)
+		{
+			addfrantumation_wsim(20, 20, 20, *h, 1);
+		}
+
+		if (gloEvent.key.keysym.sym == SDLK_m)
+		{
+			gloUsingLowResolution = 1; // LOW GRAPHICS MODE for slow computers 
+		}
+
+		if (gloEvent.key.keysym.sym == SDLK_o)
+		{
+			gloView = gloView + 1; // change view
+			if (gloView == 5)
+			{
+				gloView = 1; // restore to view 1 (normal external)
+			}
+		}
+
+		if (gloEvent.key.keysym.sym == SDLK_p)
+		{
+			aboard = -1 * aboard;
+			x_pilot = xp;
+			y_pilot = yp;
+			*RR = 1.5;
+		}
+
+		if (gloEvent.key.keysym.sym == SDLK_5)
+		{
+			*h = *h - 0.002;
+		}
+		if (gloEvent.key.keysym.sym == SDLK_6)
+		{
+			*h = *h + 0.001;
+		}
+
+		if (gloEvent.key.keysym.sym == SDLK_s)
+		{
+			// velocity of plane's CM + velocity of projectile... rotation ignored.
+			projectile_launch(xp, yp, zp, v[0] + 100.0 * Pa[0], v[1] + 100.0 * Pa[1], v[2] + 100.0 * Pa[2], *h, 1);
+		}
+
+		if (gloEvent.key.keysym.sym == SDLK_UP || gloEvent.key.keysym.sym == SDLK_w)
+		{
+			x_pilot = x_pilot - 2.0 * R[0];
+			y_pilot = y_pilot - 2.0 * R[1];
+
+			*plane_down = 1;
+		}
+		if (gloEvent.key.keysym.sym == SDLK_DOWN || gloEvent.key.keysym.sym == SDLK_z)
+		{
+			*plane_up = 1;
+		}
+		if (gloEvent.key.keysym.sym == SDLK_LEFT || gloEvent.key.keysym.sym == SDLK_a)
+		{
+			// test
+			*plane_inclleft = 1;
+		}
+		if (gloEvent.key.keysym.sym == SDLK_RIGHT || gloEvent.key.keysym.sym == SDLK_d)
+		{
+			// test
+			*plane_inclright = 1;
+		}
+	} // end condition of if-keypress-is-detected 
+
+	if (gloEvent.type == SDL_KEYUP)
+	{ 
+		// condition: key-RELEASE event detected 
+		if (gloEvent.key.keysym.sym == SDLK_c)
+		{
+			*turnch = 0.0; 
+		}
+		if (gloEvent.key.keysym.sym == SDLK_v)
+		{
+			*turnch = 0.0; 
+		}
+
+		if (gloEvent.key.keysym.sym == SDLK_r)
+		{
+			*turncv = 0.0; 
+		}
+		if (gloEvent.key.keysym.sym == SDLK_f)
+		{
+			*turncv = 0.0; 
+		}
+
+		if (gloEvent.key.keysym.sym == SDLK_DOWN || gloEvent.key.keysym.sym == SDLK_z)
+		{
+			*plane_up = 0;
+		}
+		if (gloEvent.key.keysym.sym == SDLK_UP || gloEvent.key.keysym.sym == SDLK_w)
+		{
+			*plane_down = 0;
+		}
+
+		if (gloEvent.key.keysym.sym == SDLK_LEFT || gloEvent.key.keysym.sym == SDLK_a)
+		{
+			*plane_inclleft = 0;
+		}
+		if (gloEvent.key.keysym.sym == SDLK_RIGHT || gloEvent.key.keysym.sym == SDLK_d)
+		{
+			*plane_inclright = 0;
+		}
+	}
+} // end processEvent function
+
+// ####################################################################################################################
 // Function xclearpixboard
 // ####################################################################################################################
 void xclearpixboard(int xlimit, int ylimit)
@@ -2472,6 +2496,8 @@ int waitdt_ms(double tt_ms)
 // Function xaddline
 // NOT USED IN OPENGL VERSION 
 // interpolate 2 points graphically 
+// 
+// This function is not called.
 // ####################################################################################################################
 void xaddline(int x1, int y1,
 			  int x2, int y2, float color[3], // change this to int color[3] 
@@ -2578,6 +2604,8 @@ void xaddline(int x1, int y1,
 // ####################################################################################################################
 // Function xadd1pix
 // add 1 pixel to output image but in a failsafe manner: no accidental segfaults. 
+//
+// This function is not called.
 // ####################################################################################################################
 void xadd1pix(int x, int y, float color[3],
 			  int xlimit, int ylimit)
@@ -3215,6 +3243,7 @@ double say_terrain_height(struct subterrain *ite, double x, double z)
 
 // ####################################################################################################################
 // Function xaddftriang draws a filled triangle to pixel matrix (actually it doesn't draw anything!)
+// This function is not called.
 // ####################################################################################################################
 void xaddftriang(int x1, int y1, // parameters x1 and y1 are not used
 				 int x2, int y2, // parameters x2 and y2 are not used
@@ -3269,6 +3298,8 @@ void xaddftriang_persp(float x1, float y1, float z1,
 
 // ####################################################################################################################
 // Function GLaddftriang_perspTEXTURED
+//
+// Called only from function drawTerrain.
 // ####################################################################################################################
 void GLaddftriang_perspTEXTURED(float x1, float y1, float z1,
 								float x2, float y2, float z2,
@@ -3310,7 +3341,7 @@ void xaddftriang_perspTEXTURED_pp(float x1, float y1, float z1,
 {
 	static int alternative = 0;
 	static int texture_generated = 0; // at first call of this function, a 32x32 texture sample will be generated 
-	float mag;
+	float mag; // this local variable is not used
 	static float txt[32][32];
 	int j, i;
 
@@ -3423,7 +3454,7 @@ void xaddftriang_perspTEXTURED_pp(float x1, float y1, float z1,
 		limh = -jff + texres;
 
 		for (iff = 0; iff < limh; iff = iff + 1.0)
-		{ // SEEMS OK... LOOKS OK.
+		{
 			color_app[0] = color[0] * (txt[(int)jff][(int)iff]);
 			color_app[1] = color[1] * (txt[(int)jff][(int)iff]);
 			color_app[2] = color[2] * (txt[(int)jff][(int)iff]);
@@ -3448,7 +3479,8 @@ void xaddftriang_perspTEXTURED_pp(float x1, float y1, float z1,
 
 			// tri 2
 			if (iff != limh - 1)
-			{ // DON'T DRAW THIS if we are on edge. figure out why... very simple
+			{
+				// Don't draw this if we are on edge.
 				glColor3f(color_app[0], color_app[1] + 0.01, color_app[2]);
 				glBegin(GL_TRIANGLES);
 					glVertex3f(x1 + (jff + 1.0) * v_hor[0] + (iff + 0.0) * v_ver[0],
@@ -3481,6 +3513,8 @@ struct mystruct
 // ####################################################################################################################
 // Function swap
 // Interchange *px and *py  STRUCT 
+//
+// Called only from function shellsort_struct, but shellsort_struct is not called.
 // ####################################################################################################################
 void swap(struct mystruct *px, struct mystruct *py)
 {
@@ -3497,6 +3531,8 @@ void swap(struct mystruct *px, struct mystruct *py)
 // Shell Sort STRUCT 
 // shellsort: sort v[0]...v[n-1] into increasing order, with respect to some element of the struct.
 // Calls swap(). 
+//
+// This function is not called.
 // ####################################################################################################################
 void shellsort_struct(struct mystruct *v, int n)
 {
