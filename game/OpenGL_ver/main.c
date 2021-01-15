@@ -58,7 +58,7 @@ struct subterrain
 Uint32 getpixel(SDL_Surface *surface, int x, int y);
 
 // this is the prototype of the function which will draw the pixel.
-void sdldisplay(int sw, int sh);
+void sdldisplay();
 
 void xclearpixboard(int xlimit, int ylimit);
 
@@ -79,17 +79,14 @@ void xaddline(int x1, int y1,
 void xaddftriang(int x1, int y1,
 				 int x2, int y2,
 				 int x3, int y3,
-				 float color[3],
-				 int step,
-				 int xlimit, int ylimit);
+				 float color[3]);
 
 // now we define the function which, given 2 points in 3D, calculates where they end up on the
 // virtual camera pointing toward positive z-axis and passes them to the 2D line drawing function. 
 void xaddftriang_persp(float x1, float y1, float z1,
 					   float x2, float y2, float z2,
 					   float x3, float y3, float z3,
-					   int step,
-					   float color[3], int pbwidth, int pbheight);
+					   float color[3]);
 
 // Function xaddftriang_perspTEXTURED_pp is not used; it is not called
 // textured triangles, drawn exactly, no approximations
@@ -97,31 +94,22 @@ void xaddftriang_perspTEXTURED_pp(float x1, float y1, float z1,
 								  float x2, float y2, float z2,
 								  float x3, float y3, float z3,
 								  int step,
-								  float color[3], int pbwidth, int pbheight);
-
-// The prototype for function xaddftriang_perspTEXTURED is defined, but the actual function itself is not.
-void xaddftriang_perspTEXTURED(float x1, float y1, float z1,
-							   float x2, float y2, float z2,
-							   float x3, float y3, float z3,
-							   int step,
-							   float color[3], int pbwidth, int pbheight);
+								  float color[3]);
 
 void GLaddftriang_perspTEXTURED(float x1, float y1, float z1,
 								float x2, float y2, float z2,
 								float x3, float y3, float z3,
 								int texId, float texcoords[3][2],
-								float color[3], int pbwidth, int pbheight);
+								float color[3]);
 
 void load_textures_wOpenGL();
 void load_textures96x96_SEMITRANSPARENT_wOpenGL(); // similarly but wwww alpha values transparency info too, etc.
 int load_hmap_from_bitmap(char *filename); // ...description at definition
 int load_maptex_from_bitmap(char *filename); // ...description at definition
 
-void xaddpoint_persp(float x1, float y1, float z1, float color[3],
-					 int pbwidth, int pbheight);
+void xaddpoint_persp(float x1, float y1, float z1, float color[3]);
 
-void xaddline_persp(float x1, float y1, float z1, float x2, float y2, float z2, float color[3],
-					int pbwidth, int pbheight);
+void xaddline_persp(float x1, float y1, float z1, float x2, float y2, float z2, float color[3]);
 
 // basic special effects in videogames
 // add new explosion or just process those already started 
@@ -151,7 +139,7 @@ void mat3x3_mult(double mat1[3][3], double mat2[3][3]);
 void inv(double in_3x3_matrix[3][3]);
 
 double body_rebounce(double rx, double ry, double rz,
-					 double nx, double ny, double nz, double e, double lat);
+					 double nx, double ny, double nz, double e);
 
 void make_inertia_tensor(int n_vertexs); 
 
@@ -214,12 +202,6 @@ int gloUsingLowResolution = 1;
 // However neither xaddline nor xadd1pix is called.
 float pixmatrix[HEIGHT][WIDTH][3];
 
-// best_dt_ms is defined but not used
-double best_dt_ms = 10.0;
-
-// texture_ids is defined but not used
-int texture_ids[100];
-
 // gloTexturesAvailable indicates how many textures are loaded or randomly-generated
 // Set in function load_textures_wOpenGL and load_textures96x96_SEMITRANSPARENT_wOpenGL.
 // Used (read) in functions main, load_textures96x96_SEMITRANSPARENT_wOpenGL, and load_maptex_from_bitmap.
@@ -277,28 +259,6 @@ struct subterrain gloTerrain;
 
 // gloTexIds is used only to store id number to reall...  It is filled at texture load-in at first call to GLaddpoly
 int gloTexIds[NTRIS]; 
-
-// face_texid is defined but not used
-// which of pre-loaded textures to apply on triangular face? they can also be randomly-generated of course
-int face_texid[NTRIS] = {
-	-1, -1, -1, -1, -1, -1,
-	-1, -1, -1, -1, -1, -1,
-	11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11}; 
-
-// face_texord is defined but not used
-int face_texord[NTRIS][3] = {
-	{0, 1, 2},
-	{0, 1, 2},
-	{0, 3, 2},
-	{0, 2, 3},
-	{1, 2, 3},
-	{1, 2, 3},
-	{0, 1, 2},
-	{0, 1, 2},
-	{0, 3, 2},
-	{0, 2, 3},
-	{1, 2, 3},
-	{1, 2, 3}};
 
 // texture abcd side order triplet... tells how texture image is stretched on triangular face...
 // so:
@@ -475,36 +435,6 @@ float gloPunti[NVERTEXES][3] = {// scatola  / box
 	{ -35,   20,    8},
 	{-120, -140,  -80},
 	{-120, -140,   80}
-};
-
-// Global variable estremi is defined but not used
-// chi sono i 2 punti estremi delle linee da disegnare? / who are the 2 extreme points of the lines to draw?
-// NOTA: estremi[ i-esima linea][quale punto e' l'estremo ] / NOTE: extremes [i-th line] [which point is the extreme]
-int estremi[NLINES][2] = {
-	{0, 1},
-	{1, 2},
-	{0, 3},
-	{2, 3},
-
-	{4, 5},
-	{6, 7},
-	{5, 6},
-	{4, 7},
-
-	{0, 4},
-	{1, 5},
-	{2, 6},
-	{3, 7},
-
-	{8, 9},
-	{9, 10},
-	{10, 11},
-	{8, 11},
-
-	{12, 13},
-	{13, 14},
-	{14, 15},
-	{12, 15}
 };
 
 // chi sono i 2 punti estremi delle linee da disegnare? / who are the 2 extreme points of the lines to draw?
@@ -763,20 +693,12 @@ int main()
 
 	// All non-SDL program code here
 	// auxillary integer variables
+	// With the addition of several functions, and the code from main that was put placed in those new 
+	// functions, variables i, j and k are now unused.
 	int i = 0;
 	int j = 0;
 	int k = 0;
 
-// how many segments to draw in scenery (used only with unused variables px, py and pz)
-#define NDOTS 3000
-
-	// Variables px, py and pz are defined, and set to 0 in function main, but are otherwise not used.
-	float px[NDOTS];
-	float py[NDOTS];
-	float pz[NDOTS];
-
-	// varR is defined but not used
-	float varR = 10.0;
 	float RR = 20.0;
 
 	// per ora non lo usiamo / for now we don't use it
@@ -798,15 +720,7 @@ int main()
 	// a simulation step that gives a not too disastrous result
 	float h = 0.01; 
 
-	// x1, y1 and z1 are defined here as doubles, but later in function main they are defined as floats
-	// Their redefiniton as floats was moved to function drawAirplane. So now, variables x1, y1, and z1 
-	// here are not used.
-	double x1, y1, z1;
-
 	double g = -9.81; // positive +++++ assumed!!
-
-	// Now that function main has been broken up into many functions, local variable color is no longer used.
-	float color[4] = {0.0, 0.0, 0.0, 1.0};
 
 	initSDL();
 
@@ -816,13 +730,6 @@ int main()
 
 	// ============================"INITIALISATION" PROCEDURE STARTS HERE=============
 	initPoints();
-
-	for (i = 0; i < NDOTS; i++)
-	{
-		px[i] = 0;
-		py[i] = 0;
-		pz[i] = 0;
-	}
 
 	cycles = 0;
 
@@ -921,7 +828,7 @@ int main()
 		// call function which displays the matrix of pixels in a true graphics window 
 
 		// ==================|SDL CODE BLOCK 4|=============================
-		sdldisplay(WIDTH, HEIGHT);
+		sdldisplay();
 
 		// Every ten cycles ...
 		if (cycles % 10 == 0)
@@ -1319,7 +1226,7 @@ void drawAxes()
 
 	// xc
 	xaddline_persp(0.0 - 1.0, 0.0 - 1.0, 2.0,
-					1.0 - 1.0, 0.0 - 1.0, 2.0, color, WIDTH, HEIGHT);
+					1.0 - 1.0, 0.0 - 1.0, 2.0, color);
 
 	// yc
 	color[0] = 0.0;
@@ -1327,7 +1234,7 @@ void drawAxes()
 	color[2] = 0.0;
 
 	xaddline_persp(0.0 - 1.0, 0.0 - 1.0, 2.0,
-					0.0 - 1.0, 1.0 - 1.0, 2.0, color, WIDTH, HEIGHT);
+					0.0 - 1.0, 1.0 - 1.0, 2.0, color);
 
 	// zc
 	color[0] = 0.0;
@@ -1335,7 +1242,7 @@ void drawAxes()
 	color[2] = 1.0;
 
 	xaddline_persp(0.0 - 1.0, 0.0 - 1.0, 2.0,
-					0.0 - 1.0, 0.0 - 1.0, 2.0 + 1.0, color, WIDTH, HEIGHT);
+					0.0 - 1.0, 0.0 - 1.0, 2.0 + 1.0, color);
 } // end drawAxes function
 
 // ####################################################################################################################
@@ -1507,7 +1414,7 @@ void drawTerrain() {
 
 		xaddline_persp(x_c[i], y_c[i], -z_c[i], 
 					   x_c[3], y_c[3], -z_c[3], 
-					   color, WIDTH, HEIGHT);
+					   color);
 	}
 
 	// DISEGNA IL TERRENO IN MODO ALGORITMICO, UNA GRIGILIA RETTANGOLARE COME AL SOLITO,
@@ -1591,7 +1498,7 @@ void drawTerrain() {
 
 			// This next statement will draw a line perpendicular to the terrain
 			xaddline_persp(x_c[0], y_c[0], -z_c[0],
-							x_c[4], y_c[4], -z_c[4], color, WIDTH, HEIGHT);
+							x_c[4], y_c[4], -z_c[4], color);
 
 			if (xi >= 0 && yi >= 0)
 			{
@@ -1600,7 +1507,7 @@ void drawTerrain() {
 											x_c[1], y_c[1], z_c[1],
 											x_c[2], y_c[2], z_c[2],
 											gloTexIds[gloTerrain.map_texture_indexes[xi][yi]], texcoords_gnd_tri1,
-											color, WIDTH, HEIGHT);
+											color);
 
 				// Triangolo 2 / Triangle 2 (change color a little bit)
 				color[1] = color[1] + 0.1; // draw with slightly different color... 
@@ -1609,7 +1516,7 @@ void drawTerrain() {
 											x_c[2], y_c[2], z_c[2],
 											x_c[3], y_c[3], z_c[3],
 											gloTexIds[gloTerrain.map_texture_indexes[xi][yi]], texcoords_gnd_tri2,
-											color, WIDTH, HEIGHT);
+											color);
 			}
 		}
 	}
@@ -1679,14 +1586,14 @@ void drawAirplane(float h)
 			// Draw a perspective, filled triangle using the three points in our triangular facet
 			xaddftriang_persp(x1, y1, -z1,
 								x2, y2, -z2,
-								x3, y3, -z3, 1, color, WIDTH, HEIGHT);
+								x3, y3, -z3, color);
 		}
 		else
 		{
 			// Draw a perspective, filled triangle using the three points in our triangular facet
 			xaddftriang_persp(x1, y1, -z1,
 								x2, y2, -z2,
-								x3, y3, -z3, 1, color, WIDTH, HEIGHT);
+								x3, y3, -z3, color);
 		}
 	}
 
@@ -1761,7 +1668,7 @@ void checkForPlaneCollision()
 		if (zp + zw < he_id)
 		{ 
 			// just as any vertex of airplane touches ground and tries to go below 
-			body_rebounce(xw, yw, zw, gloTerrain.auxnormal[0], gloTerrain.auxnormal[1], gloTerrain.auxnormal[2], 0.06, 0);
+			body_rebounce(xw, yw, zw, gloTerrain.auxnormal[0], gloTerrain.auxnormal[1], gloTerrain.auxnormal[2], 0.06);
 			printf("TOUCH GND \n");
 			zp = zp + (he_id - zp - zw);
 			// check is normal < 0 and eventually calculated and assigns new velocities and so.
@@ -2465,7 +2372,7 @@ void xclearpixboard(int xlimit, int ylimit)
 // THE SDL graphics function: ALL SDL DRAW COMMANDS HERE... 
 // ===============================|SDL CODE BLOCK 3|==================================
 // ####################################################################################################################
-void sdldisplay(int sw, int sh) // parameters sw and sh are not used
+void sdldisplay() 
 {
 	SDL_GL_SwapWindow(gloWindow);
 } // end sdldisplay function
@@ -2623,9 +2530,7 @@ void xadd1pix(int x, int y, float color[3],
 // now we define the function which, given 1 point in 3D, calculates where it ends up on the
 // virtual camera pointing toward positive z-axis and passes them to the failsafe pixel drawing function. 
 // ####################################################################################################################
-void xaddpoint_persp(float x1, float y1, float z1, float color[3],
-					 int pbwidth,  // parameter pbwidth is not used
-					 int pbheight) // parameter pbheight is not used
+void xaddpoint_persp(float x1, float y1, float z1, float color[3])
 {
 	glColor3f(color[0], color[1], color[2]);
 	glPointSize(2);
@@ -2643,9 +2548,7 @@ void xaddpoint_persp(float x1, float y1, float z1, float color[3],
 // virtual camera pointing toward positive z-axis and passes them to the 2D line drawing function. 
 // ####################################################################################################################
 void xaddline_persp(float x1, float y1, float z1, 
-					float x2, float y2, float z2, float color[3],
-					int pbwidth,  // parameter pbwidth is not used
-					int pbheight) // parameter pbheight is not used
+					float x2, float y2, float z2, float color[3])
 {
 	glColor3f(color[0], color[1], color[2]);
 
@@ -2818,7 +2721,7 @@ void addsmoke_wsim(double x0, double y0, double z0, double dft, int option)
 				xaddftriang_persp( xt,  yt,  -zt,
 								  xt2, yt2, -zt2,
 								  xt3, yt3, -zt3, 
-								  2, color, WIDTH, HEIGHT);
+								  color);
 			}
 		}
 
@@ -2956,7 +2859,7 @@ void addfrantumation_wsim(float x0, float y0, float z0, double dft, int option)
 			yt3 = Q[0] * (xm[i] - x) + Q[1] * (ym[i] + 1.2 * radius - y) + Q[2] * (zm[i] + radius - z);
 			zt3 = R[0] * (xm[i] - x) + R[1] * (ym[i] + 1.2 * radius - y) + R[2] * (zm[i] + radius - z);
 
-			xaddpoint_persp(xt, yt, -zt, color, WIDTH, HEIGHT); // draw points in 3D scenario Z NEGATIVE!!!!!! 
+			xaddpoint_persp(xt, yt, -zt, color); // draw points in 3D scenario Z NEGATIVE!!!!!! 
 
 			color[0] = colors[i][0];
 			color[1] = colors[i][1];
@@ -2965,7 +2868,7 @@ void addfrantumation_wsim(float x0, float y0, float z0, double dft, int option)
 			xaddftriang_persp( xt,  yt,  -zt,
 							  xt2, yt2, -zt2,
 							  xt3, yt3, -zt3, 
-							  1, color, WIDTH, HEIGHT);
+							  color);
 		}
 
 		count--;
@@ -3021,7 +2924,7 @@ void projectile_launch(float xpr, float ypr, float zpr,
 			yt = Q[0] * (xm - x) + Q[1] * (ym - y) + Q[2] * (zm - z);
 			zt = R[0] * (xm - x) + R[1] * (ym - y) + R[2] * (zm - z);
 
-			xaddpoint_persp(xt, yt, -zt, color, WIDTH, HEIGHT); // draw points in 3D scenario Z NEGATIVE!!!!!! 
+			xaddpoint_persp(xt, yt, -zt, color); // draw points in 3D scenario Z NEGATIVE!!!!!! 
 
 			// "x is an extern variable!!! be careful!!" 
 			x1 = P[0] * (-x) + P[1] * (ym - y) + P[2] * (zm - z);
@@ -3089,7 +2992,7 @@ void projectile_launch(float xpr, float ypr, float zpr,
 					color[0] = 1.0;
 					color[1] = 0.6;
 					color[2] = 0.1;
-					xaddpoint_persp(xt, yt, -zt, color, WIDTH, HEIGHT); // draw points in 3D scenario Z NEGATIVE!!!!!! 
+					xaddpoint_persp(xt, yt, -zt, color); // draw points in 3D scenario Z NEGATIVE!!!!!! 
 				}
 			}
 		}
@@ -3248,9 +3151,7 @@ double say_terrain_height(struct subterrain *ite, double x, double z)
 void xaddftriang(int x1, int y1, // parameters x1 and y1 are not used
 				 int x2, int y2, // parameters x2 and y2 are not used
 				 int x3, int y3, // parameters x3 and y3 are not used
-				 float color[3],
-				 int step,       // parameter step is not used
-				 int xlimit, int ylimit) // parameters xlimit and ylimit are not used
+				 float color[3])
 {
 	// convert RGB color intensities, call the allocate/activate function provided by Xlib,
 	// and then call the function that puts it into use.
@@ -3280,10 +3181,7 @@ void xaddftriang(int x1, int y1, // parameters x1 and y1 are not used
 void xaddftriang_persp(float x1, float y1, float z1,
 					   float x2, float y2, float z2,
 					   float x3, float y3, float z3,
-					   int step, // this parameter is not used
-					   float color[4], 
-					   int pbwidth, // this parameter is not used
-					   int pbheight) // this parameter is not used
+					   float color[4])
 {
 	glColor4f(color[0], color[1], color[2], color[3]);
 
@@ -3305,9 +3203,7 @@ void GLaddftriang_perspTEXTURED(float x1, float y1, float z1,
 								float x2, float y2, float z2,
 								float x3, float y3, float z3,
 								int texId, float texcoords[3][2],
-								float color[3], 
-								int pbwidth, // this parameter is not used
-								int pbheight) // this parameter is not used
+								float color[3])
 {
 	glBindTexture(GL_TEXTURE_2D, texId);
 	glEnable(GL_TEXTURE_2D); 
@@ -3335,9 +3231,7 @@ void xaddftriang_perspTEXTURED_pp(float x1, float y1, float z1,
 								  float x2, float y2, float z2,
 								  float x3, float y3, float z3,
 								  int step,
-								  float color[3], 
-								  int pbwidth,  // parameter pbwidth is not used
-								  int pbheight) // parameter pbheight is not used
+								  float color[3])
 {
 	static int alternative = 0;
 	static int texture_generated = 0; // at first call of this function, a 32x32 texture sample will be generated 
@@ -3661,8 +3555,7 @@ void inv(double in_3x3_matrix[3][3])
 // ####################################################################################################################
 double body_rebounce(double rx, double ry, double rz,
 					 double nx, double ny, double nz, 
-					 double e, 
-					 double lat) // parameter lat is not used
+					 double e)
 {
 	double jelf = 0, jel = 300.0;
 	double vector0[3], vector1[3], axis[3];
