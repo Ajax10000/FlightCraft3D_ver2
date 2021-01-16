@@ -136,6 +136,7 @@ void reorientAxes(void);
 void simulatePhysics(int plane_up, int plane_down, int plane_inclleft, int plane_inclright, float h, double g);
 void displayStatusInfo(int cycles, float h, float theta, float fi);
 void processEvent(float *turnch, float *turncv, float *RR, int *plane_up, int *plane_down, int *plane_inclleft, int *plane_inclright, float *h);
+void initData(float h);
 
 // #                                                                                                                  #
 // # End function prototypes                                                                                          #
@@ -680,52 +681,12 @@ int main()
 
 	initOpenGL();
 
-	// if there is an external polyhedron definition for better-defined airplanes, let's use it.
-
-	// ============================"INITIALISATION" PROCEDURE STARTS HERE=============
-	initPoints();
-
-	cycles = 0;
-
 	// clear the screen
 	clearScreen(WIDTH, HEIGHT);
 
-	// initTerrain initializes global variable gloTerrain with random values
-	initTerrain();
+	initData(h);
 
-	// initAirplaneColors initializes global variable col_tris with random values
-	initAirplaneColors();
-
-	// load textures in
-	loadTerrainTextures(); 
-	gloTreeTextureIDBounds[0] = gloTexturesAvailable; // at what ID do tree textures begin (and end also...)
-
-	// ditto but with "bitmap" image files with alpha value for transparency information on each pixel... 
-	// this is mainly used for drawing trees in a quick, nice and simple way.
-	loadTreeTextures(); 
-
-	// this comes after, because so during loading we can check if no texture index superior to the number 
-	// of available textures is inserted... .
-	loadMapTextureIndices("terrain_data/maptex_300x300.bmp"); 
-
-	// initTrees initializes global variable gloTrees
-	initTrees();
-
-	// If we're not using low resolution ...
-	if (gloUsingLowResolution == 0)
-	{
-		// Add smoke effect at plane location xp, yp, zp
-		addSmokeAtPoint(xp, yp, zp, h, 1); // commented out for testing
-	}
-
-	// initPhysicsVars will set global variables It_init, p, L, It_initINV, Fcm and gloTtlTorque
-	initPhysicsVars();
-
-	// loadAirplaneModel sets global variables gloPunti, 
-	loadAirplaneModel();
-
-	//============================"INITIALISATION" PROCEDURES DONE=============
-
+	cycles = 0;
 	while (cycles < 50000)
 	{
 		// moving camera position and airplane interactive control 
@@ -792,20 +753,18 @@ int main()
 		SDL_Delay(10);
 		cycles++;
 
-		//===============================|SDL's real-time interactivity|=============================
-		
 		while (SDL_PollEvent(&gloEvent))
 		{ 
 			processEvent(&turnch, &turncv, &RR, &plane_up, &plane_down, &plane_inclleft, &plane_inclright, &h);
 			
-			// extra case: if graphic window is closed, terminate program 
+			// if graphic window is closed, terminate program 
 			if (gloEvent.type == SDL_QUIT)
 			{ 
 				printf("GRAPHICS WINDOW CLOSED: PROGRAM TERMINATED\n");
 				SDL_Quit();
 
 				exit(1); 
-			} // end of extra case handling part 
+			} 
 		} // end of continual event-check loop. 
 	}
 
@@ -886,6 +845,48 @@ void initOpenGL()
 
 	printf("1 check graphics Window!\n");
 } // end initOpenGL function
+
+// ####################################################################################################################
+// Function initData
+// ####################################################################################################################
+void initData(float h)
+{
+	initPoints();
+
+	// initTerrain initializes global variable gloTerrain with random values
+	initTerrain();
+
+	// initAirplaneColors initializes global variable col_tris with random values
+	initAirplaneColors();
+
+	// load textures in
+	loadTerrainTextures(); 
+	gloTreeTextureIDBounds[0] = gloTexturesAvailable; // at what ID do tree textures begin (and end also...)
+
+	// ditto but with "bitmap" image files with alpha value for transparency information on each pixel... 
+	// this is mainly used for drawing trees in a quick, nice and simple way.
+	loadTreeTextures(); 
+
+	// this comes after, because so during loading we can check if no texture index superior to the number 
+	// of available textures is inserted... .
+	loadMapTextureIndices("terrain_data/maptex_300x300.bmp"); 
+
+	// initTrees initializes global variable gloTrees
+	initTrees();
+
+	// If we're not using low resolution ...
+	if (gloUsingLowResolution == 0)
+	{
+		// Add smoke effect at plane location xp, yp, zp
+		addSmokeAtPoint(xp, yp, zp, h, 1); // commented out for testing
+	}
+
+	// initPhysicsVars will set global variables It_init, p, L, It_initINV, Fcm and gloTtlTorque
+	initPhysicsVars();
+
+	// loadAirplaneModel sets global variable gloPunti, 
+	loadAirplaneModel();
+} // end initData function
 
 // ####################################################################################################################
 // Function initPoints
