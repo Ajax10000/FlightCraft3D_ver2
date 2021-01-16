@@ -60,31 +60,12 @@ void sdldisplay();
 
 void xclearpixboard(int xlimit, int ylimit);
 
-// Function xadd1pix is not called.
-// add 1 pixel to output image but in a failsafe manner: no accidental segfaults. 
-void xadd1pix(int x, int y, float color[3],
-			  int xlimit, int ylimit);
-
-// Function xaddline is not called.
-// interpolate 2 points graphically 
-void xaddline(int x1, int y1,
-			  int x2, int y2, float color[3], // change this to int color[3] 
-			  int xlimit, int ylimit);
-
 // now we define the function which, given 2 points in 3D, calculates where they end up on the
 // virtual camera pointing toward positive z-axis and passes them to the 2D line drawing function. 
 void xaddftriang_persp(float x1, float y1, float z1,
 					   float x2, float y2, float z2,
 					   float x3, float y3, float z3,
 					   float color[3]);
-
-// Function xaddftriang_perspTEXTURED_pp is not used; it is not called
-// textured triangles, drawn exactly, no approximations
-void xaddftriang_perspTEXTURED_pp(float x1, float y1, float z1,
-								  float x2, float y2, float z2,
-								  float x3, float y3, float z3,
-								  int step,
-								  float color[3]);
 
 void drawTexturedTriangle(float x1, float y1, float z1,
 						  float x2, float y2, float z2,
@@ -125,7 +106,8 @@ double getTerrainHeight(struct subterrain *ite, double x, double z);
 // multTwo3x3Matrices multiplies two 3x3 matrixes 3x3, placing result in global variable gloResultMatrix
 void multTwo3x3Matrices(double mat1[3][3], double mat2[3][3]);
 
-// invert3x3Matrix calculates the inverse of a 3x3 matrix (used for obtaining the inverse of the inertia tensor)
+// invert3x3Matrix calculates the inverse of a 3x3 matrix 
+// Used for obtaining the inverse of the inertia tensor
 void invert3x3Matrix(double in_3x3_matrix[3][3]);
 
 double bounceAirplane(double rx, double ry, double rz,
@@ -187,10 +169,6 @@ const GLdouble pi = 3.1415926535897932384626433832795;
 
 // gloUsingLowResolution is used only in function main.
 int gloUsingLowResolution = 1;
-
-// pixmatrix is populated in functions xaddline and xadd1pix
-// However neither xaddline nor xadd1pix is called.
-float pixmatrix[HEIGHT][WIDTH][3];
 
 // gloTexturesAvailable indicates how many textures are loaded or randomly-generated
 // Set in function loadTerrainTextures and loadTreeTextures.
@@ -2076,7 +2054,7 @@ void reorientAxes()
 } // end reorientAxes function
 
 // ####################################################################################################################
-// Function updateVirtualCameraPos
+// Function updateVirtualCameraPos updates the virtual camera position x, y, z.
 // ####################################################################################################################
 void updateVirtualCameraPos(float RR)
 {
@@ -2367,132 +2345,6 @@ int waitMs(double tt_ms)
 	}
 	return 1;
 } // end waitMs function 
-
-// ####################################################################################################################
-// Function xaddline
-// NOT USED IN OPENGL VERSION 
-// interpolate 2 points graphically 
-// 
-// This function is not called.
-// ####################################################################################################################
-void xaddline(int x1, int y1,
-			  int x2, int y2, float color[3], // change this to int color[3] 
-			  int xlimit, int ylimit)
-{
-
-	float m, fx1, fx2, fy1, fy2, fi;
-	int i, j, yh, temp, yh_aux;
-
-	if (fabs(x2 - x1) > 0)
-	{ // IF LINE IS NON-VERTICAL: avoid divide-by-zero case!! 
-		fx1 = (float)x1;
-		fx2 = (float)x2;
-
-		fy1 = (float)y1;
-		fy2 = (float)y2;
-
-		m = (fy2 - fy1) / (fx2 - fx1);
-		// case x2 > x1 : augment from x1 to come to x2... 
-		if (x1 > x2)
-		{ // interchange them... 
-			temp = x2;
-			x2 = x1;
-			x1 = temp;
-		}
-
-		for (i = x1; i < x2; i++)
-		{
-			fi = (float)i;
-			yh = (int)(m * fi - m * fx1 + fy1);
-
-			if ((i >= 0 && i < xlimit) && (yh >= 0 && yh < ylimit))
-			{ // limits! 
-				pixmatrix[yh][i][0] = color[0];
-				pixmatrix[yh][i][1] = color[1];
-				pixmatrix[yh][i][2] = color[2];
-				// this will have 3 components, thanks to hi color-res of SDL 
-
-				// these points are good for cases -1.0 < m < 1.0 but are part of the 
-				// super-filling for cases of m outside ( -1.0, 1.0 ) range. 
-
-				// nice continuous lines for cases of m outside ( -1.0, 1.0 ) range. 
-
-				if ((m > 1.0))
-				{
-					fi = (float)(i + 1);
-					yh_aux = (int)(m * fi - m * fx1 + fy1);
-					for (j = yh; j < yh_aux; j++)
-					{
-						if ((i >= 0 && i < xlimit) && (j >= 0 && j < ylimit))
-						{
-							pixmatrix[j][i][0] = color[0];
-							pixmatrix[j][i][1] = color[1];
-							pixmatrix[j][i][2] = color[2];
-						}
-					}
-				}
-				else if ((m < -1.0))
-				{
-					fi = (float)(i + 1);
-					yh_aux = (int)(m * fi - m * fx1 + fy1);
-					for (j = yh; j > yh_aux; j--)
-					{
-						if ((i >= 0 && i < xlimit) && (j >= 0 && j < ylimit))
-						{
-							pixmatrix[j][i][0] = color[0];
-							pixmatrix[j][i][1] = color[1];
-							pixmatrix[j][i][2] = color[2];
-						}
-					} // for j
-				}
-			}
-		} // for i
-	}
-	else
-	{ // IF LINE IS VERTICAL 
-		if (y1 < y2)
-		{ // case y1 < y2 : augment from y1 to come to y2... 
-			for (yh = y1; yh < y2; yh++)
-			{
-				if ((x1 >= 0 && x1 < xlimit) && (yh >= 0 && yh < ylimit))
-				{ // limits! 
-					pixmatrix[yh][x1][0] = color[0];
-					pixmatrix[yh][x1][1] = color[1];
-					pixmatrix[yh][x1][2] = color[2];
-				}
-			}
-		}
-		else
-		{ // case y2 < y1 : augment from y1 to come to y2... 
-			for (yh = y2; yh < y1; yh++)
-			{
-				if ((x1 >= 0 && x1 < xlimit) && (yh >= 0 && yh < ylimit))
-				{ // limits! 
-					pixmatrix[yh][x1][0] = color[0];
-					pixmatrix[yh][x1][1] = color[1];
-					pixmatrix[yh][x1][2] = color[2];
-				}
-			}
-		}
-	}
-} // end xaddline function
-
-// ####################################################################################################################
-// Function xadd1pix
-// add 1 pixel to output image but in a failsafe manner: no accidental segfaults. 
-//
-// This function is not called.
-// ####################################################################################################################
-void xadd1pix(int x, int y, float color[3],
-			  int xlimit, int ylimit)
-{
-	if ((x >= 0 && x <= xlimit) && (y <= ylimit && y >= 0))
-	{
-		pixmatrix[y][x][0] = color[0];
-		pixmatrix[y][x][1] = color[1];
-		pixmatrix[y][x][2] = color[2];
-	}
-} // end xadd1pix function
 
 // ####################################################################################################################
 // Function xaddpoint_persp draws a (perspective) point in 3D space.
@@ -3154,188 +3006,6 @@ void drawTexturedTriangle(float x1, float y1, float z1,
 	glFlush();
 	glDisable(GL_TEXTURE_2D);
 } // end drawTexturedTriangle function
-
-// ####################################################################################################################
-// Function xaddftriang_perspTEXTURED_pp
-//
-// This function is not called.
-// ####################################################################################################################
-void xaddftriang_perspTEXTURED_pp(float x1, float y1, float z1,
-								  float x2, float y2, float z2,
-								  float x3, float y3, float z3,
-								  int step,
-								  float color[3])
-{
-	static int alternative = 0;
-	static int texture_generated = 0; // at first call of this function, a 32x32 texture sample will be generated 
-	float mag; // this local variable is not used
-	static float txt[32][32];
-	int j, i;
-
-	if (texture_generated == 0)
-	{
-		texture_generated = 1;
-
-		for (j = 0; j < 32; j++)
-		{
-			for (i = 0; i < 32; i++)
-			{
-				txt[j][i] = 0.5 + (float)0.5 * rand() / (float)RAND_MAX;
-			}
-		}
-	}
-
-	if ((pow(x3 - x2, 2) + pow(y3 - y2, 2) + pow(z3 - z2, 2)) > (pow(x3 - x1, 2) + pow(y3 - y1, 2) + pow(z3 - z1, 2)) && (pow(x3 - x2, 2) + pow(y3 - y2, 2) + pow(z3 - z2, 2)) > pow(x2 - x1, 2) + pow(y2 - y1, 2) + pow(z2 - z1, 2))
-	{ 
-		// side 2 longer than the others: x2 is the hypothenuse of a quasi-rect triangle.
-		// leave p1, p2, p3 as they are... they are ok.
-		alternative = 1; // first case: 1-2 and 1-3 are the catetes... .
-	}
-	else if ((pow(x2 - x1, 2) + pow(y2 - y1, 2) + pow(z2 - z1, 2)) > (pow(x3 - x1, 2) + pow(y3 - y1, 2) + pow(z3 - z1, 2)) && (pow(x2 - x1, 2) + pow(y2 - y1, 2) + pow(z2 - z1, 2)) > pow(x2 - x3, 2) + pow(y2 - y3, 2) + pow(z2 - z3, 2))
-	{
-		// change order... .
-		float tx, ty, tz;
-
-		alternative = 2; // second case. 1-3 and 2-3 are cathetes
-		// must change order so that 1-2 and 1-3 be cathetes:
-
-		// 2 interchanged with 3 .
-		tx = x3;
-		ty = y3;
-		tz = z3;
-
-		x3 = x2;
-		y3 = y2;
-		z3 = z2;
-
-		x2 = tx;
-		y2 = ty;
-		z2 = tz;
-
-		// 1 interchanged with 2 .
-		tx = x1;
-		ty = y1;
-		tz = z1;
-
-		x1 = x2;
-		y1 = y2;
-		z1 = z2;
-
-		x2 = tx;
-		y2 = ty;
-		z2 = tz;
-	}
-	else
-	{
-		float tx, ty, tz;
-
-		alternative = 3.0;
-
-		// 2 interchanged with 3 .
-		tx = x3;
-		ty = y3;
-		tz = z3;
-
-		x3 = x2;
-		y3 = y2;
-		z3 = z2;
-
-		x2 = tx;
-		y2 = ty;
-		z2 = tz;
-
-		// 1 interchanged with 3 .
-		tx = x1;
-		ty = y1;
-		tz = z1;
-
-		x1 = x3;
-		y1 = y3;
-		z1 = z3;
-
-		x3 = tx;
-		y3 = ty;
-		z3 = tz;
-	}
-
-	float v_hor[3] = {3.4, 1.2, 2.0}; // the one with greater x-component... ('more horizonal'
-	float v_ver[3] = {1.2, 2.3, 1.0}; // the one wiht greater y-component... ('more vertical' )
-									  // first x-y couple is intact... MIDPOINT, DOWNER 
-
-	float jff, iff, limh, limv, texres;
-	texres = step; // texture resolution
-
-	v_ver[0] = (x2 - x1) / texres;
-	v_ver[1] = (y2 - y1) / texres;
-	v_ver[2] = (z2 - z1) / texres;
-
-	v_hor[0] = (x3 - x1) / texres;
-	v_hor[1] = (y3 - y1) / texres;
-	v_hor[2] = (z3 - z1) / texres;
-
-	//=== dimension = texres!!! ===
-	float color_app[3];
-
-	for (jff = 0; jff < texres; jff = jff + 1.0)
-	{
-		limh = -jff + texres;
-
-		for (iff = 0; iff < limh; iff = iff + 1.0)
-		{
-			color_app[0] = color[0] * (txt[(int)jff][(int)iff]);
-			color_app[1] = color[1] * (txt[(int)jff][(int)iff]);
-			color_app[2] = color[2] * (txt[(int)jff][(int)iff]);
-
-			// tri 1
-			glColor3f(color_app[0], color_app[1], color_app[2]);
-
-			glBegin(GL_TRIANGLES);
-				glVertex3f(x1 + jff * v_hor[0] + iff * v_ver[0],
-						   y1 + jff * v_hor[1] + iff * v_ver[1],
-						  (z1 + jff * v_hor[2] + iff * v_ver[2]));
-
-				glVertex3f(x1 + (jff + 1.0) * v_hor[0] + (iff + 0.0) * v_ver[0],
-						   y1 + (jff + 1.0) * v_hor[1] + (iff + 0.0) * v_ver[1],
-						  (z1 + (jff + 1.0) * v_hor[2] + (iff + 0.0) * v_ver[2]));
-
-				glVertex3f(x1 + (jff + 0.0) * v_hor[0] + (iff + 1.0) * v_ver[0],
-						   y1 + (jff + 0.0) * v_hor[1] + (iff + 1.0) * v_ver[1],
-						  (z1 + (jff + 0.0) * v_hor[2] + (iff + 1.0) * v_ver[2]));
-			glEnd();
-			glFlush();
-
-			// tri 2
-			if (iff != limh - 1)
-			{
-				// Don't draw this if we are on edge.
-				glColor3f(color_app[0], color_app[1] + 0.01, color_app[2]);
-				glBegin(GL_TRIANGLES);
-					glVertex3f(x1 + (jff + 1.0) * v_hor[0] + (iff + 0.0) * v_ver[0],
-							   y1 + (jff + 1.0) * v_hor[1] + (iff + 0.0) * v_ver[1],
-							  (z1 + (jff + 1.0) * v_hor[2] + (iff + 0.0) * v_ver[2]));
-
-					glVertex3f(x1 + (jff + 1.0) * v_hor[0] + (iff + 1.0) * v_ver[0],
-							   y1 + (jff + 1.0) * v_hor[1] + (iff + 1.0) * v_ver[1],
-							  (z1 + (jff + 1.0) * v_hor[2] + (iff + 1.0) * v_ver[2]));
-
-					glVertex3f(x1 + (jff + 0.0) * v_hor[0] + (iff + 1.0) * v_ver[0],
-							   y1 + (jff + 0.0) * v_hor[1] + (iff + 1.0) * v_ver[1],
-							  (z1 + (jff + 0.0) * v_hor[2] + (iff + 1.0) * v_ver[2]));
-				glEnd();
-				glFlush();
-			}
-		}
-	}
-} // end xaddftriang_perspTEXTURED_pp function
-
-// Prototype of the struct meant to be the main container of data, 
-// be it single numbers, couples, tripets or heterogeneous mixes of data 
-struct mystruct
-{
-	float z;
-	int ind_triang[3];
-	int color_index;
-};
 
 // ####################################################################################################################
 // Function multTwo3x3Matrices multiplies two 3x3 matrices and places the result in global variable gloResultMatrix.
