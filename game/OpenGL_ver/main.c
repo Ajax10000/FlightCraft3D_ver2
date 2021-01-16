@@ -58,14 +58,14 @@ Uint32 getPixel(SDL_Surface *surface, int x, int y);
 // this is the prototype of the function which will draw the pixel.
 void sdldisplay();
 
-void xclearpixboard(int xlimit, int ylimit);
+void clearScreen(int xlimit, int ylimit);
 
 // now we define the function which, given 2 points in 3D, calculates where they end up on the
 // virtual camera pointing toward positive z-axis and passes them to the 2D line drawing function. 
-void xaddftriang_persp(float x1, float y1, float z1,
-					   float x2, float y2, float z2,
-					   float x3, float y3, float z3,
-					   float color[3]);
+void drawFilledPerspTriangle(float x1, float y1, float z1,
+							 float x2, float y2, float z2,
+							 float x3, float y3, float z3,
+							 float color[3]);
 
 void drawTexturedTriangle(float x1, float y1, float z1,
 						  float x2, float y2, float z2,
@@ -78,9 +78,9 @@ void loadTreeTextures(); // similarly but wwww alpha values transparency info to
 int loadHeightMap(char *filename); // ...description at definition
 int loadMapTextureIndices(char *filename); // ...description at definition
 
-void xaddpoint_persp(float x1, float y1, float z1, float color[3]);
+void drawPerspPoint(float x1, float y1, float z1, float color[3]);
 
-void xaddline_persp(float x1, float y1, float z1, float x2, float y2, float z2, float color[3]);
+void drawPerspLine(float x1, float y1, float z1, float x2, float y2, float z2, float color[3]);
 
 // basic special effects in videogames
 // add new explosion or just process those already started 
@@ -113,7 +113,7 @@ void invert3x3Matrix(double in_3x3_matrix[3][3]);
 double bounceAirplane(double rx, double ry, double rz,
 					  double nx, double ny, double nz, double e);
 
-void make_inertia_tensor(int n_vertexs); 
+void makeInertiaTensor(int n_vertexs); 
 
 void initSDL(void);
 void initOpenGL(void);
@@ -175,7 +175,7 @@ int gloUsingLowResolution = 1;
 // Used (read) in functions main, loadTreeTextures, and loadMapTextureIndices.
 int gloTexturesAvailable = 0; 
 
-// MAG is used in function xclearpixboard.
+// MAG is used in function clearScreen.
 // MAG can be increased by 10 by the user at runtime by clicking on the 't' key.
 float MAG = 60.0;
 
@@ -300,7 +300,7 @@ float texcoords_gnd_tri2[3][2] = {
 // Aereo: Definizione dei vertici
 // Plane: Definition of the vertexes
 //
-// Used in functions main and make_inertia_tensor.
+// Used in functions main and makeInertiaTensor.
 // Set in function importAirplanePolyhedron.
 float gloPunti[NVERTEXES][3] = {// scatola  / box
 	{  74,   76,  -57},
@@ -688,7 +688,7 @@ int main()
 	cycles = 0;
 
 	// clear the screen
-	xclearpixboard(WIDTH, HEIGHT);
+	clearScreen(WIDTH, HEIGHT);
 
 	// initTerrain initializes global variable gloTerrain with random values
 	initTerrain();
@@ -748,7 +748,7 @@ int main()
 
 		// Cancella schermata/lavagna
 		// Clear screen/board
-		xclearpixboard(WIDTH, HEIGHT); 
+		clearScreen(WIDTH, HEIGHT); 
 
 		updatePQRAxes(theta, fi);
 
@@ -1084,8 +1084,8 @@ void initPhysicsVars()
 {
 	int i, j;
 
-	// make_inertia_tensor will set global variable It_init
-	make_inertia_tensor(NVERTEXES);
+	// makeInertiaTensor will set global variable It_init
+	makeInertiaTensor(NVERTEXES);
 
 	// momentum p (linear quantity)
 	// momentum = mass x velocity
@@ -1174,7 +1174,7 @@ void drawAxes()
 	// in these cases, go use unit-length references. It's the obvious choice but saying it is not bad.
 
 	// xc
-	xaddline_persp(0.0 - 1.0, 0.0 - 1.0, 2.0,
+	drawPerspLine(0.0 - 1.0, 0.0 - 1.0, 2.0,
 					1.0 - 1.0, 0.0 - 1.0, 2.0, color);
 
 	// yc
@@ -1182,7 +1182,7 @@ void drawAxes()
 	color[1] = 1.0;
 	color[2] = 0.0;
 
-	xaddline_persp(0.0 - 1.0, 0.0 - 1.0, 2.0,
+	drawPerspLine(0.0 - 1.0, 0.0 - 1.0, 2.0,
 					0.0 - 1.0, 1.0 - 1.0, 2.0, color);
 
 	// zc
@@ -1190,7 +1190,7 @@ void drawAxes()
 	color[1] = 0.0;
 	color[2] = 1.0;
 
-	xaddline_persp(0.0 - 1.0, 0.0 - 1.0, 2.0,
+	drawPerspLine(0.0 - 1.0, 0.0 - 1.0, 2.0,
 					0.0 - 1.0, 0.0 - 1.0, 2.0 + 1.0, color);
 } // end drawAxes function
 
@@ -1361,7 +1361,7 @@ void drawTerrain() {
 		color[1] = i / 3.0;
 		color[2] = i / 3.0;
 
-		xaddline_persp(x_c[i], y_c[i], -z_c[i], 
+		drawPerspLine(x_c[i], y_c[i], -z_c[i], 
 					   x_c[3], y_c[3], -z_c[3], 
 					   color);
 	}
@@ -1446,7 +1446,7 @@ void drawTerrain() {
 			}
 
 			// This next statement will draw a line perpendicular to the terrain
-			xaddline_persp(x_c[0], y_c[0], -z_c[0],
+			drawPerspLine(x_c[0], y_c[0], -z_c[0],
 							x_c[4], y_c[4], -z_c[4], color);
 
 			if (xi >= 0 && yi >= 0)
@@ -1533,14 +1533,14 @@ void drawAirplane(float h)
 		if (gloUsingLowResolution == 0)
 		{
 			// Draw a perspective, filled triangle using the three points in our triangular facet
-			xaddftriang_persp(x1, y1, -z1,
+			drawFilledPerspTriangle(x1, y1, -z1,
 								x2, y2, -z2,
 								x3, y3, -z3, color);
 		}
 		else
 		{
 			// Draw a perspective, filled triangle using the three points in our triangular facet
-			xaddftriang_persp(x1, y1, -z1,
+			drawFilledPerspTriangle(x1, y1, -z1,
 								x2, y2, -z2,
 								x3, y3, -z3, color);
 		}
@@ -2293,9 +2293,9 @@ void processEvent(float *turnch, float *turncv, float *RR,
 } // end processEvent function
 
 // ####################################################################################################################
-// Function xclearpixboard
+// Function clearScreen
 // ####################################################################################################################
-void xclearpixboard(int xlimit, int ylimit)
+void clearScreen(int xlimit, int ylimit)
 {
 	GLdouble fW, fH;
 	double aspect;
@@ -2314,7 +2314,7 @@ void xclearpixboard(int xlimit, int ylimit)
 	glFrustum(-fW, fW, -fH, fH, 0.1, 100000.0);
 
 	glViewport(0, 0, xlimit, ylimit);
-} // end xclearpixboard function
+} // end clearScreen function
 
 // ####################################################################################################################
 // Function sdldisplay
@@ -2347,12 +2347,12 @@ int waitMs(double tt_ms)
 } // end waitMs function 
 
 // ####################################################################################################################
-// Function xaddpoint_persp draws a (perspective) point in 3D space.
+// Function drawPerspPoint draws a (perspective) point in 3D space.
 //
 // now we define the function which, given 1 point in 3D, calculates where it ends up on the
 // virtual camera pointing toward positive z-axis and passes them to the failsafe pixel drawing function. 
 // ####################################################################################################################
-void xaddpoint_persp(float x1, float y1, float z1, float color[3])
+void drawPerspPoint(float x1, float y1, float z1, float color[3])
 {
 	glColor3f(color[0], color[1], color[2]);
 	glPointSize(2);
@@ -2362,16 +2362,16 @@ void xaddpoint_persp(float x1, float y1, float z1, float color[3])
 	glEnd();
 
 	glFlush();
-} // end xaddpoint_persp function
+} // end drawPerspPoint function
 
 // ####################################################################################################################
-// Function xaddline_persp draws a (perspective) line in 3D space.
+// Function drawPerspLine draws a (perspective) line in 3D space.
 //
 // now we define the function which, given 2 points in 3D, calculates where they end up on the
 // virtual camera pointing toward positive z-axis and passes them to the 2D line drawing function. 
 // ####################################################################################################################
-void xaddline_persp(float x1, float y1, float z1, 
-					float x2, float y2, float z2, float color[3])
+void drawPerspLine(float x1, float y1, float z1, 
+				   float x2, float y2, float z2, float color[3])
 {
 	glColor3f(color[0], color[1], color[2]);
 
@@ -2381,7 +2381,7 @@ void xaddline_persp(float x1, float y1, float z1,
 	glEnd();
 
 	glFlush();
-} // end xaddline_persp function
+} // end drawPerspLine function
 
 // ####################################################################################################################
 // Function addSmokeAtPoint draws smoke at the point (x0, y0, z0)
@@ -2542,7 +2542,7 @@ void addSmokeAtPoint(double x0, double y0, double z0, double dft, int option)
 				color[2] = colors[j][i][2];
 				color[3] = 0.1;
 
-				xaddftriang_persp( xt,  yt,  -zt,
+				drawFilledPerspTriangle( xt,  yt,  -zt,
 								  xt2, yt2, -zt2,
 								  xt3, yt3, -zt3, 
 								  color);
@@ -2683,13 +2683,13 @@ void addExplosionAtPoint(float x0, float y0, float z0, double dft, int option)
 			yt3 = Q[0] * (xm[i] - x) + Q[1] * (ym[i] + 1.2 * radius - y) + Q[2] * (zm[i] + radius - z);
 			zt3 = R[0] * (xm[i] - x) + R[1] * (ym[i] + 1.2 * radius - y) + R[2] * (zm[i] + radius - z);
 
-			xaddpoint_persp(xt, yt, -zt, color); // draw points in 3D scenario Z NEGATIVE!!!!!! 
+			drawPerspPoint(xt, yt, -zt, color); // draw points in 3D scenario Z NEGATIVE!!!!!! 
 
 			color[0] = colors[i][0];
 			color[1] = colors[i][1];
 			color[2] = colors[i][2];
 			color[3] = 1.0;
-			xaddftriang_persp( xt,  yt,  -zt,
+			drawFilledPerspTriangle( xt,  yt,  -zt,
 							  xt2, yt2, -zt2,
 							  xt3, yt3, -zt3, 
 							  color);
@@ -2744,7 +2744,7 @@ void launchProjectiles(float xpr, float ypr, float zpr,
 			yt = Q[0] * (xm - x) + Q[1] * (ym - y) + Q[2] * (zm - z);
 			zt = R[0] * (xm - x) + R[1] * (ym - y) + R[2] * (zm - z);
 
-			xaddpoint_persp(xt, yt, -zt, color); // draw points in 3D scenario Z NEGATIVE!!!!!! 
+			drawPerspPoint(xt, yt, -zt, color); // draw points in 3D scenario Z NEGATIVE!!!!!! 
 		}
 	}
 
@@ -2803,7 +2803,7 @@ void launchProjectiles(float xpr, float ypr, float zpr,
 					color[0] = 1.0;
 					color[1] = 0.6;
 					color[2] = 0.1;
-					xaddpoint_persp(xt, yt, -zt, color); // draw points in 3D scenario Z NEGATIVE!!!!!! 
+					drawPerspPoint(xt, yt, -zt, color); // draw points in 3D scenario Z NEGATIVE!!!!!! 
 				}
 			}
 		}
@@ -2956,12 +2956,12 @@ double getTerrainHeight(struct subterrain *ite, double x, double z)
 } // end getTerrainHeight function
 
 // ####################################################################################################################
-// Function xaddftriang_persp draws a (perspective) triangle in 3D space.
+// Function drawFilledPerspTriangle draws a (perspective) triangle in 3D space.
 //
 // now we define the function which, given 3 points in 3D, calculates where they end up on the
 // virtual camera pointing toward positive z-s and passes them to the 3D line drawing function. 
 // ####################################################################################################################
-void xaddftriang_persp(float x1, float y1, float z1,
+void drawFilledPerspTriangle(float x1, float y1, float z1,
 					   float x2, float y2, float z2,
 					   float x3, float y3, float z3,
 					   float color[4])
@@ -2975,7 +2975,7 @@ void xaddftriang_persp(float x1, float y1, float z1,
 	glEnd();
 
 	glFlush();
-} // end xaddftriang_persp function
+} // end drawFilledPerspTriangle function
 
 // ####################################################################################################################
 // Function drawTexturedTriangle
@@ -3211,9 +3211,9 @@ double bounceAirplane(double rx, double ry, double rz,
 } // end bounceAirplane function
 
 // ####################################################################################################################
-// Function make_inertia_tensor
+// Function makeInertiaTensor
 // ####################################################################################################################
-void make_inertia_tensor(int n_vertexs)
+void makeInertiaTensor(int n_vertexs)
 {
 // be very careful to assign storage space correctly!!!! otherwise it brings to 0 all elements!!!
 #define ne 1000
@@ -3264,7 +3264,7 @@ void make_inertia_tensor(int n_vertexs)
 
 	It_init[1][2] = -Iyz;
 	It_init[2][1] = -Iyz;
-} // end make_inertia_tensor function
+} // end makeInertiaTensor function
 
 // ####################################################################################################################
 // Function loadTerrainTextures
