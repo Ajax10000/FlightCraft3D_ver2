@@ -1,5 +1,9 @@
 Notes.txt 
 
+a.out is the original compiled version of FlightCraft.
+You can compare its performance against this version.
+
+// ####################################################################################################################
 The c and v keys, which rotate the viewpoint around the plane, only appear to work when view = 0 or 4.
 The r and f keys, which also rotate the viewpoint around the plane, only appear to work when view = 0 or 4.
 
@@ -112,7 +116,7 @@ Unused function parameters
 There are several functions that contain unused parameters:
 sdldislay (parameters sw and sh are not used)
 xaddpoint_persp (pbwidth and pbheight are not used)
-xaddline_persp (pb width and pbheight are not used)
+xaddline_persp (pbwidth and pbheight are not used)
 xaddftriang (parameters x1, y1, x2, y2, x3, y3, step, xlimit and ylimit are not used)
 xaddftriang_persp (parameters step, pbwidth and pbheight are not used)
 GLaddftriang_perspTEXTURED (parameters pbwidth and pbheight are not used)
