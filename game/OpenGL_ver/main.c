@@ -83,9 +83,10 @@ int main()
 			th_add = th_add + turnch * 0.01;
 		}
 
-		// None of the parameters passed to simulatePhysics is modified
+		// None of the parameters passed to simulatePhysics are modified
 		simulatePhysics(plane_up, plane_down, plane_inclleft, plane_inclright, h, g);
 
+		// If the plane collides with the ground, this routine will call function bounceAirplane.
 		checkForPlaneCollision();
 
 		// Cancella schermata/lavagna
