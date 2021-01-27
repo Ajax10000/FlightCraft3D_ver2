@@ -170,10 +170,10 @@ void addSmokeAtPoint(double x0, double y0, double z0, double dft, int option)
 				color[2] = colors[j][i][2];
 				color[3] = 0.1;
 
-				drawFilledPerspTriangle( xt,  yt,  -zt,
-								  xt2, yt2, -zt2,
-								  xt3, yt3, -zt3, 
-								  color);
+				drawFilledPerspTriangle(xt,  yt,  zt,
+										xt2, yt2, zt2,
+										xt3, yt3, zt3, 
+										color);
 			}
 		}
 
@@ -317,10 +317,11 @@ void addExplosionAtPoint(float x0, float y0, float z0, double dft, int option)
 			color[1] = colors[i][1];
 			color[2] = colors[i][2];
 			color[3] = 1.0;
-			drawFilledPerspTriangle( xt,  yt,  -zt,
-							  xt2, yt2, -zt2,
-							  xt3, yt3, -zt3, 
-							  color);
+
+			drawFilledPerspTriangle(xt,  yt,  zt,
+									xt2, yt2, zt2,
+									xt3, yt3, zt3, 
+									color);
 		}
 
 		count--;

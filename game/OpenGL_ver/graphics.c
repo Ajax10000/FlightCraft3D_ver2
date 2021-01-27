@@ -129,9 +129,9 @@ void drawFilledPerspTriangle(float x1, float y1, float z1,
 	glColor4f(color[0], color[1], color[2], color[3]);
 
 	glBegin(GL_TRIANGLES);
-		glVertex3f(x1, y1, -z1);
-		glVertex3f(x2, y2, -z2);
-		glVertex3f(x3, y3, -z3);
+		glVertex3f(x1, y1, z1);
+		glVertex3f(x2, y2, z2);
+		glVertex3f(x3, y3, z3);
 	glEnd();
 
 	glFlush();
