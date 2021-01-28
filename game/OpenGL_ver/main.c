@@ -23,8 +23,8 @@
 int main(void);
 void initSDL(void);
 void initOpenGL(void);
-void displayStatusInfo(int cycles, float h, float theta, float fi);
-void processEvent(float *turnch, float *turncv, float *RR, int *plane_up, int *plane_down, int *plane_inclleft, int *plane_inclright, float *h);
+void displayStatusInfo(int cycles, float h, float theta, float fi, float zoomFactor);
+void processEvent(float *turnch, float *turncv, float *zoomFactor, int *plane_up, int *plane_down, int *plane_inclleft, int *plane_inclright, float *h);
 void initData(float h);
 
 // #                                                                                                                  #
@@ -38,13 +38,13 @@ void initData(float h);
 int main()
 {
 	float turnch = 0.0; // used for smooth turning of virtual camera 
-	float turncv = 0.0; // used for smooth turning if virtual camera 
+	float turncv = 0.0; // used for smooth turning of virtual camera 
 	int plane_up = 0;
 	int plane_down = 0;
 	int plane_inclleft = 0;
 	int plane_inclright = 0;
-
-	float RR = 20.0;
+	// User can zoom in by pressing 1 key, and zoom out by pressing 2 key
+	float zoomFactor = 20.0;
 
 	// 3 angoli che indicano la orientazione del sistema di riferimento della telecaera virtuale, per dire 
 	// 3 angles that indicate the orientation of the reference system of the virtual camera, so to speak
@@ -96,7 +96,7 @@ int main()
 		updatePQRAxes(theta, fi);
 
 		// Update the virtual camera position x, y, z
-		updateVirtualCameraPos(RR);
+		updateVirtualCameraPos(zoomFactor);
 
 		// If we are not using low resolution ...
 		if (gloUsingLowResolution == 0)
@@ -129,7 +129,7 @@ int main()
 		if (cycles % 10 == 0)
 		{
 			// Display status/debugging information
-			displayStatusInfo(cycles, h, theta, fi);
+			displayStatusInfo(cycles, h, theta, fi, zoomFactor);
 		}
 
 		SDL_Delay(10);
@@ -137,7 +137,7 @@ int main()
 
 		while (SDL_PollEvent(&gloEvent))
 		{ 
-			processEvent(&turnch, &turncv, &RR, &plane_up, &plane_down, &plane_inclleft, &plane_inclright, &h);
+			processEvent(&turnch, &turncv, &zoomFactor, &plane_up, &plane_down, &plane_inclleft, &plane_inclright, &h);
 			
 			// if graphic window is closed, terminate program 
 			if (gloEvent.type == SDL_QUIT)
@@ -273,19 +273,23 @@ void initData(float h)
 // ####################################################################################################################
 // Function displayStatusInfo
 // ####################################################################################################################
-void displayStatusInfo(int cycles, float h, float theta, float fi)
+void displayStatusInfo(int cycles, float h, float theta, float fi, float zoomFactor)
 {
 	int i, j;
 
 	// Display status/debugging information
 	printf("GAME TIME [sec] =  %f \n", cycles * h);
-	printf("GOING ON...game cycle %i : plane position: x = %f, y = %f, z = %f \n theta = %3.2f, fi = %f3.2\n", cycles, x, y, z, theta, fi);
+	printf("GOING ON...game cycle %i : theta = %3.3f, fi = %f3.3\n", cycles, theta, fi);
+	printf("Plane position: xp = %f, yp = %f, zp = %f\n", xp, yp, zp);
+	printf("Virtual camera position: x = %f, y = %f, z = %f\n", x, y , z);
+    printf("ZoomFactor = %f\n", zoomFactor);
+	printf("View = %d\n", gloView);
 
 	for (j = 0; j < 10; j++)
 	{
 		for (i = 0; i < 10; i++)
 		{
-			printf("%2i|", gloTexIds[gloTerrain.map_texture_indexes[j][i]]);
+			printf("%3i|", gloTexIds[gloTerrain.map_texture_indexes[j][i]]);
 		}
 		printf("\n");
 	}
@@ -294,7 +298,7 @@ void displayStatusInfo(int cycles, float h, float theta, float fi)
 // ####################################################################################################################
 // Function processEvent
 // ####################################################################################################################
-void processEvent(float *turnch, float *turncv, float *RR, 
+void processEvent(float *turnch, float *turncv, float *zoomFactor, 
 				  int *plane_up, int *plane_down, int *plane_inclleft, int *plane_inclright, float *h)
 {
 	// Loop until there are no events left on the queue 
@@ -341,7 +345,13 @@ void processEvent(float *turnch, float *turncv, float *RR,
 
 		if (gloEvent.key.keysym.sym == SDLK_1)
 		{
-			*RR = *RR - 2.0; 
+			if (*zoomFactor == 0) 
+			{
+				printf("Cannot zoom any more, at maximum zoom.\n");
+			} else 
+			{
+				*zoomFactor = *zoomFactor - 2.0; 
+			}
 			if (gloView == 4)
 			{
 				x_cockpit_view = x_cockpit_view - 0.1;
@@ -349,7 +359,7 @@ void processEvent(float *turnch, float *turncv, float *RR,
 		}
 		if (gloEvent.key.keysym.sym == SDLK_2)
 		{
-			*RR = *RR + 2.0;
+			*zoomFactor = *zoomFactor + 2.0;
 			if (gloView == 4)
 			{
 				x_cockpit_view = x_cockpit_view + 0.1;
@@ -419,7 +429,7 @@ void processEvent(float *turnch, float *turncv, float *RR,
 			aboard = -1 * aboard;
 			x_pilot = xp;
 			y_pilot = yp;
-			*RR = 1.5;
+			*zoomFactor = 1.5;
 		}
 
 		if (gloEvent.key.keysym.sym == SDLK_5)
@@ -450,12 +460,10 @@ void processEvent(float *turnch, float *turncv, float *RR,
 		}
 		if (gloEvent.key.keysym.sym == SDLK_LEFT || gloEvent.key.keysym.sym == SDLK_a)
 		{
-			// test
 			*plane_inclleft = 1;
 		}
 		if (gloEvent.key.keysym.sym == SDLK_RIGHT || gloEvent.key.keysym.sym == SDLK_d)
 		{
-			// test
 			*plane_inclright = 1;
 		}
 	} // end condition of if-keypress-is-detected 
