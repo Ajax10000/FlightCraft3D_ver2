@@ -284,6 +284,7 @@ void displayStatusInfo(int cycles, float h, float theta, float fi, float zoomFac
 	printf("Virtual camera position: x = %f, y = %f, z = %f\n", x, y , z);
     printf("ZoomFactor = %f\n", zoomFactor);
 	printf("View = %d\n", gloView);
+	printf("x_cockpit_view, y_cockpit_view, z_cockpit_view: %f, %f, %f\n", x_cockpit_view, y_cockpit_view, z_cockpit_view);
 
 	for (j = 0; j < 10; j++)
 	{
@@ -352,34 +353,70 @@ void processEvent(float *turnch, float *turncv, float *zoomFactor,
 			{
 				*zoomFactor = *zoomFactor - 2.0; 
 			}
-			if (gloView == 4)
-			{
-				x_cockpit_view = x_cockpit_view - 0.1;
-			}
 		}
 		if (gloEvent.key.keysym.sym == SDLK_2)
 		{
 			*zoomFactor = *zoomFactor + 2.0;
-			if (gloView == 4)
-			{
-				x_cockpit_view = x_cockpit_view + 0.1;
-			}
 		}
 
-		if (gloEvent.key.keysym.sym == SDLK_3)
+		// If we're in view mode 4 (i.e., looking from within the cockpit)
+		if (gloView == 4)
 		{
-			y_cockpit_view = y_cockpit_view + 0.1;
-			if (y_cockpit_view > 2.0)
+			// If user is pressing shift-x, increase x_cockpit_view
+			if ((gloEvent.key.keysym.mod & KMOD_SHIFT) && (gloEvent.key.keysym.sym == SDLK_x))
 			{
-				y_cockpit_view = -2.0;
+				x_cockpit_view = x_cockpit_view + 0.1;
+				if (x_cockpit_view > 2.0)
+				{
+					x_cockpit_view = -2.0;
+				}
+			} 
+			// if user is just pressing x, decrease x_cockpit_view
+			else if (gloEvent.key.keysym.sym == SDLK_x)
+			{
+				x_cockpit_view = x_cockpit_view - 0.1;
+				if (x_cockpit_view < -2.0)
+				{
+					x_cockpit_view = 2.0;
+				}
 			}
-		}
-		if (gloEvent.key.keysym.sym == SDLK_4)
-		{
-			z_cockpit_view = z_cockpit_view + 0.1;
-			if (z_cockpit_view > 2.0)
+
+			// If user is pressing shift-y, increase y_cockpit_view
+			if ((gloEvent.key.keysym.mod & KMOD_SHIFT) && (gloEvent.key.keysym.sym == SDLK_y))
 			{
-				z_cockpit_view = -2.0;
+				y_cockpit_view = y_cockpit_view + 0.1;
+				if (y_cockpit_view > 2.0)
+				{
+					y_cockpit_view = -2.0;
+				}
+			} 
+			// if user is just pressing y, decrease y_cockpit_view
+			else if (gloEvent.key.keysym.sym == SDLK_y)
+			{
+				y_cockpit_view = y_cockpit_view - 0.1;
+				if (y_cockpit_view < -2.0)
+				{
+					y_cockpit_view = 2.0;
+				}
+			}
+
+			// If user is pressing shift-z, increase z_cockpit_view
+			if ((gloEvent.key.keysym.mod & KMOD_SHIFT) && (gloEvent.key.keysym.sym == SDLK_z))
+			{
+				z_cockpit_view = z_cockpit_view + 0.1;
+				if (z_cockpit_view > 2.0)
+				{
+					z_cockpit_view = -2.0;
+				}
+			}
+			// if user is just pressing z, decrease z_cockpit_view
+			else if (gloEvent.key.keysym.sym == SDLK_z)
+			{
+				z_cockpit_view = z_cockpit_view - 0.1;
+				if (z_cockpit_view < -2.0)
+				{
+					z_cockpit_view = 2.0;
+				}
 			}
 		}
 
