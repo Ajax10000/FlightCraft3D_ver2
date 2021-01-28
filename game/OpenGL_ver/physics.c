@@ -33,9 +33,9 @@ void initPhysicsVars()
 	p[2] = MASS * v[2];
 
 	// angular momentum (angular/rotational quantity)
-	L[0] = It_now[0][0] * w[0] + It_now[0][1] * w[1] + It_now[0][2] * w[2];
-	L[1] = It_now[1][0] * w[0] + It_now[1][1] * w[1] + It_now[1][2] * w[2];
-	L[2] = It_now[2][0] * w[0] + It_now[2][1] * w[1] + It_now[2][2] * w[2];
+	L[0] = It_now[0][0] * w[0]  +  It_now[0][1] * w[1]  +  It_now[0][2] * w[2];
+	L[1] = It_now[1][0] * w[0]  +  It_now[1][1] * w[1]  +  It_now[1][2] * w[2];
+	L[2] = It_now[2][0] * w[0]  +  It_now[2][1] * w[1]  +  It_now[2][2] * w[2];
 
 	invert3x3Matrix(It_init); // puts the inverse matrix into the "gloResultMatrix" global variable. 
 
@@ -84,9 +84,9 @@ void makeInertiaTensor(int n_vertexs)
 	for (i = 0; i < n_vertexs; i++)
 	{
 		// those 'principal moments of inertia'...
-		Ixxe[i] = std_vxmass * (pow(gloPunti[i][1], 2) + pow(gloPunti[i][2], 2)); // y2 + z2
-		Iyye[i] = std_vxmass * (pow(gloPunti[i][0], 2) + pow(gloPunti[i][2], 2)); // x2 + z2
-		Izze[i] = std_vxmass * (pow(gloPunti[i][0], 2) + pow(gloPunti[i][1], 2)); // x2 + y2
+		Ixxe[i] = std_vxmass * (pow(gloPunti[i][1], 2) + pow(gloPunti[i][2], 2)); // y^2 + z^2
+		Iyye[i] = std_vxmass * (pow(gloPunti[i][0], 2) + pow(gloPunti[i][2], 2)); // x^2 + z^2
+		Izze[i] = std_vxmass * (pow(gloPunti[i][0], 2) + pow(gloPunti[i][1], 2)); // x^2 + y^2
 
 		// those 'products of inertia'...
 		Ixye[i] = std_vxmass * (gloPunti[i][0] * gloPunti[i][1]); // xy
@@ -131,7 +131,6 @@ void simulatePhysics(int plane_up, int plane_down, int plane_inclleft, int plane
 
 	updateTorque(plane_up, plane_down, plane_inclleft, plane_inclright);
 
-	// ===========PHYSICS PROCEDURE=============
 	// Sembra tutto OK / Everything seems OK
 	reorientAxes();
 
@@ -142,27 +141,23 @@ void simulatePhysics(int plane_up, int plane_down, int plane_inclleft, int plane
 	// and torque due to a rudimental plane aerodynamical forces' consideration
 	float vpar;
 	float vlat;
-
 	float rot1;
 	float rot2;
 	float rot3;
 
-	vlat = gloAxis3[0] * v[0] + gloAxis3[1] * v[1] + gloAxis3[2] * v[2]; // dot product calculated directly
-
+	vlat  = gloAxis3[0] * v[0] + gloAxis3[1] * v[1] + gloAxis3[2] * v[2]; // dot product calculated directly
 	vperp = gloAxis2[0] * v[0] + gloAxis2[1] * v[1] + gloAxis2[2] * v[2]; // dot product calculated directly
+	vpar  = gloAxis1[0] * v[0] + gloAxis1[1] * v[1] + gloAxis1[2] * v[2];
 
-	vpar = gloAxis1[0] * v[0] + gloAxis1[1] * v[1] + gloAxis1[2] * v[2];
+	rot1  = gloAxis1[0] * w[0] + gloAxis1[1] * w[1] + gloAxis1[2] * w[2]; // how much it rotates around axis 1 (nose--> back)
+	rot2  = gloAxis2[0] * w[0] + gloAxis2[1] * w[1] + gloAxis2[2] * w[2]; // how much it rotates around axis 2 (perp to wings)
+	rot3  = gloAxis3[0] * w[0] + gloAxis3[1] * w[1] + gloAxis3[2] * w[2]; // how much it rotates around axis 3 (parallel to wings)
+	// effect (in a very rudimentary approximation of aerodynamics, not scientific at all) of air friction
+	// on the motion of Center of Mass directly.
 
-	rot1 = gloAxis1[0] * w[0] + gloAxis1[1] * w[1] + gloAxis1[2] * w[2]; // how much it rotates around axis 1 (nose--> back)
-
-	rot2 = gloAxis2[0] * w[0] + gloAxis2[1] * w[1] + gloAxis2[2] * w[2]; // how much it rotates around axis 2 (perp to wings)
-
-	rot3 = gloAxis3[0] * w[0] + gloAxis3[1] * w[1] + gloAxis3[2] * w[2]; // how much it rotates around axis 3 (parallel to wings)
-	// effect (IN A VERY RUDIMENTAL CONCEPTION OF AERODYNAMICS, NOT SCIENTIFIC AT ALL) of air friction on the motion of Center of Mass directly.
-
-	Fcm[0] += -k_visc * vperp * gloAxis2[0] - k_visc2 * vlat * gloAxis3[0] - k_visc3 * vpar * gloAxis1[0] + Pforce * gloAxis1[0];
-	Fcm[1] += -k_visc * vperp * gloAxis2[1] - k_visc2 * vlat * gloAxis3[1] - k_visc3 * vpar * gloAxis1[1] + Pforce * gloAxis1[1];
-	Fcm[2] += -k_visc * vperp * gloAxis2[2] - k_visc2 * vlat * gloAxis3[2] - k_visc3 * vpar * gloAxis1[2] + Pforce * gloAxis1[2];
+	Fcm[0] += -k_visc * vperp * gloAxis2[0]  -  k_visc2 * vlat * gloAxis3[0]  -  k_visc3 * vpar * gloAxis1[0]  +  Pforce * gloAxis1[0];
+	Fcm[1] += -k_visc * vperp * gloAxis2[1]  -  k_visc2 * vlat * gloAxis3[1]  -  k_visc3 * vpar * gloAxis1[1]  +  Pforce * gloAxis1[1];
+	Fcm[2] += -k_visc * vperp * gloAxis2[2]  -  k_visc2 * vlat * gloAxis3[2]  -  k_visc3 * vpar * gloAxis1[2]  +  Pforce * gloAxis1[2];
 
 	// same for the rotational motion. other effects are not considered.
 	// if you're an expert of aeromobilism, you can write better, just substitute these weak formulas for better ones.
@@ -172,7 +167,7 @@ void simulatePhysics(int plane_up, int plane_down, int plane_inclleft, int plane
 	gloTtlTorque[1] += -vpar * k_visc_rot_STABILIZE * w[1];
 	gloTtlTorque[2] += -vpar * k_visc_rot_STABILIZE * w[2];
 
-	double boh = gloAxis3[0] * v[0] + gloAxis3[1] * v[1] + gloAxis3[2] * v[2];
+	double boh = gloAxis3[0] * v[0]  +  gloAxis3[1] * v[1]  +  gloAxis3[2] * v[2];
 
 	// effetto coda verticale: decente...
 	// vertical tail effect: decent ...
@@ -180,32 +175,30 @@ void simulatePhysics(int plane_up, int plane_down, int plane_inclleft, int plane
 	gloTtlTorque[1] += -k_visc_rot3 * (boh)*gloAxis2[1];
 	gloTtlTorque[2] += -k_visc_rot3 * (boh)*gloAxis2[2];
 
-	// =======tota Fcm and toal torque DONE=============
+	// total Fcm and total torque done
 
-	// ===UPDATE VELOCITY, LINEAR AND ANGULAR TOO===
+	// Update velocity, linear and angular too
 	// momentum p (linear quantity)
 	p[0] = MASS * v[0];
 	p[1] = MASS * v[1];
 	p[2] = MASS * v[2];
 
-	p[0] = p[0] + Fcm[0] * h;
-	p[1] = p[1] + Fcm[1] * h; // we model gravity as a force given by: g*MASS, downward 
-	p[2] = p[2] + Fcm[2] * h + g * MASS * h;
+	p[0] = p[0]  +  Fcm[0] * h;
+	p[1] = p[1]  +  Fcm[1] * h; // we model gravity as a force given by: g*MASS, downward 
+	p[2] = p[2]  +  Fcm[2] * h  +  g * MASS * h;
 
 	v[0] = p[0] / MASS;
 	v[1] = p[1] / MASS;
 	v[2] = p[2] / MASS;
 
-	L[0] = L[0] + gloTtlTorque[0] * h;
-	L[1] = L[1] + gloTtlTorque[1] * h;
-	L[2] = L[2] + gloTtlTorque[2] * h;
+	L[0] = L[0]  +  gloTtlTorque[0] * h;
+	L[1] = L[1]  +  gloTtlTorque[1] * h;
+	L[2] = L[2]  +  gloTtlTorque[2] * h;
 
 	// now we get the updated velocity, component by component.
-	w[0] = inv_It_now[0][0] * L[0] + inv_It_now[0][1] * L[1] + inv_It_now[0][2] * L[2];
-
-	w[1] = inv_It_now[1][0] * L[0] + inv_It_now[1][1] * L[1] + inv_It_now[1][2] * L[2];
-
-	w[2] = inv_It_now[2][0] * L[0] + inv_It_now[2][1] * L[1] + inv_It_now[2][2] * L[2];
+	w[0] = inv_It_now[0][0] * L[0]  +  inv_It_now[0][1] * L[1]  +  inv_It_now[0][2] * L[2];
+	w[1] = inv_It_now[1][0] * L[0]  +  inv_It_now[1][1] * L[1]  +  inv_It_now[1][2] * L[2];
+	w[2] = inv_It_now[2][0] * L[0]  +  inv_It_now[2][1] * L[1]  +  inv_It_now[2][2] * L[2];
 
 	// angular momentum (angular/rotational quantity)
 
@@ -218,9 +211,9 @@ void simulatePhysics(int plane_up, int plane_down, int plane_inclleft, int plane
 
 	// update position and orientation
 	// xp, yp, zp give the location of the airplane
-	xp = xp + v[0] * h;
-	yp = yp + v[1] * h;
-	zp = zp + v[2] * h;
+	xp = xp  +  v[0] * h;
+	yp = yp  +  v[1] * h;
+	zp = zp  +  v[2] * h;
 
 	// update orientation 
 	w_abs = sqrt(w[0] * w[0] + w[1] * w[1] + w[2] * w[2]);
@@ -374,9 +367,6 @@ void simulatePhysics(int plane_up, int plane_down, int plane_inclleft, int plane
 	}
 	// Done calculating inv_It_now
 	// -----------------------------------------------------------
-
-	//=================DONE UPDATE OF ORIENTATION MATRIX and intertia tensor=================
-	//====END PHYSICALLY SIMULATED UPDATE OF AIRPLANE POS AND ROTATION, ORIENTAION=====	
 } // end simulatePhysics function 
 
 // ####################################################################################################################
@@ -399,18 +389,18 @@ double bounceAirplane(double rx, double ry, double rz,
 	vector1[1] = ry;
 	vector1[2] = rz;
 
-	axis[0] = vector0[1] * vector1[2] - vector0[2] * vector1[1]; // x component
-	axis[1] = vector0[2] * vector1[0] - vector0[0] * vector1[2]; // y component
-	axis[2] = vector0[0] * vector1[1] - vector0[1] * vector1[0]; // z component
+	axis[0] = vector0[1] * vector1[2]  -  vector0[2] * vector1[1]; // x component
+	axis[1] = vector0[2] * vector1[0]  -  vector0[0] * vector1[2]; // y component
+	axis[2] = vector0[0] * vector1[1]  -  vector0[1] * vector1[0]; // z component
 
 	// let's do the hit resolution in a correct way, also becuase when it can be done, let's do it: 
 	// good collision simulation for single rigid-body make good landings.
 
-	vvertex[0] = v[0] + w[1] * vector1[2] - w[2] * vector1[1]; // x component
-	vvertex[1] = v[1] + w[2] * vector1[0] - w[0] * vector1[2]; // y component
-	vvertex[2] = v[2] + w[0] * vector1[1] - w[1] * vector1[0]; // z component
+	vvertex[0] = v[0]  +  w[1] * vector1[2]  -  w[2] * vector1[1]; // x component
+	vvertex[1] = v[1]  +  w[2] * vector1[0]  -  w[0] * vector1[2]; // y component
+	vvertex[2] = v[2]  +  w[0] * vector1[1]  -  w[1] * vector1[0]; // z component
 
-	vnorm = nx * vvertex[0] + ny * vvertex[1] + nz * vvertex[2];
+	vnorm = nx * vvertex[0]  +  ny * vvertex[1]  +  nz * vvertex[2];
 	if (vnorm < 0)
 	{ 
 		// safecheck of right collision... it never will certainly rebounce *towards* the 
@@ -423,25 +413,25 @@ double bounceAirplane(double rx, double ry, double rz,
 		vector1[1] = ny;
 		vector1[2] = nz;
 
-		auxv[0] = vector0[1] * vector1[2] - vector0[2] * vector1[1]; // x component
-		auxv[1] = vector0[2] * vector1[0] - vector0[0] * vector1[2]; // y component
-		auxv[2] = vector0[0] * vector1[1] - vector0[1] * vector1[0]; // z component
+		auxv[0] = vector0[1] * vector1[2]  -  vector0[2] * vector1[1]; // x component
+		auxv[1] = vector0[2] * vector1[0]  -  vector0[0] * vector1[2]; // y component
+		auxv[2] = vector0[0] * vector1[1]  -  vector0[1] * vector1[0]; // z component
 
 		// implement directly this: mat3x3_vect( inbody[0].TIworInv, auxv )
-		auxv2[0] = inv_It_now[0][0] * auxv[0] + inv_It_now[0][1] * auxv[1] + inv_It_now[0][2] * auxv[2]; // x component
-		auxv2[1] = inv_It_now[1][0] * auxv[0] + inv_It_now[1][1] * auxv[1] + inv_It_now[1][2] * auxv[2]; // y component
-		auxv2[2] = inv_It_now[2][0] * auxv[0] + inv_It_now[2][1] * auxv[1] + inv_It_now[2][2] * auxv[2]; // z component
+		auxv2[0] = inv_It_now[0][0] * auxv[0]  +  inv_It_now[0][1] * auxv[1]  +  inv_It_now[0][2] * auxv[2]; // x component
+		auxv2[1] = inv_It_now[1][0] * auxv[0]  +  inv_It_now[1][1] * auxv[1]  +  inv_It_now[1][2] * auxv[2]; // y component
+		auxv2[2] = inv_It_now[2][0] * auxv[0]  +  inv_It_now[2][1] * auxv[1]  +  inv_It_now[2][2] * auxv[2]; // z component
 
 		UP = -(1.0 + e) * vnorm;
-		DOWN = 1.0 / MASS + (auxv[0] * auxv2[0] + auxv[1] * auxv2[1] + auxv[2] * auxv2[2]);
+		DOWN = 1.0 / MASS  +  (auxv[0] * auxv2[0] + auxv[1] * auxv2[1] + auxv[2] * auxv2[2]);
 
 		jel = UP / DOWN;
 		// "jel" is the right impulse, now appy the impulse and assign final velocity and rotation.
 
 		// update velocity of CM...
-		v[0] = v[0] + (jel / MASS) * nx;
-		v[1] = v[1] + (jel / MASS) * ny;
-		v[2] = v[2] + (jel / MASS) * nz;
+		v[0] = v[0]  +  (jel / MASS) * nx;
+		v[1] = v[1]  +  (jel / MASS) * ny;
+		v[2] = v[2]  +  (jel / MASS) * nz;
 
 		// update rotation... this is the hardest one:
 		vector0[0] = rx;
@@ -452,24 +442,24 @@ double bounceAirplane(double rx, double ry, double rz,
 		vector1[1] = jel * ny;
 		vector1[2] = jel * nz;
 
-		auxv[0] = vector0[1] * vector1[2] - vector0[2] * vector1[1]; // x component
-		auxv[1] = vector0[2] * vector1[0] - vector0[0] * vector1[2]; // y component
-		auxv[2] = vector0[0] * vector1[1] - vector0[1] * vector1[0]; // z component
+		auxv[0] = vector0[1] * vector1[2]  -  vector0[2] * vector1[1]; // x component
+		auxv[1] = vector0[2] * vector1[0]  -  vector0[0] * vector1[2]; // y component
+		auxv[2] = vector0[0] * vector1[1]  -  vector0[1] * vector1[0]; // z component
 
 		// implement directly this: mat3x3_vect( inbody[0].TIworInv, auxv )
 
-		auxv2[0] = inv_It_now[0][0] * auxv[0] + inv_It_now[0][1] * auxv[1] + inv_It_now[0][2] * auxv[2]; // x component
-		auxv2[1] = inv_It_now[1][0] * auxv[0] + inv_It_now[1][1] * auxv[1] + inv_It_now[1][2] * auxv[2]; // y component
-		auxv2[2] = inv_It_now[2][0] * auxv[0] + inv_It_now[2][1] * auxv[1] + inv_It_now[2][2] * auxv[2]; // z component
+		auxv2[0] = inv_It_now[0][0] * auxv[0]  +  inv_It_now[0][1] * auxv[1]  +  inv_It_now[0][2] * auxv[2]; // x component
+		auxv2[1] = inv_It_now[1][0] * auxv[0]  +  inv_It_now[1][1] * auxv[1]  +  inv_It_now[1][2] * auxv[2]; // y component
+		auxv2[2] = inv_It_now[2][0] * auxv[0]  +  inv_It_now[2][1] * auxv[1]  +  inv_It_now[2][2] * auxv[2]; // z component
 
 		w[0] = w[0] + auxv2[0];
 		w[1] = w[1] + auxv2[1];
 		w[2] = w[2] + auxv2[2];
 
 		// update also this, to be sure you know... .
-		L[0] = It_now[0][0] * w[0] + It_now[0][1] * w[1] + It_now[0][2] * w[2];
-		L[1] = It_now[1][0] * w[0] + It_now[1][1] * w[1] + It_now[1][2] * w[2];
-		L[2] = It_now[2][0] * w[0] + It_now[2][1] * w[1] + It_now[2][2] * w[2];
+		L[0] = It_now[0][0] * w[0]  +  It_now[0][1] * w[1]  +  It_now[0][2] * w[2];
+		L[1] = It_now[1][0] * w[0]  +  It_now[1][1] * w[1]  +  It_now[1][2] * w[2];
+		L[2] = It_now[2][0] * w[0]  +  It_now[2][1] * w[1]  +  It_now[2][2] * w[2];
 
 		printf("COLLISION BEING RESOLVED ....\n\n");
 	}
