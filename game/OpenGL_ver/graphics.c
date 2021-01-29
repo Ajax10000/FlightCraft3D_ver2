@@ -328,30 +328,32 @@ void updatePQRAxes(float theta, float fi)
 void reorientAxes()
 {
     // Calculate axes in their new 'orientation', using the orientation matrix.
+	// gloOrigAxis1[3] = {1.0, 0.0, 0.0};
+    gloAxis1[0] = Rm[0][0]; // * gloOrigAxis1[0]  +  Rm[0][1] * gloOrigAxis1[1]  +  Rm[0][2] * gloOrigAxis1[2];
+    gloAxis1[1] = Rm[1][0]; // * gloOrigAxis1[0]  +  Rm[1][1] * gloOrigAxis1[1]  +  Rm[1][2] * gloOrigAxis1[2];
+    gloAxis1[2] = Rm[2][0]; // * gloOrigAxis1[0]  +  Rm[2][1] * gloOrigAxis1[1]  +  Rm[2][2] * gloOrigAxis1[2];
 
-    gloAxis1[0] = Rm[0][0] * gloOrigAxis1[0]  +  Rm[0][1] * gloOrigAxis1[1]  +  Rm[0][2] * gloOrigAxis1[2];
-    gloAxis1[1] = Rm[1][0] * gloOrigAxis1[0]  +  Rm[1][1] * gloOrigAxis1[1]  +  Rm[1][2] * gloOrigAxis1[2];
-    gloAxis1[2] = Rm[2][0] * gloOrigAxis1[0]  +  Rm[2][1] * gloOrigAxis1[1]  +  Rm[2][2] * gloOrigAxis1[2];
+	// gloOrigAxis2[3] = {0.0, 1.0, 0.0};
+    gloAxis2[0] = /* Rm[0][0] * gloOrigAxis2[0] */ +  Rm[0][1]; // * gloOrigAxis2[1]  +  Rm[0][2] * gloOrigAxis2[2]; 
+    gloAxis2[1] = /* Rm[1][0] * gloOrigAxis2[0] */ +  Rm[1][1]; // * gloOrigAxis2[1]  +  Rm[1][2] * gloOrigAxis2[2];
+    gloAxis2[2] = /* Rm[2][0] * gloOrigAxis2[0] */ +  Rm[2][1]; // * gloOrigAxis2[1]  +  Rm[2][2] * gloOrigAxis2[2];
 
-    gloAxis2[0] = Rm[0][0] * gloOrigAxis2[0]  +  Rm[0][1] * gloOrigAxis2[1]  +  Rm[0][2] * gloOrigAxis2[2]; 
-    gloAxis2[1] = Rm[1][0] * gloOrigAxis2[0]  +  Rm[1][1] * gloOrigAxis2[1]  +  Rm[1][2] * gloOrigAxis2[2];
-    gloAxis2[2] = Rm[2][0] * gloOrigAxis2[0]  +  Rm[2][1] * gloOrigAxis2[1]  +  Rm[2][2] * gloOrigAxis2[2];
+	// gloOrigAxis3[3] = {0.0, 0.0, 1.0};
+    gloAxis3[0] = /* Rm[0][0] * gloOrigAxis3[0]  +  Rm[0][1] * gloOrigAxis3[1] */ +  Rm[0][2]; //* gloOrigAxis3[2];
+    gloAxis3[1] = /* Rm[1][0] * gloOrigAxis3[0]  +  Rm[1][1] * gloOrigAxis3[1] */ +  Rm[1][2]; //* gloOrigAxis3[2];
+    gloAxis3[2] = /* Rm[2][0] * gloOrigAxis3[0]  +  Rm[2][1] * gloOrigAxis3[1] */ +  Rm[2][2]; //* gloOrigAxis3[2];
 
-    gloAxis3[0] = Rm[0][0] * gloOrigAxis3[0]  +  Rm[0][1] * gloOrigAxis3[1]  +  Rm[0][2] * gloOrigAxis3[2];
-    gloAxis3[1] = Rm[1][0] * gloOrigAxis3[0]  +  Rm[1][1] * gloOrigAxis3[1]  +  Rm[1][2] * gloOrigAxis3[2];
-    gloAxis3[2] = Rm[2][0] * gloOrigAxis3[0]  +  Rm[2][1] * gloOrigAxis3[1]  +  Rm[2][2] * gloOrigAxis3[2];
+    Pa[0] = gloAxis1[0]; // = Rm[0][0]
+    Pa[1] = gloAxis1[1]; // = Rm[1][0]
+    Pa[2] = gloAxis1[2]; // = Rm[2][0]
 
-    Pa[0] = gloAxis1[0];
-    Pa[1] = gloAxis1[1];
-    Pa[2] = gloAxis1[2];
+    Qa[0] = gloAxis2[0]; // = Rm[0][1]
+    Qa[1] = gloAxis2[1]; // = Rm[1][1]
+    Qa[2] = gloAxis2[2]; // = Rm[2][1]
 
-    Qa[0] = gloAxis2[0];
-    Qa[1] = gloAxis2[1];
-    Qa[2] = gloAxis2[2];
-
-    Ra[0] = gloAxis3[0];
-    Ra[1] = gloAxis3[1];
-    Ra[2] = gloAxis3[2];
+    Ra[0] = gloAxis3[0]; // = Rm[0][2]
+    Ra[1] = gloAxis3[1]; // = Rm[1][2]
+    Ra[2] = gloAxis3[2]; // = Rm[2][2]
 } // end reorientAxes function
 
 // ####################################################################################################################
@@ -363,6 +365,8 @@ void reorientAxes()
 //      and so the user zooms in to the plane's CM.
 //      When the user presses 2, the user's distance to the plane becomes longer (zoomFactor = zoomFactor + 2.0), 
 //      and so the user zooms out from the plane's CM.
+//
+// Called only from function main in main.c
 // ####################################################################################################################
 void updateVirtualCameraPos(float zoomFactor)
 {
