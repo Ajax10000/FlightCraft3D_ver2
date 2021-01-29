@@ -25,11 +25,17 @@ void addSmokeAtPoint(double x0, double y0, double z0, double dft, int option)
 	// visc = coefficient of viscous force 
 	static int visc = 3.9; // why is visc given the value 3.9 when it is defined as an int?
 	static int MAXN, N_as = 1;
-	static double xc, yc, zc, radius[NAUTSM][NPS], Vix = 0.0, Viy = 0.0, Viz = 2.0;
-	int i, j, k;
-	static double xm[NAUTSM][NPS], ym[NAUTSM][NPS], zm[NAUTSM][NPS], vx[NAUTSM][NPS], vy[NAUTSM][NPS], vz[NAUTSM][NPS];
-	float xt, yt, zt, xt2, yt2, zt2, xt3, yt3, zt3, color[4], colors[NAUTSM][NPS][3];
+	static double xc, yc, zc;
+	static double radius[NAUTSM][NPS];
+	static double Vix = 0.0, Viy = 0.0, Viz = 2.0;
+	static double xm[NAUTSM][NPS], ym[NAUTSM][NPS], zm[NAUTSM][NPS];
+	static double vx[NAUTSM][NPS], vy[NAUTSM][NPS], vz[NAUTSM][NPS];
 	static int auxc = 0;
+	int i, j, k;
+	float xt, yt, zt;
+	float xt2, yt2, zt2;
+	float xt3, yt3, zt3;
+	float color[4], colors[NAUTSM][NPS][3];
 
 	glDisable(GL_DEPTH_TEST);
 	if (option == 1 && N_as < NAUTSM)
@@ -228,10 +234,17 @@ void addExplosionAtPoint(float x0, float y0, float z0, double dft, int option)
 {
 #define NP 100
 	static int count = 0, LT = 400; // sequence lifetime
-	static float xc, yc, zc, radius = 4.2, color[4], colors[NP][3], Vix = 4.0, Viy = 4.0, Viz = 20.3, visc = 0.95;
+	static float xc, yc, zc;
+	static float radius = 4.2;
+	static float color[4], colors[NP][3];
+	static float Vix = 4.0, Viy = 4.0, Viz = 20.3;
+	static float visc = 0.95;
+	static float xm[NP], ym[NP], zm[NP];
+	static float vx[NP], vy[NP], vz[NP];
 	int i, j, k, auxc;
-	static float xm[NP], ym[NP], zm[NP], vx[NP], vy[NP], vz[NP];
-	float xt, yt, zt, xt2, yt2, zt2, xt3, yt3, zt3;
+	float xt, yt, zt;
+	float xt2, yt2, zt2;
+	float xt3, yt3, zt3;
 
 	if (option == 1)
 	{
@@ -338,10 +351,11 @@ void launchProjectiles(float xpr, float ypr, float zpr,
 	static int n = 0;
 	static float poss[100][3];
 	static float vels[100][3];
+	static int life[100];
 	float color[3] = {1.0, 0.0, 1.0};
 	float th_sph; // theta or spherical coordinated, used for a spherical 'explosion' 
-	static int life[100];
-	float xm, ym, zm, xt, yt, zt;
+	float xm, ym, zm;
+	float xt, yt, zt;
 	int i, k;
 
 	if (do_add == 1)
@@ -407,8 +421,10 @@ void launchProjectiles(float xpr, float ypr, float zpr,
 					gloTerrain.scol [(int)(poss[i][0] / gloTerrain.GPunit)][(int)(poss[i][1] / gloTerrain.GPunit)][1] = 0.8 * gloTerrain.scol [(int)(poss[i][0] / gloTerrain.GPunit)][(int)(poss[i][1] / gloTerrain.GPunit)][1];
 
 					printf(">>>>>>>>>IMPACT \n");
-					addSmokeAtPoint(poss[i][0], poss[i][1], poss[i][2], dft, 1);		  // add a smoke sequence at disappeared point.
-					addExplosionAtPoint(poss[i][0], poss[i][1], poss[i][2], dft, 1); // add a frantumation sequance at disappeared point.
+					// add a smoke sequence at disappeared point
+					addSmokeAtPoint(poss[i][0], poss[i][1], poss[i][2], dft, 1); 
+					// add a frantumation sequence at disappeared point
+					addExplosionAtPoint(poss[i][0], poss[i][1], poss[i][2], dft, 1); 
 				}
 			}
 		}
