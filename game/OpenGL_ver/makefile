@@ -30,5 +30,5 @@ trees.o: trees.c trees.h globals.h
 
 clean: 
 	rm *.o 
-	rm cf3D 
+	rm fc3D 
 
