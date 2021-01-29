@@ -29,6 +29,6 @@ void drawPerspLine(float x1, float y1, float z1, float x2, float y2, float z2, f
 void drawLogo(void);
 void drawAxes(void);
 void updatePQRAxes(float theta, float fi);
-void updateVirtualCameraPos(float RR);
+void updateVirtualCameraPos(float zoomFactor);
 void reorientAxes(void);
 #endif
