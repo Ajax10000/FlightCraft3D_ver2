@@ -98,6 +98,7 @@ extern float z_cockpit_view;
 
 extern int aboard;
 extern float x_pilot, y_pilot, z_pilot;
+extern float prev_x_pilot, prev_y_pilot;
 
 // autoset by general graphics procedure!! 
 // posizione telecamera vituale / virtual camera position

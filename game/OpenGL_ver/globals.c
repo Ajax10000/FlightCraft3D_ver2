@@ -55,6 +55,7 @@ float z_cockpit_view = 0.6;
 
 int aboard = 1;
 float x_pilot, y_pilot, z_pilot;
+float prev_x_pilot, prev_y_pilot;
 
 // autoset by general graphics procedure!! 
 // posizione telecamera vituale / virtual camera position

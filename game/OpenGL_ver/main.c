@@ -24,7 +24,8 @@ int main(void);
 void initSDL(void);
 void initOpenGL(void);
 void displayStatusInfo(int cycles, float h, float theta, float fi, float zoomFactor);
-void processEvent(float *turnch, float *turncv, float *zoomFactor, int *plane_up, int *plane_down, int *plane_inclleft, int *plane_inclright, float *h);
+void processEvent(float *turnch, float *turncv, float *zoomFactor, float *prevZoomFactor, 
+				  int *plane_up, int *plane_down, int *plane_inclleft, int *plane_inclright, float *h);
 void initData(float h);
 
 // #                                                                                                                  #
@@ -45,6 +46,7 @@ int main()
 	int plane_inclright = 0;
 	// User can zoom in by pressing 1 key, and zoom out by pressing 2 key
 	float zoomFactor = 20.0;
+	float prevZoomFactor;
 
 	// 3 angoli che indicano la orientazione del sistema di riferimento della telecaera virtuale, per dire 
 	// 3 angles that indicate the orientation of the reference system of the virtual camera, so to speak
@@ -137,7 +139,7 @@ int main()
 
 		while (SDL_PollEvent(&gloEvent))
 		{ 
-			processEvent(&turnch, &turncv, &zoomFactor, &plane_up, &plane_down, &plane_inclleft, &plane_inclright, &h);
+			processEvent(&turnch, &turncv, &zoomFactor, &prevZoomFactor, &plane_up, &plane_down, &plane_inclleft, &plane_inclright, &h);
 			
 			// if graphic window is closed, terminate program 
 			if (gloEvent.type == SDL_QUIT)
@@ -299,7 +301,7 @@ void displayStatusInfo(int cycles, float h, float theta, float fi, float zoomFac
 // ####################################################################################################################
 // Function processEvent
 // ####################################################################################################################
-void processEvent(float *turnch, float *turncv, float *zoomFactor, 
+void processEvent(float *turnch, float *turncv, float *zoomFactor, float *prevZoomFactor,
 				  int *plane_up, int *plane_down, int *plane_inclleft, int *plane_inclright, float *h)
 {
 	// Loop until there are no events left on the queue 
@@ -463,10 +465,22 @@ void processEvent(float *turnch, float *turncv, float *zoomFactor,
 
 		if (gloEvent.key.keysym.sym == SDLK_p)
 		{
-			aboard = -1 * aboard;
-			x_pilot = xp;
-			y_pilot = yp;
-			*zoomFactor = 1.5;
+			if (aboard == 1) {
+				aboard = -1 * aboard;
+				prev_x_pilot = x_pilot;
+				prev_y_pilot = y_pilot;
+				*prevZoomFactor = *zoomFactor;
+				x_pilot = xp;
+				y_pilot = yp;
+				*zoomFactor = 1.5;
+			} 
+			else 
+			{
+				aboard = -1 * aboard;
+				x_pilot = prev_x_pilot;
+				y_pilot = prev_y_pilot;
+				*zoomFactor = *prevZoomFactor;
+			}
 		}
 
 		if (gloEvent.key.keysym.sym == SDLK_5)
