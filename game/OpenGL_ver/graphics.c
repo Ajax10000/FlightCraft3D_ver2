@@ -122,9 +122,9 @@ void drawPerspLine(float x1, float y1, float z1,
 // virtual camera pointing toward positive z-s and passes them to the 3D line drawing function. 
 // ####################################################################################################################
 void drawFilledPerspTriangle(float x1, float y1, float z1,
-					   float x2, float y2, float z2,
-					   float x3, float y3, float z3,
-					   float color[4])
+							 float x2, float y2, float z2,
+							 float x3, float y3, float z3,
+							 float color[4])
 {
 	glColor4f(color[0], color[1], color[2], color[3]);
 
@@ -200,33 +200,34 @@ void drawAxes()
 
 	// test asse perpendiclare allo 'schermo' grafica 3D
 	// test axis perpendicular to the 3D graphics 'screen'
-	color[0] = 1.0;
-	color[1] = 0.0;
-	color[2] = 0.0;
 	
 	// IMPORTANT NOTE: 2 meters far from camera virtual 'lens' along it perpendiculat to it 
 	// towards screen, axes are each 1 meter long. use in an intelligent way the measures... 
 	// in these cases, go use unit-length references. It's the obvious choice but saying it is not bad.
 
-	// xc
-	drawPerspLine(0.0 - 1.0, 0.0 - 1.0, 2.0,
-					1.0 - 1.0, 0.0 - 1.0, 2.0, color);
+	// x axis should be drawn in red
+	color[0] = 1.0;
+	color[1] = 0.0;
+	color[2] = 0.0;
 
-	// yc
+	drawPerspLine(-1.0, -1.0, 2.0,
+				   0.0, -1.0, 2.0, color);
+
+	// y axis should be drawn in green 
 	color[0] = 0.0;
 	color[1] = 1.0;
 	color[2] = 0.0;
 
-	drawPerspLine(0.0 - 1.0, 0.0 - 1.0, 2.0,
-					0.0 - 1.0, 1.0 - 1.0, 2.0, color);
+	drawPerspLine(-1.0, -1.0, 2.0,
+				  -1.0,  0.0, 2.0, color);
 
-	// zc
+	// z axis should be drawn in blue
 	color[0] = 0.0;
 	color[1] = 0.0;
 	color[2] = 1.0;
 
-	drawPerspLine(0.0 - 1.0, 0.0 - 1.0, 2.0,
-					0.0 - 1.0, 0.0 - 1.0, 2.0 + 1.0, color);
+	drawPerspLine(-1.0, -1.0, 2.0,
+				  -1.0, -1.0, 3.0, color);
 } // end drawAxes function
 
 // ####################################################################################################################
@@ -237,23 +238,27 @@ void updatePQRAxes(float theta, float fi)
 	// scenario inquadrature 3D / 3D shot scenery
 	if (gloView == 1)
 	{
-		P[0] = -sin(theta);
-		P[1] = cos(theta);
+		float sinTheta = sin(theta);
+		float cosTheta = cos(theta);
+		float sinFi = sin(fi);
+		float cosFi = cos(fi);
+
+		P[0] = -sinTheta;
+		P[1] = cosTheta;
 		P[2] = 0.0;
 
-		Q[0] = -cos(theta) * cos(fi);
-		Q[1] = -sin(theta) * cos(fi);
-		Q[2] = sin(fi);
+		Q[0] = -cosTheta * cosFi;
+		Q[1] = -sinTheta * cosFi;
+		Q[2] = sinFi;
 
-		R[0] = cos(theta) * sin(fi);
-		R[1] = sin(theta) * sin(fi);
-		R[2] = cos(fi);
+		R[0] = cosTheta * sinFi;
+		R[1] = sinTheta * sinFi;
+		R[2] = cosFi;
 	}
 	else if (gloView == 2)
 	{
-		// I know this negative index stuff is awkward but in the prototype stage 
-		// it was good to have 1 and -1. now just extend this to support more views.
-		P[0] = -Pa[0]; // had to be mirrored sorry
+		// Above the plane, looking down at the top of the plane.
+		P[0] = -Pa[0]; 
 		P[1] = -Pa[1];
 		P[2] = -Pa[2];
 
@@ -267,7 +272,8 @@ void updatePQRAxes(float theta, float fi)
 	}
 	else if (gloView == 3)
 	{
-		P[0] = Pa[0]; // had to be mirrored sorry
+		// Looking at right side of airplane
+		P[0] = Pa[0]; 
 		P[1] = Pa[1];
 		P[2] = Pa[2];
 
@@ -281,7 +287,7 @@ void updatePQRAxes(float theta, float fi)
 	}
 	else if (gloView == 4)
 	{ 
-		// INTERNAL VIEW COCKPIT
+		// Internal view from cockpit
 		float Pp[3], Qp[3], Rp[3];
 
 		Rp[0] = -Pa[0]; // had to be mirrored sorry
@@ -296,18 +302,23 @@ void updatePQRAxes(float theta, float fi)
 		Qp[1] = Qa[1];
 		Qp[2] = Qa[2];
 
+		float sinTheta = sin(theta);
+		float cosTheta = cos(theta);
+		float sinFi = sin(fi);
+		float cosFi = cos(fi);
+
 		// Ri, Pi, Qi - this is most practical axis-order.
-		P[0] = Rp[0] * (-sin(theta)) + Pp[0] * (cos(theta)) + Qp[0] * 0.0;
-		P[1] = Rp[1] * (-sin(theta)) + Pp[1] * (cos(theta)) + Qp[1] * 0.0;
-		P[2] = Rp[2] * (-sin(theta)) + Pp[2] * (cos(theta)) + Qp[2] * 0.0;
+		P[0] = Rp[0] * (-sinTheta)          +  Pp[0] * (cosTheta); //       +  Qp[0] * 0.0;
+		P[1] = Rp[1] * (-sinTheta)          +  Pp[1] * (cosTheta); //       +  Qp[1] * 0.0;
+		P[2] = Rp[2] * (-sinTheta)          +  Pp[2] * (cosTheta); //       +  Qp[2] * 0.0;
 
-		Q[0] = Rp[0] * (-cos(theta) * cos(fi)) + Pp[0] * (-sin(theta) * cos(fi)) + Qp[0] * sin(fi);
-		Q[1] = Rp[1] * (-cos(theta) * cos(fi)) + Pp[1] * (-sin(theta) * cos(fi)) + Qp[1] * sin(fi);
-		Q[2] = Rp[2] * (-cos(theta) * cos(fi)) + Pp[2] * (-sin(theta) * cos(fi)) + Qp[2] * sin(fi);
+		Q[0] = Rp[0] * (-cosTheta * cosFi)  +  Pp[0] * (-sinTheta * cosFi)  +  Qp[0] * sinFi;
+		Q[1] = Rp[1] * (-cosTheta * cosFi)  +  Pp[1] * (-sinTheta * cosFi)  +  Qp[1] * sinFi;
+		Q[2] = Rp[2] * (-cosTheta * cosFi)  +  Pp[2] * (-sinTheta * cosFi)  +  Qp[2] * sinFi;
 
-		R[0] = Rp[0] * (cos(theta) * sin(fi)) + Pp[0] * (sin(theta) * sin(fi)) + Qp[0] * cos(fi);
-		R[1] = Rp[1] * (cos(theta) * sin(fi)) + Pp[1] * (sin(theta) * sin(fi)) + Qp[1] * cos(fi);
-		R[2] = Rp[2] * (cos(theta) * sin(fi)) + Pp[2] * (sin(theta) * sin(fi)) + Qp[2] * cos(fi);
+		R[0] = Rp[0] * (cosTheta * sinFi)   +  Pp[0] * (sinTheta * sinFi)   +  Qp[0] * cosFi;
+		R[1] = Rp[1] * (cosTheta * sinFi)   +  Pp[1] * (sinTheta * sinFi)   +  Qp[1] * cosFi;
+		R[2] = Rp[2] * (cosTheta * sinFi)   +  Pp[2] * (sinTheta * sinFi)   +  Qp[2] * cosFi;
 	}
 } // end updatePQRAxes function
 
@@ -316,44 +327,19 @@ void updatePQRAxes(float theta, float fi)
 // ####################################################################################################################
 void reorientAxes()
 {
-    // now calculate axes in their new 'orientation', using the orientation matrix.
+    // Calculate axes in their new 'orientation', using the orientation matrix.
 
-    //R:
-    gloAxis1[0] = Rm[0][0] * gloOrigAxis1[0] +
-                    Rm[0][1] * gloOrigAxis1[1] +
-                    Rm[0][2] * gloOrigAxis1[2];
+    gloAxis1[0] = Rm[0][0] * gloOrigAxis1[0]  +  Rm[0][1] * gloOrigAxis1[1]  +  Rm[0][2] * gloOrigAxis1[2];
+    gloAxis1[1] = Rm[1][0] * gloOrigAxis1[0]  +  Rm[1][1] * gloOrigAxis1[1]  +  Rm[1][2] * gloOrigAxis1[2];
+    gloAxis1[2] = Rm[2][0] * gloOrigAxis1[0]  +  Rm[2][1] * gloOrigAxis1[1]  +  Rm[2][2] * gloOrigAxis1[2];
 
-    gloAxis1[1] = Rm[1][0] * gloOrigAxis1[0] +
-                    Rm[1][1] * gloOrigAxis1[1] +
-                    Rm[1][2] * gloOrigAxis1[2];
+    gloAxis2[0] = Rm[0][0] * gloOrigAxis2[0]  +  Rm[0][1] * gloOrigAxis2[1]  +  Rm[0][2] * gloOrigAxis2[2]; 
+    gloAxis2[1] = Rm[1][0] * gloOrigAxis2[0]  +  Rm[1][1] * gloOrigAxis2[1]  +  Rm[1][2] * gloOrigAxis2[2];
+    gloAxis2[2] = Rm[2][0] * gloOrigAxis2[0]  +  Rm[2][1] * gloOrigAxis2[1]  +  Rm[2][2] * gloOrigAxis2[2];
 
-    gloAxis1[2] = Rm[2][0] * gloOrigAxis1[0] +
-                    Rm[2][1] * gloOrigAxis1[1] +
-                    Rm[2][2] * gloOrigAxis1[2];
-
-    gloAxis2[0] = Rm[0][0] * gloOrigAxis2[0] +
-                    Rm[0][1] * gloOrigAxis2[1] +
-                    Rm[0][2] * gloOrigAxis2[2];
-
-    gloAxis2[1] = Rm[1][0] * gloOrigAxis2[0] +
-                    Rm[1][1] * gloOrigAxis2[1] +
-                    Rm[1][2] * gloOrigAxis2[2];
-
-    gloAxis2[2] = Rm[2][0] * gloOrigAxis2[0] +
-                    Rm[2][1] * gloOrigAxis2[1] +
-                    Rm[2][2] * gloOrigAxis2[2];
-
-    gloAxis3[0] = Rm[0][0] * gloOrigAxis3[0] +
-                    Rm[0][1] * gloOrigAxis3[1] +
-                    Rm[0][2] * gloOrigAxis3[2];
-
-    gloAxis3[1] = Rm[1][0] * gloOrigAxis3[0] +
-                    Rm[1][1] * gloOrigAxis3[1] +
-                    Rm[1][2] * gloOrigAxis3[2];
-
-    gloAxis3[2] = Rm[2][0] * gloOrigAxis3[0] +
-                    Rm[2][1] * gloOrigAxis3[1] +
-                    Rm[2][2] * gloOrigAxis3[2];
+    gloAxis3[0] = Rm[0][0] * gloOrigAxis3[0]  +  Rm[0][1] * gloOrigAxis3[1]  +  Rm[0][2] * gloOrigAxis3[2];
+    gloAxis3[1] = Rm[1][0] * gloOrigAxis3[0]  +  Rm[1][1] * gloOrigAxis3[1]  +  Rm[1][2] * gloOrigAxis3[2];
+    gloAxis3[2] = Rm[2][0] * gloOrigAxis3[0]  +  Rm[2][1] * gloOrigAxis3[1]  +  Rm[2][2] * gloOrigAxis3[2];
 
     Pa[0] = gloAxis1[0];
     Pa[1] = gloAxis1[1];
@@ -366,28 +352,34 @@ void reorientAxes()
     Ra[0] = gloAxis3[0];
     Ra[1] = gloAxis3[1];
     Ra[2] = gloAxis3[2];
-    // =======END OF AXES REORIENTATION DONE============
 } // end reorientAxes function
 
 // ####################################################################################################################
 // Function updateVirtualCameraPos updates the virtual camera position x, y, z.
+// 
+// Parameters:
+// RR - provides a zoom factor. 
+//      When the user presses 1, the user's distance to the plane becomes shorter (zoomFactor = zoomFactor - 2.0), 
+//      and so the user zooms in to the plane's CM.
+//      When the user presses 2, the user's distance to the plane becomes longer (zoomFactor = zoomFactor + 2.0), 
+//      and so the user zooms out from the plane's CM.
 // ####################################################################################################################
-void updateVirtualCameraPos(float RR)
+void updateVirtualCameraPos(float zoomFactor)
 {
 	// moving plane's CM 
 	if (aboard == 1)
 	{
-		x = xp + RR * R[0];
-		y = yp + RR * R[1];
-		z = zp + RR * R[2];
+		x = xp + zoomFactor * R[0];
+		y = yp + zoomFactor * R[1];
+		z = zp + zoomFactor * R[2];
 
 		if (gloView == 4)
 		{ 
-			// INTERNAL VIEW COCKPIT
+			// Internal view from cockpit
 			// now: here the camera position is very important.
-			x = xp + z_cockpit_view * P[0] + y_cockpit_view * Q[0] + x_cockpit_view * R[0];
-			y = yp + z_cockpit_view * P[1] + y_cockpit_view * Q[1] + x_cockpit_view * R[1];
-			z = zp + z_cockpit_view * P[2] + y_cockpit_view * Q[2] + x_cockpit_view * R[2];
+			x = xp + x_cockpit_view * P[0]  +  y_cockpit_view * Q[0]  +  z_cockpit_view * R[0];
+			y = yp + x_cockpit_view * P[1]  +  y_cockpit_view * Q[1]  +  z_cockpit_view * R[1];
+			z = zp + x_cockpit_view * P[2]  +  y_cockpit_view * Q[2]  +  z_cockpit_view * R[2];
 		}
 	}
 	else
