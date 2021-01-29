@@ -317,18 +317,20 @@ void loadTerrainTextures()
 			sprintf(filename, "textures/terrain_texture_%i.bmp", texn);
 			printf("TRYING TO OPEN FILE: %s", filename);
 
+			// load (or reload) a bmp file into image
 			image = SDL_LoadBMP(filename);
 
 			imhe = 128;
 			if (image != NULL)
 			{
+				// load the image colors into txt1
 				printf("bitmap found: %s\n", filename);
 
 				imhe = image->h;
 				txtRES = imhe; // set texture resolution, txt must be square!!!
 				SDL_Delay(5);
 
-				// feed into 'the' array used for this
+				// feed into txt1 array used for this
 				for (j = 0; j < txtRES; j++)
 				{ // vertical
 					for (i = 0; i < txtRES; i++)
@@ -345,9 +347,10 @@ void loadTerrainTextures()
 				// Release the surface
 				SDL_FreeSurface(image);
 
+				// Pass the data on to OpenGL
+
 				texName = texn;
 
-				//---------| TEXTURE PROCESSING |-----THIS PART MUST BE EXECUTED ONLY ONCE!!!
 				// Otherwise it silently overloads memory at each call
 
 				glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -360,20 +363,21 @@ void loadTerrainTextures()
 
 				glBindTexture(GL_TEXTURE_2D, gloTexIds[texn - 1]); // [texn-1] because startd fron 1, be careful
 
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); // what OpgnGL should do when texture is magnified GL_NEAREST: non-smoothed texture | GL_LINEAR: smoothed
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);	// ...when texture is miniaturized because far; GL_NEAREST: non-smoothed tecture
+				// Indicate what OpenGL should do when texture is magnified (GL_NEAREST => non-smoothed texture; GL_LINEAR => smoothed)
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); 
+				// Indicate what OpenGL should do when texture is miniaturized because far (GL_NEAREST => non-smoothed texture)
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);	
 
 				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB4, txtRES, txtRES, 0, GL_RGB, GL_UNSIGNED_BYTE, txt1);
 				glGenerateMipmap(GL_TEXTURE_2D);
 
 				glEnable(GL_TEXTURE_2D);
-				glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL); // the GL_DECAL option draws texture as is: no color mixing thigs. GL_MODULATE lets mixing.
+				glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL); // the GL_DECAL option draws texture as is: no color mixing things. GL_MODULATE lets mixing.
 
 				glBindTexture(GL_TEXTURE_2D, texName);
-				//--------------------------| END OF TEXTURE LOAD PROCESSING |-------------------------------
 
 				texn++;	// augment count... next texture
-				gloTexturesAvailable = texn; // at left is extern... you know... .
+				gloTexturesAvailable = texn; 
 			}
 			else
 			{
@@ -549,20 +553,20 @@ double getTerrainHeight(struct subterrain *ite, double x, double z)
 	else if (col == 1)
 	{
 		vector0[0] = -1.0; // pick from the on-purpose triangle storer....
-		vector0[1] = ite[0].shmap[Xi][Yi + 1] - ite[0].shmap[Xi + 1][Yi + 1];
-		vector0[2] = 0.0;
+		vector0[1] = ite[0].shmap[Xi][Yi + 1]  -  ite[0].shmap[Xi + 1][Yi + 1];
+		vector0[2] =  0.0;
 
-		vector1[0] = 0.0; // pick from the on-purpose triangle storer....
-		vector1[1] = ite[0].shmap[Xi + 1][Yi] - ite[0].shmap[Xi + 1][Yi + 1];
+		vector1[0] =  0.0; // pick from the on-purpose triangle storer....
+		vector1[1] = ite[0].shmap[Xi + 1][Yi]  -  ite[0].shmap[Xi + 1][Yi + 1];
 		vector1[2] = -1.0;
 	}
 
 	// we do directly the cross product 
-	s_nloc[0] = vector0[1] * vector1[2] - vector0[2] * vector1[1]; // IMPLEMENT IT WARNING
-	s_nloc[1] = vector0[2] * vector1[0] - vector0[0] * vector1[2]; //              WARNING
-	s_nloc[2] = vector0[0] * vector1[1] - vector0[1] * vector1[0]; //              WARNING
+	s_nloc[0] = vector0[1] * vector1[2]  -  vector0[2] * vector1[1]; 
+	s_nloc[1] = vector0[2] * vector1[0]  -  vector0[0] * vector1[2]; 
+	s_nloc[2] = vector0[0] * vector1[1]  -  vector0[1] * vector1[0]; 
 
-	// ------------calculate apl, bpl and cpl on the fly---------------------- 
+	// Calculate apl, bpl and cpl on the fly
 	// use cross_product method. 
 	// put equation parameters.
 	apl = s_nloc[0];
@@ -587,7 +591,7 @@ double getTerrainHeight(struct subterrain *ite, double x, double z)
 		bpl // d )/b
 	);
 
-	// additional stuff( NOT part of previous procedures) 
+	// additional stuff (NOT part of previous procedures) 
 	lenght = sqrt(pow(s_nloc[0], 2) + pow(s_nloc[1], 2) + pow(s_nloc[2], 2));
 
 	// normalize: this vector must be unit-length
