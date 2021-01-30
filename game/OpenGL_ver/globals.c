@@ -20,22 +20,23 @@ SDL_Surface *gloScreen;
 // gloEvent is used only in function main
 SDL_Event gloEvent;		   // for real-time interactivity functions provided by SDL library 
 
-// gloWindow is used in functions initSDL and sdldisplay
+// gloWindow is used in functions initSDL in main.c and sdldisplay in graphics.c
 SDL_Window *gloWindow = NULL; // New for SDL 2
 
-// Set in function initSDL
+// Set in function initSDL in main.c
 SDL_GLContext gloContext;	   // New for SDL2
 const GLdouble pi = 3.1415926535897932384626433832795;
 
-// gloUsingLowResolution is used only in function main.
-int gloUsingLowResolution = 1;
+// gloUsingLowResolution indicates if we are using low resolution or not.
+// Smoke and explosion special effects only work if we are NOT using low resolution
+int gloUsingLowResolution = 1; // indicate we are using low resolution
 
 // gloTexturesAvailable indicates how many textures are loaded or randomly-generated
-// Set in function loadTerrainTextures and loadTreeTextures.
-// Used (read) in functions main, loadTreeTextures, and loadMapTextureIndices.
+// Set in function loadTerrainTextures in terrain.c and loadTreeTextures in trees.c
+// Used (read) in functions loadTreeTextures in trees.c and loadMapTextureIndices in terrain.c
 int gloTexturesAvailable = 0; 
 
-// MAG is used in function clearScreen.
+// MAG is used in function clearScreen in graphics.c
 // MAG can be increased by 10 by the user at runtime by clicking on the 't' key.
 float MAG = 60.0;
 
@@ -46,7 +47,7 @@ float MAG = 60.0;
 // 4 => internal view, from inside plane looking outside of cockpit
 // The user can switch through the various values of gloView by pressing the 'o' button
 //
-// Used (read) in functions updatePQRAxes and updateVirtualCameraPos
+// Used (read) in functions updatePQRAxes and updateVirtualCameraPos in graphics.c
 int gloView = 1; // start w external view
 
 float x_cockpit_view = 0.6;
@@ -59,7 +60,7 @@ float prev_x_pilot, prev_y_pilot;
 
 // autoset by general graphics procedure!! 
 // posizione telecamera vituale / virtual camera position
-// Updated in function updateVirtualCameraPos
+// Updated in function updateVirtualCameraPos in graphics.c
 float x = 0.0, y = 0.0, z = 0.0;		  
 
 // coordinates of airplane in game... external view is just needed here to make this game 
@@ -70,14 +71,14 @@ float xp = 200.0, yp = 200.0, zp = 400.0;
 // versori dei 3 assi della telecamera virtuale 
 // versors of the 3 axes of the virtual camera
 //
-// Updated in function updatePQRAxes.
+// Updated in function updatePQRAxes in graphics.c
 float P[3], Q[3], R[3];
 
 // versori dei 3 assi del sistema di riferimento rispetto cui sono dati i vertici dello aeroplano 
 // versors of the 3 axes of the reference system with respect to which the vertices of the airplane are given
 //
 // Set/reset in function reorientAxes
-// Used in functions drawTerrain, drawAirplane, and updatePQRAxes
+// Used in functions drawTerrain in terrain.c, drawAirplane in airplane.c, and updatePQRAxes in graphics.c
 float Pa[3], Qa[3], Ra[3]; 
 
 struct subterrain gloTerrain;
@@ -124,14 +125,14 @@ const int texcoord_y[4] = {0, 0, 1, 1}; //...y
 // After all, this way trees would be polyherda as any generic polyhedra with also semitransparent 
 // faces for the 'slices' where desired. 
 //
-// Set in function main. Drawn in function drawTrees.
+// Set in function main. Drawn in function drawTrees in trees.c
 float gloTrees[NTREES][5];
 
-// gloTreeTextureIDBounds[0] is set in function main.
-// gloTreeTextureIDBounds[0] is read in function initTrees.
+// gloTreeTextureIDBounds[0] is set in function main
+// gloTreeTextureIDBounds[0] is read in function initTrees in trees.c
 int gloTreeTextureIDBounds[2]; // texture_ID -related thing
 
-// treeR1 is used in function drawTrees.
+// treeR1 is used in function drawTrees in trees.c
 // Not modified, so this can be declared a constant.
 float treeR1 = 0.5;
 
@@ -139,7 +140,7 @@ float treeR1 = 0.5;
 // quadrangular texture image / color-matrix onto some triangles into which all 3D objects 
 // in the simplest case are divided.
 //
-// Used in function drawTerrain, where it is used as a parameter to drawTexturedTriangle.
+// Used in function drawTerrain in terrain.c, where it is used as a parameter to drawTexturedTriangle.
 // It would be better to declare this variable as a local variable in drawTerrain.
 float texcoords_gnd_tri1[3][2] = {
 	{0.0, 0.0},
@@ -147,7 +148,7 @@ float texcoords_gnd_tri1[3][2] = {
 	{0.0, 1.0}
 };
 
-// Used in function drawTerrain, where it is used as a parameter to drawTexturedTriangle.
+// Used in function drawTerrain in terrain.c, where it is used as a parameter to drawTexturedTriangle.
 // It would be better to declare this variable as a local variable in drawTerrain.
 float texcoords_gnd_tri2[3][2] = {
 	{1.0, 0.0},
@@ -161,10 +162,11 @@ float texcoords_gnd_tri2[3][2] = {
 // Aereo: Definizione dei vertici
 // Plane: Definition of the vertexes
 //
-// Used in functions main and makeInertiaTensor.
-// Set in function importAirplanePolyhedron.
+// Set with data from a file in function importAirplanePolyhedron in airplane.c
+// Drawn in function drawAirplane in airplane.c
+// Used in function makeInertiaTensor in physics.c
 float gloPunti[NVERTEXES][3] = {// scatola  / box
-	{  74,   76,  -57},
+	{  74,   76,  -57}, // 0
 	{  74,   76,   57},
 	{  74,   76,  262},
 	{ -74,   76,  262},
@@ -174,7 +176,7 @@ float gloPunti[NVERTEXES][3] = {// scatola  / box
 	{  74,   76,  262},
 	{  74,   76, -549},
 	{ -44,   76, -549},
-	{  74,   76,  549},
+	{  74,   76,  549}, // 10
 	{ -44,   76,  549},
 	{ 244,   -1,   50},
 	{ 244,   -1,  -50},
@@ -184,7 +186,7 @@ float gloPunti[NVERTEXES][3] = {// scatola  / box
 	{-434,   10, -165},
 	{-434,   10,    0},
 	{-434,   10,  165},
-	{-370,   10,  165},
+	{-370,   10,  165}, // 20
 	{ 244,  -75,   50},
 	{ 244,  -75,  -50},
 	{  74,   10,  -80},
@@ -194,7 +196,7 @@ float gloPunti[NVERTEXES][3] = {// scatola  / box
 	{-377,   25,    0},
 	{-159,   10,    0},
 	{-445,  108,    0},
-	{  90, -135, -134},
+	{  90, -135, -134}, // 30
 	{-220, -135,  -30},
 	{-220, -135,   30},
 	{  90, -135,  134},
@@ -204,7 +206,7 @@ float gloPunti[NVERTEXES][3] = {// scatola  / box
 	{  17,  -10,   40},
 	{ -17,   20,  -40},
 	{ -17,   20,   40},
-	{ -17,  -40,  -60},
+	{ -17,  -40,  -60}, // 40
 	{ -17,  -20,   40},
 	{-445,    5,    0},
 	{-445,    5,    0},
@@ -214,7 +216,7 @@ float gloPunti[NVERTEXES][3] = {// scatola  / box
 	{-156,   10,    0},
 	{  35,   20,  -40},
 	{  35,   20,   40},
-	{ -35,   20,   89},
+	{ -35,   20,   89}, // 50
 	{ -35,    0,   89},
 	{  10,   70,  -50},
 	{  56,   71,  -40},
@@ -224,7 +226,7 @@ float gloPunti[NVERTEXES][3] = {// scatola  / box
 	{  16,  -50,  -40},
 	{  17,   20,  -40},
 	{   0,    5,  -40},
-	{  17,   20,  -40},
+	{  17,   20,  -40}, // 60
 	{  17,   20,  -40},
 	{ -10,   20,  -40},
 	{ -35,   20,  -40},
@@ -234,7 +236,7 @@ float gloPunti[NVERTEXES][3] = {// scatola  / box
 	{   0,   75,  -40},
 	{ -15,  -50,  -40},
 	{ -15,  -50,  -40},
-	{ -15,  -20,    6},
+	{ -15,  -20,    6}, // 70
 	{  56,   73,   40},
 	{ -30,   20,  -40},
 	{ -30,   20,  -40},
@@ -244,7 +246,7 @@ float gloPunti[NVERTEXES][3] = {// scatola  / box
 	{  14,  -50,  -80},
 	{  14,  -50,   80},
 	{-110,  -50,   -4},
-	{  16,  -50,    0},
+	{  16,  -50,    0}, // 80
 	{  16,  -50,    0},
 	{  18,   20,    0},
 	{   6,   75,    5},
@@ -254,7 +256,7 @@ float gloPunti[NVERTEXES][3] = {// scatola  / box
 	{ -20,   50,    7},
 	{ -10,   50,    0},
 	{ 120,  -75,   40},
-	{ 120,  -75,  -40},
+	{ 120,  -75,  -40}, // 90
 	{   0,   75,   -8},
 	{-165,  -50,   -0},
 	{-165,  -50,    7},
@@ -263,14 +265,14 @@ float gloPunti[NVERTEXES][3] = {// scatola  / box
 	{  10,   70,   -6},
 	{ -35,   20,    8},
 	{-120, -140,  -80},
-	{-120, -140,   80}
+	{-120, -140,   80} // 99
 };
 
 // chi sono i 2 punti estremi delle linee da disegnare? / who are the 2 extreme points of the lines to draw?
 // NOTA: estremi[ i-esima linea][quale punto e' l'estremo ] / NOTE: extremes [i-th line] [which point is the extreme]
 // Initialized below with 61 elements, indexed from 0 to 60.
 // 
-// Used in function drawAirplane as indices into matrix gloPunti.
+// Used in function drawAirplane in airplane.c as indices into matrix gloPunti.
 int tris[NTRIS][3] = {
 	{ 0,  4,  5}, // 0
 	{ 1,  2,  3},
@@ -337,8 +339,9 @@ int tris[NTRIS][3] = {
 
 // ovvio a cosa serve... / obvious what it's for ...
 // col_tris holds the airplane's colors
-// Initialized with random colors in initAirplaneColors
-// Loaded with data from file input/facecolor.txt in function importAirplanePolyhedron
+// Initialized with random colors in initAirplaneColors in airplane.c
+// Loaded with data from file input/facecolor.txt in function importAirplanePolyhedron in airplane.c
+// Used (read) in function drawAirplane in airplane.c
 float col_tris[NTRIS][3] = {
 	{0.9, 0.9, 0.3}, // 0
 	{0.9, 0.9, 0.3},
@@ -371,12 +374,12 @@ float col_tris[NTRIS][3] = {
 	{0.4, 0.4, 0.3}
 };
 
-// nvertexes is set in function importAirplanePolyhedron to the number of rows set in array gloPunti 
+// nvertexes is set in function importAirplanePolyhedron in airplane.c to the number of rows set in array gloPunti 
 // with data read from file input/vertexes.txt.
 int nvertexes = 100; // default value
 
-// ntris is used in function drawAirplane.
-// It is set in function importAirplanePolyhedron to the number of rows set in array tris 
+// ntris is used in function drawAirplane in airplane.c
+// It is set in function importAirplanePolyhedron in airplane.c to the number of rows set in array tris 
 // with data read from file input/triangulation.txt.
 int ntris = 33;		 // default value
 
@@ -478,13 +481,13 @@ double inv_It_now[3][3] = {
 	{0.0, 0.0, 1.0}
 };
 
-
+// gloOriginalAxis1, gloOrigAxis2, and gloOrigAxis3 are only used in function reorientAxes in graphics.c
 double gloOrigAxis1[3] = {1.0, 0.0, 0.0};
 double gloOrigAxis2[3] = {0.0, 1.0, 0.0};
 double gloOrigAxis3[3] = {0.0, 0.0, 1.0};
 
 // according to present orientation: 3 principal axes of inertia.
-// Used in function checkForPlaneCollision.
+// Used in function checkForPlaneCollision in airplane.c
 double gloAxis1[3], gloAxis2[3], gloAxis3[3]; 
 
 // auxillaries:
@@ -492,8 +495,11 @@ double SD[3][3], SD2[3][3], u1, u2, u3, w_abs, dAng;
 
 // ==END OF SIMULATION physical QUANTITIES DECLARATIONS========================
 
-// Drawn in function drawLogo
+// gloLogo holds the logo
+// which is used to display the words "FLightCRaftbY SiMON HASUR"
+// Drawn in function drawLogo in graphics.c
 int gloLogo[8][128] = {
+	// F               L           i        g           h        t           C              R           a        f           t           b              Y                    S        i           M                 O               N                         H                    A                 S                U                  R            
 	{1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 	{1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 	{1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0},
@@ -502,4 +508,7 @@ int gloLogo[8][128] = {
 	{1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0},
 	{1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0},
 	{1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1},
+//   0                             1                             2                             3                             4                             5                             6                             7                             8                             9                             1                             1            
+//                                 0                             0                             0                             0                             0                             0                             0                             0                             0                             0                             1
+//                                                                                                                                                                                                                                                                                                               0                             0
 };
