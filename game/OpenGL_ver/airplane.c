@@ -22,9 +22,9 @@ void initPoints()
 
 	for (i = 0; i < NVERTEXES; i++)
 	{
-		gloPunti[i][0] = 0.01 * gloPunti[i][0]; // from centimeters to meters (x/100)
-		gloPunti[i][1] = 0.01 * gloPunti[i][1];
-		gloPunti[i][2] = 0.01 * gloPunti[i][2];
+		gloPunti[i][0] = 0.01f * gloPunti[i][0]; // from centimeters to meters (x/100)
+		gloPunti[i][1] = 0.01f * gloPunti[i][1];
+		gloPunti[i][2] = 0.01f * gloPunti[i][2];
 	}
 } // end initPoints function
 
@@ -84,7 +84,7 @@ void importAirplanePolyhedron(void)
 	{
 		for (i = 0; i < 3; i++)
 		{
-			gloPunti[j][i] = 2.4 * auxxv[j * 3 + i];
+			gloPunti[j][i] = 2.4f * auxxv[j * 3 + i];
 		}
 	}
 	nvertexes = nelem / 3;
@@ -195,6 +195,8 @@ void checkForPlaneCollision()
 
 // ####################################################################################################################
 // Function drawAirplane
+//
+// Called from function main in main.c
 // ####################################################################################################################
 void drawAirplane(float h) 
 {
@@ -233,28 +235,33 @@ void drawAirplane(float h)
 		z3a = Pa[2] * gloPunti[thirdPtIdx][0]  +  Qa[2] * gloPunti[thirdPtIdx][1]  +  Ra[2] * gloPunti[thirdPtIdx][2];
 
 		// Note that x, y, and z hold the virtual camera's position.
-		// This position changes with each iteration of the game (see function updateVirtualCameraPos)
+		// This position changes with each iteration of the game (see function updateVirtualCameraPos in graphics.c)
 
 		// xp, yp, and zp hold the coordinates of the plane's position.
 		// Of course as the plane moves, xp, yp, and zp change also.
 
 		// Vectors P, Q, and R also change over time, depending on the view (gloView) the user has selected.
-		// See function updatePQRAxes.
+		// See function updatePQRAxes in graphics.c
+
+		float dx, dy, dz;
+		dx = xp - x;
+		dy = yp - y;
+		dz = zp - z;
 
 		// vertex 1
-		x1 = P[0] * (x1a + xp - x) + P[1] * (y1a + yp - y) + P[2] * (z1a + zp - z);
-		y1 = Q[0] * (x1a + xp - x) + Q[1] * (y1a + yp - y) + Q[2] * (z1a + zp - z);
-		z1 = R[0] * (x1a + xp - x) + R[1] * (y1a + yp - y) + R[2] * (z1a + zp - z);
+		x1 = P[0] * (x1a + dx)  +  P[1] * (y1a + dy)  +  P[2] * (z1a + dz);
+		y1 = Q[0] * (x1a + dx)  +  Q[1] * (y1a + dy)  +  Q[2] * (z1a + dz);
+		z1 = R[0] * (x1a + dx)  +  R[1] * (y1a + dy)  +  R[2] * (z1a + dz);
 
 		// vertex 2
-		x2 = P[0] * (x2a + xp - x) + P[1] * (y2a + yp - y) + P[2] * (z2a + zp - z);
-		y2 = Q[0] * (x2a + xp - x) + Q[1] * (y2a + yp - y) + Q[2] * (z2a + zp - z);
-		z2 = R[0] * (x2a + xp - x) + R[1] * (y2a + yp - y) + R[2] * (z2a + zp - z);
+		x2 = P[0] * (x2a + dx)  +  P[1] * (y2a + dy)  +  P[2] * (z2a + dz);
+		y2 = Q[0] * (x2a + dx)  +  Q[1] * (y2a + dy)  +  Q[2] * (z2a + dz);
+		z2 = R[0] * (x2a + dx)  +  R[1] * (y2a + dy)  +  R[2] * (z2a + dz);
 
 		// vertex 3 
-		x3 = P[0] * (x3a + xp - x) + P[1] * (y3a + yp - y) + P[2] * (z3a + zp - z);
-		y3 = Q[0] * (x3a + xp - x) + Q[1] * (y3a + yp - y) + Q[2] * (z3a + zp - z);
-		z3 = R[0] * (x3a + xp - x) + R[1] * (y3a + yp - y) + R[2] * (z3a + zp - z);
+		x3 = P[0] * (x3a + dx)  +  P[1] * (y3a + dy)  +  P[2] * (z3a + dz);
+		y3 = Q[0] * (x3a + dx)  +  Q[1] * (y3a + dy)  +  Q[2] * (z3a + dz);
+		z3 = R[0] * (x3a + dx)  +  R[1] * (y3a + dy)  +  R[2] * (z3a + dz);
 
 		// col_tris holds the airplane's colors
 		color[0] = col_tris[i][0];
