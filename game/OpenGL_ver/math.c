@@ -20,7 +20,7 @@ void multTwo3x3Matrices(double mat1[3][3], double mat2[3][3])
 			{
 				sum = sum + mat1[im][k] * mat2[k][jm];
 			}
-			gloResultMatrix[im][jm] = sum; // EXTERN VALUE!!! It's an easy way to implement all this.
+			gloResultMatrix[im][jm] = sum; 
 		}
 	}
 } // end multTwo3x3Matrices function
@@ -34,10 +34,11 @@ void invert3x3Matrix(double in_3x3_matrix[3][3])
 	double A[3][3]; // the matrix that is entered by user 
 	double B[3][3]; // the transpose of a matrix A 
 	double C[3][3]; // the adjunct matrix of transpose of a matrix A, not adjunct of A
-	double X[3][3]; // the inverse
 	int i, j;
 	double x, n = 0; // n is the determinant of A
 
+	// Set A to the matrix passed in.
+	// Set B and C to the zero matrix.
 	for (i = 0; i < 3; i++)
 	{
 		for (j = 0; j < 3; j++)
@@ -79,6 +80,7 @@ void invert3x3Matrix(double in_3x3_matrix[3][3])
 		getchar();
 	}
 
+	// Set B to the transpose of matrix A.
 	for (i = 0; i < 3; i++)
 	{
 		for (j = 0; j < 3; j++)
@@ -87,24 +89,23 @@ void invert3x3Matrix(double in_3x3_matrix[3][3])
 		}
 	}
 
-	C[0][0] = B[1][1] * B[2][2] - (B[2][1] * B[1][2]);
+	C[0][0] =         B[1][1] * B[2][2] - (B[2][1] * B[1][2]);
 	C[0][1] = (-1) * (B[1][0] * B[2][2] - (B[2][0] * B[1][2]));
-	C[0][2] = B[1][0] * B[2][1] - (B[2][0] * B[1][1]);
+	C[0][2] =         B[1][0] * B[2][1] - (B[2][0] * B[1][1]);
 
 	C[1][0] = (-1) * (B[0][1] * B[2][2] - B[2][1] * B[0][2]);
-	C[1][1] = B[0][0] * B[2][2] - B[2][0] * B[0][2];
+	C[1][1] =         B[0][0] * B[2][2] - B[2][0] * B[0][2];
 	C[1][2] = (-1) * (B[0][0] * B[2][1] - B[2][0] * B[0][1]);
 
-	C[2][0] = B[0][1] * B[1][2] - B[1][1] * B[0][2];
+	C[2][0] =         B[0][1] * B[1][2] - B[1][1] * B[0][2];
 	C[2][1] = (-1) * (B[0][0] * B[1][2] - B[1][0] * B[0][2]);
-	C[2][2] = B[0][0] * B[1][1] - B[1][0] * B[0][1];
+	C[2][2] =         B[0][0] * B[1][1] - B[1][0] * B[0][1];
 
 	for (i = 0; i < 3; i++)
 	{
 		for (j = 0; j < 3; j++)
 		{
-			X[i][j] = C[i][j] * x;
-			gloResultMatrix[i][j] = C[i][j] * x; // EXTERN VALUE!!!
+			gloResultMatrix[i][j] = C[i][j] * x; 
 		}
 	}
 } // end invert3x3Matrix function
