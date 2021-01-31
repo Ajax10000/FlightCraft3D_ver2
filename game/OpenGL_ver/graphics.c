@@ -324,24 +324,23 @@ void updatePQRAxes(float theta, float fi)
 
 // ####################################################################################################################
 // Function reorientAxes
+//
+// Called from function simulatePhysics in physics.c
 // ####################################################################################################################
 void reorientAxes()
 {
     // Calculate axes in their new 'orientation', using the orientation matrix.
-	// gloOrigAxis1[3] = {1.0, 0.0, 0.0};
-    gloAxis1[0] = Rm[0][0]; // * gloOrigAxis1[0]  +  Rm[0][1] * gloOrigAxis1[1]  +  Rm[0][2] * gloOrigAxis1[2];
-    gloAxis1[1] = Rm[1][0]; // * gloOrigAxis1[0]  +  Rm[1][1] * gloOrigAxis1[1]  +  Rm[1][2] * gloOrigAxis1[2];
-    gloAxis1[2] = Rm[2][0]; // * gloOrigAxis1[0]  +  Rm[2][1] * gloOrigAxis1[1]  +  Rm[2][2] * gloOrigAxis1[2];
+    gloAxis1[0] = Rm[0][0]; 
+    gloAxis1[1] = Rm[1][0]; 
+    gloAxis1[2] = Rm[2][0]; 
 
-	// gloOrigAxis2[3] = {0.0, 1.0, 0.0};
-    gloAxis2[0] = /* Rm[0][0] * gloOrigAxis2[0] */ +  Rm[0][1]; // * gloOrigAxis2[1]  +  Rm[0][2] * gloOrigAxis2[2]; 
-    gloAxis2[1] = /* Rm[1][0] * gloOrigAxis2[0] */ +  Rm[1][1]; // * gloOrigAxis2[1]  +  Rm[1][2] * gloOrigAxis2[2];
-    gloAxis2[2] = /* Rm[2][0] * gloOrigAxis2[0] */ +  Rm[2][1]; // * gloOrigAxis2[1]  +  Rm[2][2] * gloOrigAxis2[2];
+    gloAxis2[0] = Rm[0][1]; 
+    gloAxis2[1] = Rm[1][1]; 
+    gloAxis2[2] = Rm[2][1]; 
 
-	// gloOrigAxis3[3] = {0.0, 0.0, 1.0};
-    gloAxis3[0] = /* Rm[0][0] * gloOrigAxis3[0]  +  Rm[0][1] * gloOrigAxis3[1] */ +  Rm[0][2]; //* gloOrigAxis3[2];
-    gloAxis3[1] = /* Rm[1][0] * gloOrigAxis3[0]  +  Rm[1][1] * gloOrigAxis3[1] */ +  Rm[1][2]; //* gloOrigAxis3[2];
-    gloAxis3[2] = /* Rm[2][0] * gloOrigAxis3[0]  +  Rm[2][1] * gloOrigAxis3[1] */ +  Rm[2][2]; //* gloOrigAxis3[2];
+    gloAxis3[0] = Rm[0][2];
+    gloAxis3[1] = Rm[1][2];
+    gloAxis3[2] = Rm[2][2];
 
     Pa[0] = gloAxis1[0]; // = Rm[0][0]
     Pa[1] = gloAxis1[1]; // = Rm[1][0]
@@ -360,13 +359,13 @@ void reorientAxes()
 // Function updateVirtualCameraPos updates the virtual camera position x, y, z.
 // 
 // Parameters:
-// RR - provides a zoom factor. 
+// zoomFactor - provides a zoom factor. 
 //      When the user presses 1, the user's distance to the plane becomes shorter (zoomFactor = zoomFactor - 2.0), 
-//      and so the user zooms in to the plane's CM.
+//      and so the user zooms in to the plane's CM (center of mass).
 //      When the user presses 2, the user's distance to the plane becomes longer (zoomFactor = zoomFactor + 2.0), 
 //      and so the user zooms out from the plane's CM.
 //
-// Called only from function main in main.c
+// Called only from function main in main.c.
 // ####################################################################################################################
 void updateVirtualCameraPos(float zoomFactor)
 {
