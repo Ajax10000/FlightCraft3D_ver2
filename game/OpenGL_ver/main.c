@@ -346,6 +346,7 @@ void processEvent(float *turnch, float *turncv, float *zoomFactor, float *prevZo
 			}
 		}
 
+		// If the user wants to zoom in ...
 		if (gloEvent.key.keysym.sym == SDLK_1)
 		{
 			if (*zoomFactor == 0) 
@@ -356,6 +357,8 @@ void processEvent(float *turnch, float *turncv, float *zoomFactor, float *prevZo
 				*zoomFactor = *zoomFactor - 2.0; 
 			}
 		}
+
+		// If the user wants to zoom out ...
 		if (gloEvent.key.keysym.sym == SDLK_2)
 		{
 			*zoomFactor = *zoomFactor + 2.0;
@@ -454,6 +457,7 @@ void processEvent(float *turnch, float *turncv, float *zoomFactor, float *prevZo
 			gloUsingLowResolution = 1; // LOW GRAPHICS MODE for slow computers 
 		}
 
+		// If the user wants to change the view ...
 		if (gloEvent.key.keysym.sym == SDLK_o)
 		{
 			gloView = gloView + 1; // change view
@@ -498,23 +502,34 @@ void processEvent(float *turnch, float *turncv, float *zoomFactor, float *prevZo
 			launchProjectiles(xp, yp, zp, v[0] + 100.0 * Pa[0], v[1] + 100.0 * Pa[1], v[2] + 100.0 * Pa[2], *h, 1);
 		}
 
+		// If the user wants the plane to pitch up ...
 		if (gloEvent.key.keysym.sym == SDLK_UP || gloEvent.key.keysym.sym == SDLK_w)
 		{
 			x_pilot = x_pilot - 2.0 * R[0];
 			y_pilot = y_pilot - 2.0 * R[1];
 
-			*plane_down = 1;
-		}
-		if (gloEvent.key.keysym.sym == SDLK_DOWN || gloEvent.key.keysym.sym == SDLK_z)
-		{
+			// This will affect function updateTorque in physics.c
 			*plane_up = 1;
 		}
+
+		// If the user wants the plane to pitch down ...
+		if (gloEvent.key.keysym.sym == SDLK_DOWN || gloEvent.key.keysym.sym == SDLK_z)
+		{
+			// This will affect function updateTorque in physics.c
+			*plane_down = 1;
+		}
+
+		// If the user wants the plane to go left ...
 		if (gloEvent.key.keysym.sym == SDLK_LEFT || gloEvent.key.keysym.sym == SDLK_a)
 		{
+			// This will affect function updateTorque in physics.c
 			*plane_inclleft = 1;
 		}
+
+		// If the user wants the plane to go right ...
 		if (gloEvent.key.keysym.sym == SDLK_RIGHT || gloEvent.key.keysym.sym == SDLK_d)
 		{
+			// This will affect function updateTorque in physics.c
 			*plane_inclright = 1;
 		}
 	} // end condition of if-keypress-is-detected 
@@ -540,21 +555,31 @@ void processEvent(float *turnch, float *turncv, float *zoomFactor, float *prevZo
 			*turncv = 0.0; 
 		}
 
+		// If the user wants the plane to stop pitching down ...
 		if (gloEvent.key.keysym.sym == SDLK_DOWN || gloEvent.key.keysym.sym == SDLK_z)
 		{
-			*plane_up = 0;
-		}
-		if (gloEvent.key.keysym.sym == SDLK_UP || gloEvent.key.keysym.sym == SDLK_w)
-		{
+			// This will affect function updateTorque in physics.c
 			*plane_down = 0;
 		}
 
+		// If the user wants the plane to stop pitching up ...
+		if (gloEvent.key.keysym.sym == SDLK_UP || gloEvent.key.keysym.sym == SDLK_w)
+		{
+			// This will affect function updateTorque in physics.c
+			*plane_up = 0;
+		}
+
+		// If the user wants to stop the plane going left ...
 		if (gloEvent.key.keysym.sym == SDLK_LEFT || gloEvent.key.keysym.sym == SDLK_a)
 		{
+			// This will affect function updateTorque in physics.c
 			*plane_inclleft = 0;
 		}
+
+		// If the user wants to stop the plane going right ...
 		if (gloEvent.key.keysym.sym == SDLK_RIGHT || gloEvent.key.keysym.sym == SDLK_d)
 		{
+			// This will affect function updateTorque in physics.c
 			*plane_inclright = 0;
 		}
 	}
