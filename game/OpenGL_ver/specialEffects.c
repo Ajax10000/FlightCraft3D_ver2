@@ -378,14 +378,14 @@ void launchProjectiles(float xpr, float ypr, float zpr,
 	{
 		if (life[i] > 0)
 		{
-			xm = poss[i][0]; 
-			ym = poss[i][1];
-			zm = poss[i][2];
+			float dx = poss[i][0] - x;
+			float dy = poss[i][1] - y;
+			float dz = poss[i][2] - z;
 
 			// "x is an extern variable!!! be careful!!" 
-			xt = P[0] * (xm - x) + P[1] * (ym - y) + P[2] * (zm - z);
-			yt = Q[0] * (xm - x) + Q[1] * (ym - y) + Q[2] * (zm - z);
-			zt = R[0] * (xm - x) + R[1] * (ym - y) + R[2] * (zm - z);
+			xt = P[0] * dx  +  P[1] * dy  +  P[2] * dz;
+			yt = Q[0] * dx  +  Q[1] * dy  +  Q[2] * dz;
+			zt = R[0] * dx  +  R[1] * dy  +  R[2] * dz;
 
 			drawPerspPoint(xt, yt, -zt, color); // draw points in 3D scenario Z NEGATIVE!!!!!! 
 		}
