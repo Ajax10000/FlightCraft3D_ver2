@@ -38,7 +38,7 @@ int gloTexturesAvailable = 0;
 
 // MAG is used in function clearScreen in graphics.c
 // MAG can be increased by 10 by the user at runtime by clicking on the 't' key.
-float MAG = 60.0;
+float MAG = 60.0f;
 
 // gloView can have 4 values: 1, 2, 3, 4
 // 1 => external view, looking at plane from behind and right of the plane
@@ -50,9 +50,9 @@ float MAG = 60.0;
 // Used (read) in functions updatePQRAxes and updateVirtualCameraPos in graphics.c
 int gloView = 1; // start w external view
 
-float x_cockpit_view = 0.6;
-float y_cockpit_view = 0.6;
-float z_cockpit_view = 0.6;
+float x_cockpit_view = 0.6f;
+float y_cockpit_view = 0.6f;
+float z_cockpit_view = 0.6f;
 
 int aboard = 1;
 float x_pilot, y_pilot, z_pilot;
@@ -61,12 +61,12 @@ float prev_x_pilot, prev_y_pilot;
 // autoset by general graphics procedure!! 
 // posizione telecamera vituale / virtual camera position
 // Updated in function updateVirtualCameraPos in graphics.c
-float x = 0.0, y = 0.0, z = 0.0;		  
+float x = 0.0f, y = 0.0f, z = 0.0f;
 
 // coordinates of airplane in game... external view is just needed here to make this game 
 // show accidental crashes due to overflow of the float datatype variables after going far 
 // more than 4300 Km from origin 
-float xp = 200.0, yp = 200.0, zp = 400.0; 
+float xp = 200.0f, yp = 200.0f, zp = 400.0f; 
 
 // versori dei 3 assi della telecamera virtuale 
 // versors of the 3 axes of the virtual camera
@@ -134,7 +134,7 @@ int gloTreeTextureIDBounds[2]; // texture_ID -related thing
 
 // treeR1 is used in function drawTrees in trees.c
 // Not modified, so this can be declared a constant.
-float treeR1 = 0.5;
+float treeR1 = 0.5f;
 
 // auxilliary for giving right texture coordinates... the right way of 'splattering' the 
 // quadrangular texture image / color-matrix onto some triangles into which all 3D objects 
@@ -143,17 +143,17 @@ float treeR1 = 0.5;
 // Used in function drawTerrain in terrain.c, where it is used as a parameter to drawTexturedTriangle.
 // It would be better to declare this variable as a local variable in drawTerrain.
 float texcoords_gnd_tri1[3][2] = {
-	{0.0, 0.0},
-	{1.0, 0.0},
-	{0.0, 1.0}
+	{0.0f, 0.0f},
+	{1.0f, 0.0f},
+	{0.0f, 1.0f}
 };
 
 // Used in function drawTerrain in terrain.c, where it is used as a parameter to drawTexturedTriangle.
 // It would be better to declare this variable as a local variable in drawTerrain.
 float texcoords_gnd_tri2[3][2] = {
-	{1.0, 0.0},
-	{0.0, 1.0},
-	{1.0, 1.0}
+	{1.0f, 0.0f},
+	{0.0f, 1.0f},
+	{1.0f, 1.0f}
 };
 
 #define NLINES 20
@@ -343,35 +343,35 @@ int tris[NTRIS][3] = {
 // Loaded with data from file input/facecolor.txt in function importAirplanePolyhedron in airplane.c
 // Used (read) in function drawAirplane in airplane.c
 float col_tris[NTRIS][3] = {
-	{0.9, 0.9, 0.3}, // 0
-	{0.9, 0.9, 0.3},
+	{0.9f, 0.9f, 0.3f}, // 0
+	{0.9f, 0.9f, 0.3f},
 
-	{0.7, 0.5, 0.3}, // 2
-	{0.7, 0.5, 0.3},
+	{0.7f, 0.5f, 0.3f}, // 2
+	{0.7f, 0.5f, 0.3f},
 
-	{0.3, 0.3, 0.3}, // 4
-	{0.3, 0.3, 0.3},
+	{0.3f, 0.3f, 0.3f}, // 4
+	{0.3f, 0.3f, 0.3f},
 
-	{0.3, 0.8, 0.9}, // 6
-	{0.3, 0.8, 0.9},
+	{0.3f, 0.8f, 0.9f}, // 6
+	{0.3f, 0.8f, 0.9f},
 
-	{0.3, 0.4, 0.3}, // 8
-	{0.3, 0.4, 0.3},
+	{0.3f, 0.4f, 0.3f}, // 8
+	{0.3f, 0.4f, 0.3f},
 
-	{0.4, 0.2, 0.3}, // 10
-	{0.4, 0.2, 0.3},
+	{0.4f, 0.2f, 0.3f}, // 10
+	{0.4f, 0.2f, 0.3f},
 
-	{0.6, 0.6, 0.6}, // 12
-	{0.6, 0.6, 0.6},
+	{0.6f, 0.6f, 0.6f}, // 12
+	{0.6f, 0.6f, 0.6f},
 
-	{0.3, 0.6, 0.9}, // 14
-	{0.3, 0.6, 0.9},
+	{0.3f, 0.6f, 0.9f}, // 14
+	{0.3f, 0.6f, 0.9f},
 
-	{0.3, 0.4, 0.3}, // 16
-	{0.3, 0.4, 0.3},
+	{0.3f, 0.4f, 0.3f}, // 16
+	{0.3f, 0.4f, 0.3f},
 
-	{0.7, 0.4, 0.3}, // 18
-	{0.4, 0.4, 0.3}
+	{0.7f, 0.4f, 0.3f}, // 18
+	{0.4f, 0.4f, 0.3f}
 };
 
 // nvertexes is set in function importAirplanePolyhedron in airplane.c to the number of rows set in array gloPunti 
@@ -385,7 +385,7 @@ int ntris = 33;		 // default value
 
 // quantities used for simulation / realistic motion and rebounce from ground
 // v = velocity
-float v[3] = {0.0, 0.0, 0.0}; // (needs initial value!) 
+float v[3] = {0.0f, 0.0f, 0.0f}; // (needs initial value!) 
 
 // p = momentum
 float p[3];
@@ -403,12 +403,12 @@ double w[3] = {0.0, 0.0, 0.0};
 double L[3] = {0.0, 0.0, 0.0};
 
 // constants which characterize dynamically the body
-float MASS = 1000.0; // total mass (linear motion) 
+float MASS = 1000.0f; // total mass (linear motion) 
 
 double It_init[3][3] = {
-	{100.0, 0.0, 0.0},
-	{0.0, 200.0, 0.0},
-	{0.0, 0.0, 110.0}
+	{100.0,   0.0,   0.0},
+	{  0.0, 200.0,   0.0},
+	{  0.0,   0.0, 110.0}
 };
 // sort of "rotational mass" (angular motion) 
 
@@ -417,15 +417,15 @@ double It_initINV[3][3];
 
 // it's updated according to orientation
 double It_now[3][3] = {
-	{100.0, 0.0, 0.0},
-	{0.0, 100.0, 0.0},
-	{0.0, 0.0, 100.0}
+	{100.0,   0.0,   0.0},
+	{  0.0, 100.0,   0.0},
+	{  0.0,   0.0, 100.0}
 }; 
 
 // (DON'T CARE; info: Google --> "moment of inertia tensor" ) 
 // influences from outside: force vectors
-float Fcm[3] = {0.0, 0.0, 0.0};			// total force on center-of-mass "CM" 
-double gloTtlTorque[3] = {0.0, 0.0, 0.0}; // total torque-force on rigid body
+float Fcm[3] = {0.0f, 0.0f, 0.0f};			// total force on center-of-mass "CM" 
+double gloTtlTorque[3] = {0.0, 0.0, 0.0}; 	// total torque-force on rigid body
 
 // costants specific to simplest **AIRPLANE** game. 
 // some constant deriving from viscosity of air 
