@@ -13,6 +13,10 @@
 #include "graphics.h"        // for draw... functions
 #include "terrain.h"         // for our prototypes
 
+// maximal values, if possible don't exploit maximums
+#define txtWidth 128
+#define txtHeight 128
+
 // ####################################################################################################################
 // Function initTerrain initializes the terrain with random values.
 // ####################################################################################################################
@@ -265,31 +269,45 @@ void drawTerrain() {
 } // end function drawTerrain
 
 // ####################################################################################################################
+// Function feedIntoTxt1
+// ####################################################################################################################
+static void feedIntoTxt1(SDL_Surface *image, GLubyte txt1[txtHeight][txtWidth][3])
+{
+	int i, j;
+	Uint8 red, green, blue;
+	Uint32 color_to_convert;
+	int txtRES = 128; // A reasonable texture resolution
+
+	for (j = 0; j < txtRES; j++)
+	{ // vertical
+		for (i = 0; i < txtRES; i++)
+		{ // horizontal
+			color_to_convert = getPixel(image, i, txtRES - 1 - j);
+			SDL_GetRGB(color_to_convert, image->format, &red, &green, &blue);
+
+			txt1[j][i][0] = (GLubyte)red;
+			txt1[j][i][1] = (GLubyte)green;
+			txt1[j][i][2] = (GLubyte)blue;
+		}
+	}
+}
+
+// ####################################################################################################################
 // Function loadTerrainTextures
 // ####################################################################################################################
 void loadTerrainTextures()
 {
 	static int texture_generated = 0; // at first call of this function, a 32x32 texture sample will be generated 
-
-	//	Create texture
-// maximal values, if possible don't exploit maximums
-#define txtWidth 128
-#define txtHeight 128
-
-	int txtRES = 128; // A reasonable texture resolution
-
 	static GLubyte txt1[txtHeight][txtWidth][3];
-
-#ifdef GL_VERSION_1_1
 	static GLuint texName;
-#endif
-
+	int txtRES = 128; // A reasonable texture resolution
 	int j, i, k;
 
 	if (texture_generated == 0)
 	{
 		texture_generated = 1;
 
+		//	Create texture
 		for (j = 0; j < txtHeight; j++)
 		{
 			for (i = 0; i < txtWidth; i++)
@@ -301,18 +319,13 @@ void loadTerrainTextures()
 			}
 		}
 
-		//=================GROUND TEXTURE PERSONALISED...=====================
 		int texn = 1;
 
 		while (texn > 0)
 		{
 			char filename[100];
 			SDL_Surface *image; // This pointer will reference our bitmap.
-			int bytes_per_color, imhe;
-			Uint8 red, green, blue;
-			Uint32 color_to_convert;
-
-			bytes_per_color = COLDEPTH / 8;
+			int imhe;
 
 			sprintf(filename, "textures/terrain_texture_%i.bmp", texn);
 			printf("TRYING TO OPEN FILE: %s", filename);
@@ -330,41 +343,29 @@ void loadTerrainTextures()
 				txtRES = imhe; // set texture resolution, txt must be square!!!
 				SDL_Delay(5);
 
-				// feed into txt1 array used for this
-				for (j = 0; j < txtRES; j++)
-				{ // vertical
-					for (i = 0; i < txtRES; i++)
-					{ // horizontal
-						color_to_convert = getPixel(image, i, txtRES - 1 - j);
-						SDL_GetRGB(color_to_convert, image->format, &red, &green, &blue);
-
-						txt1[j][i][0] = (GLubyte)red;
-						txt1[j][i][1] = (GLubyte)green;
-						txt1[j][i][2] = (GLubyte)blue;
-					}
-				}
+				// feed into txt1 
+				feedIntoTxt1(image, txt1);
 
 				// Release the surface
 				SDL_FreeSurface(image);
 
-				// Pass the data on to OpenGL
-
 				texName = texn;
 
-				// Otherwise it silently overloads memory at each call
+				// Pass the data on to OpenGL
 
 				glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
 				glGenTextures(1, &texName);
 
-				gloTexIds[texn - 1] = (int)texName; // [texn-1] because started fron 1, be careful
+				gloTexIds[texn - 1] = (int)texName; // [texn-1] because started from 1, be careful
 
 				printf("teName %i\n", gloTexIds[texn - 1]);
 
-				glBindTexture(GL_TEXTURE_2D, gloTexIds[texn - 1]); // [texn-1] because startd fron 1, be careful
+				glBindTexture(GL_TEXTURE_2D, gloTexIds[texn - 1]); // [texn-1] because started from 1, be careful
 
 				// Indicate what OpenGL should do when texture is magnified (GL_NEAREST => non-smoothed texture; GL_LINEAR => smoothed)
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); 
+
 				// Indicate what OpenGL should do when texture is miniaturized because far (GL_NEAREST => non-smoothed texture)
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);	
 
