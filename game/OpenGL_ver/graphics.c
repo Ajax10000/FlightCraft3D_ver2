@@ -108,8 +108,8 @@ void drawPerspLine(float x1, float y1, float z1,
 	glColor3f(color[0], color[1], color[2]);
 
 	glBegin(GL_LINES);
-		glVertex3f(x1, y1, -z1);
-		glVertex3f(x2, y2, -z2);
+		glVertex3f(x1, y1, z1);
+		glVertex3f(x2, y2, z2);
 	glEnd();
 
 	glFlush();
@@ -210,24 +210,24 @@ void drawAxes()
 	color[1] = 0.0;
 	color[2] = 0.0;
 
-	drawPerspLine(-1.0, -1.0, 2.0,
-				   0.0, -1.0, 2.0, color);
+	drawPerspLine(-1.0, -1.0, -2.0,
+				   0.0, -1.0, -2.0, color);
 
 	// y axis should be drawn in green 
 	color[0] = 0.0;
 	color[1] = 1.0;
 	color[2] = 0.0;
 
-	drawPerspLine(-1.0, -1.0, 2.0,
-				  -1.0,  0.0, 2.0, color);
+	drawPerspLine(-1.0, -1.0, -2.0,
+				  -1.0,  0.0, -2.0, color);
 
 	// z axis should be drawn in blue
 	color[0] = 0.0;
 	color[1] = 0.0;
 	color[2] = 1.0;
 
-	drawPerspLine(-1.0, -1.0, 2.0,
-				  -1.0, -1.0, 3.0, color);
+	drawPerspLine(-1.0, -1.0, -2.0,
+				  -1.0, -1.0, -3.0, color);
 } // end drawAxes function
 
 // ####################################################################################################################

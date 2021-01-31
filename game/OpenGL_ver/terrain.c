@@ -158,9 +158,9 @@ void drawTerrain() {
 		color[1] = i / 3.0;
 		color[2] = i / 3.0;
 
-		drawPerspLine(x_c[i], y_c[i], -z_c[i], 
-					   x_c[3], y_c[3], -z_c[3], 
-					   color);
+		drawPerspLine(x_c[i], y_c[i], z_c[i], 
+					  x_c[3], y_c[3], z_c[3], 
+					  color);
 	}
 
 	// DISEGNA IL TERRENO IN MODO ALGORITMICO, UNA GRIGILIA RETTANGOLARE COME AL SOLITO,
@@ -243,8 +243,9 @@ void drawTerrain() {
 			}
 
 			// This next statement will draw a line perpendicular to the terrain
-			drawPerspLine(x_c[0], y_c[0], -z_c[0],
-							x_c[4], y_c[4], -z_c[4], color);
+			drawPerspLine(x_c[0], y_c[0], z_c[0],
+						  x_c[4], y_c[4], z_c[4], 
+						  color);
 
 			if (xi >= 0 && yi >= 0)
 			{
