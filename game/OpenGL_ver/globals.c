@@ -487,11 +487,32 @@ double gloOrigAxis2[3] = {0.0, 1.0, 0.0};
 double gloOrigAxis3[3] = {0.0, 0.0, 1.0};
 
 // according to present orientation: 3 principal axes of inertia.
-// Used in function checkForPlaneCollision in airplane.c
+// Set in function reorientAxes in graphics.c
+// Used (read, not written) in function checkForPlaneCollision in airplane.c
 double gloAxis1[3], gloAxis2[3], gloAxis3[3]; 
 
 // auxillaries:
-double SD[3][3], SD2[3][3], u1, u2, u3, w_abs, dAng;
+// SD is used to calculate SD2 and dR
+double SD[3][3];
+
+// SD2 = SD*SD; see function simulatePhysics in physics.c
+// SD2 is used to calculate dR
+double SD2[3][3];
+
+// u = (u1, u2, u3) is the w vector as a unit vector;
+// see function simulatePhysics in physics.c
+// u1, u2, and u3 are used to compute SD; see function simulatePhysics in physics.c
+double u1, u2, u3;
+
+// w_abs is the length of vector w
+// It is used to calculate u1, u2 and u3; 
+// see function simulatePhysics in physics.c.
+double w_abs;
+
+// dAng = w_abs * h, if vector w is not the zero vector.
+// dAng is used to calculate dR;
+// see function simulatePhysics in physics.c
+double dAng;
 
 // ==END OF SIMULATION physical QUANTITIES DECLARATIONS========================
 
