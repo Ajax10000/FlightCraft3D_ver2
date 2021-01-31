@@ -90,7 +90,7 @@ void drawPerspPoint(float x1, float y1, float z1, float color[3])
 	glPointSize(2);
 
 	glBegin(GL_POINTS);
-		glVertex3f(x1, y1, -z1);
+		glVertex3f(x1, y1, z1);
 	glEnd();
 
 	glFlush();

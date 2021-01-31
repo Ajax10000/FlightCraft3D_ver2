@@ -324,7 +324,7 @@ void addExplosionAtPoint(float x0, float y0, float z0, double dft, int option)
 			yt3 = Q[0] * (xm[i] - x) + Q[1] * (ym[i] + 1.2 * radius - y) + Q[2] * (zm[i] + radius - z);
 			zt3 = R[0] * (xm[i] - x) + R[1] * (ym[i] + 1.2 * radius - y) + R[2] * (zm[i] + radius - z);
 
-			drawPerspPoint(xt, yt, -zt, color); // draw points in 3D scenario Z NEGATIVE!!!!!! 
+			drawPerspPoint(xt, yt, zt, color); // draw points in 3D scenario
 
 			color[0] = colors[i][0];
 			color[1] = colors[i][1];
@@ -387,7 +387,7 @@ void launchProjectiles(float xpr, float ypr, float zpr,
 			yt = Q[0] * dx  +  Q[1] * dy  +  Q[2] * dz;
 			zt = R[0] * dx  +  R[1] * dy  +  R[2] * dz;
 
-			drawPerspPoint(xt, yt, -zt, color); // draw points in 3D scenario Z NEGATIVE!!!!!! 
+			drawPerspPoint(xt, yt, zt, color); // draw points in 3D scenario
 		}
 	}
 
@@ -448,7 +448,7 @@ void launchProjectiles(float xpr, float ypr, float zpr,
 					color[0] = 1.0;
 					color[1] = 0.6;
 					color[2] = 0.1;
-					drawPerspPoint(xt, yt, -zt, color); // draw points in 3D scenario Z NEGATIVE!!!!!! 
+					drawPerspPoint(xt, yt, zt, color); // draw points in 3D scenario
 				}
 			}
 		}
