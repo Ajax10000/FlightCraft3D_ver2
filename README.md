@@ -47,4 +47,21 @@ You can make the plane go left or right by pressing the left or right arrow
 keys, respectively.
 
 You can change the viewpoint by pressing the o key, multiple times if necessary.
-The doing so gives you
+Doing so gives you 4 views, and eventually takes you back to the first view.
+* The first view, on startup, is an external view.
+* The second view is looking at the top of the plane, from directly above it.
+* The third view is looking at the right-side of the plane.
+* The fourth view is from a point within the cockpit. However the viewing angle is wrong, 
+and you will have to use the c or v keys to rotate the viewpoint until it is 
+facing forward. 
+
+In the cockpit, you can also use the x key or Shift-X key to decrease or increase, 
+respectively, the x position of the eyepoint in the cockpit.
+You can use the y or Shift-Y key to decrase or increase, respectively, the y 
+position of the eyepoint in the cockpit.
+You can also use the z or Shift-z key to increase or decrease the z position 
+of the eyepoint.
+
+However, the z modification contains a bug, when pressing z it should decrease 
+the z position of the eyepoint, and instead it is increased. Similarly pressing 
+Shift-z should increase the z position of the eyepoint, but instead it is decreased.
