@@ -425,6 +425,9 @@ double It_now[3][3] = {
 // (DON'T CARE; info: Google --> "moment of inertia tensor" ) 
 // influences from outside: force vectors
 float Fcm[3] = {0.0f, 0.0f, 0.0f};			// total force on center-of-mass "CM" 
+
+// Used to calculate update L; see simulatePhysics in physics.c
+// Updated in functions updateTorque and simulatePhysics in physics.c
 double gloTtlTorque[3] = {0.0, 0.0, 0.0}; 	// total torque-force on rigid body
 
 // costants specific to simplest **AIRPLANE** game. 
@@ -445,18 +448,16 @@ double k_visc_rot = 2.9;
 double k_visc_rot2 = 20.9; 
 
 // some constant vaguely related to viscosity of air **CODINO alignment**?? 
+// Used to update gloTtlTorque in function simulatePhysics in physics.c.
 double k_visc_rot3 = 290.9; 
 
 // some constant deriving form viscosity of air around main axis... 
 // around the axis passing through the wings, you know... *???* 
+// Used to update gloTtlTorque in function simulatePhysics in physics.c.
 double k_visc_rot_STABILIZE = 110.0; 
 
 // Force of the propeller driven by the motor... a propulsion force. 
 double Pforce = 0.0; 
-
-// updated at each cycle... part of the super-simplified formula to give forces to the body 
-// in a way to make it fly a bit like a real airplane.
-double vpar, vperp;	 
 
 double gloResultMatrix[3][3];
 double gloTempMatrix[3][3];

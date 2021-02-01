@@ -280,10 +280,6 @@ extern double k_visc_rot_STABILIZE;
 // Force of the propeller driven by the motor... a propulsion force. 
 extern double Pforce; 
 
-// updated at each cycle... part of the super-simplified formula to give forces to the body 
-// in a way to make it fly a bit like a real airplane.
-extern double vpar, vperp;	 
-
 extern double gloResultMatrix[3][3];
 extern double gloTempMatrix[3][3];
 

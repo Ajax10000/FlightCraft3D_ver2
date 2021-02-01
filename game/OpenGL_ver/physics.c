@@ -129,9 +129,11 @@ void simulatePhysics(int plane_up, int plane_down, int plane_inclleft, int plane
 {
 	int i, j;
 
+	// Update torque gloTtlTorque
 	updateTorque(plane_up, plane_down, plane_inclleft, plane_inclright);
 
 	// Sembra tutto OK / Everything seems OK
+	// The following will update gloAxis1, gloAxis2, gloAxis3, Pa, Qa, and Ra
 	reorientAxes();
 
 	// Calulate total Fcm and total torque, starting from external forces applied to vertices 
@@ -140,6 +142,7 @@ void simulatePhysics(int plane_up, int plane_down, int plane_inclleft, int plane
 	// NOT needed for dynamics, it's only in this game: some approx of force on CM 
 	// and torque due to a rudimental plane aerodynamical forces' consideration
 	float vpar;
+	float vperp;
 	float vlat;
 	float rot1;
 	float rot2;
@@ -162,6 +165,7 @@ void simulatePhysics(int plane_up, int plane_down, int plane_inclleft, int plane
 	// same for the rotational motion. other effects are not considered.
 	// if you're an expert of aeromobilism, you can write better, just substitute these weak formulas for better ones.
 
+	// update torque gloTtlTorque again
 	// generic stabilization (very poor approximation)
 	gloTtlTorque[0] += -vpar * k_visc_rot_STABILIZE * w[0];
 	gloTtlTorque[1] += -vpar * k_visc_rot_STABILIZE * w[1];
@@ -469,6 +473,8 @@ double bounceAirplane(double rx, double ry, double rz,
 
 // ####################################################################################################################
 // Function updateTorque
+//
+// Called from function simulatePhysics.
 // ####################################################################################################################
 void updateTorque(int plane_up, int plane_down, int plane_inclleft, int plane_inclright)
 {
