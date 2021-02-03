@@ -11,6 +11,8 @@
 // ####################################################################################################################
 // Function initPhysicsVars 
 //
+// Called once, from function initData in main.c.
+//
 // Assumptions:
 //    Vectors v and w have already been initialized.
 // ####################################################################################################################
@@ -33,6 +35,8 @@ void initPhysicsVars()
 	p[2] = MASS * v[2];
 
 	// angular momentum (angular/rotational quantity)
+	// L = It_now * w
+	// See equation 466 in //http://farside.ph.utexas.edu/teaching/336k/Newtonhtml/node64.html
 	L[0] = It_now[0][0] * w[0]  +  It_now[0][1] * w[1]  +  It_now[0][2] * w[2];
 	L[1] = It_now[1][0] * w[0]  +  It_now[1][1] * w[1]  +  It_now[1][2] * w[2];
 	L[2] = It_now[2][0] * w[0]  +  It_now[2][1] * w[1]  +  It_now[2][2] * w[2];
@@ -68,6 +72,8 @@ void initPhysicsVars()
 
 // ####################################################################################################################
 // Function makeInertiaTensor
+// 
+// Called once, from function initPhysicsVars
 // ####################################################################################################################
 void makeInertiaTensor(int n_vertexs)
 {
@@ -195,11 +201,13 @@ void simulatePhysics(int plane_up, int plane_down, int plane_inclleft, int plane
 	v[1] = p[1] / MASS;
 	v[2] = p[2] / MASS;
 
+	// L = angular momentum of the airplane
 	L[0] = L[0]  +  gloTtlTorque[0] * h;
 	L[1] = L[1]  +  gloTtlTorque[1] * h;
 	L[2] = L[2]  +  gloTtlTorque[2] * h;
 
 	// now we get the updated velocity, component by component.
+	// L = Iw, so w = (I^(-1))*L, where I is the intertia tensor
 	w[0] = inv_It_now[0][0] * L[0]  +  inv_It_now[0][1] * L[1]  +  inv_It_now[0][2] * L[2];
 	w[1] = inv_It_now[1][0] * L[0]  +  inv_It_now[1][1] * L[1]  +  inv_It_now[1][2] * L[2];
 	w[2] = inv_It_now[2][0] * L[0]  +  inv_It_now[2][1] * L[1]  +  inv_It_now[2][2] * L[2];
@@ -220,6 +228,7 @@ void simulatePhysics(int plane_up, int plane_down, int plane_inclleft, int plane
 	zp = zp  +  v[2] * h;
 
 	// update orientation 
+	// w_abs = magnitude of w
 	w_abs = sqrt(w[0] * w[0] + w[1] * w[1] + w[2] * w[2]);
 
 	if (w_abs > 0.0000001)
@@ -278,6 +287,8 @@ void simulatePhysics(int plane_up, int plane_down, int plane_inclleft, int plane
 	// -----------------------------------------------------------
 	// Calculate Rm = dR*Rm
 	// Multiply dR times Rm and place the product in the global variable gloResultMatrix
+	// The first time this code executes, Rm is equal to the 3x3 identity matrix I, so that 
+	// Rm = dR*Rm = dR*I = dR.
 	multTwo3x3Matrices(dR, Rm); 
 
 	// Copy glResultMatrix into Rm
