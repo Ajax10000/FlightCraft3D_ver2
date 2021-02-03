@@ -34,11 +34,11 @@ inside of them, for example)
 * Plane is now symmetrical (left-side was made a mirror image of the right side)
 
 ## Notes
-To compile, open a terminal in the OpenGL directory and type make.
+To compile, open a terminal in the OpenGL_ver directory and type make.
 This will generate an executable named fc3D.
 
 ## Playing the Game
-To start the game, in a terminal in the OpenGL directory, type ./fc3D.
+To start the game, in a terminal in the OpenGL_ver directory, type ./fc3D.
 
 On startup the plane is on its side and is falling. I usually wait until the 
 plane is pointing down and then press the up-arrow key continually until the 
@@ -57,11 +57,11 @@ facing forward.
 
 In the cockpit, you can also use the x key or Shift-X key to decrease or increase, 
 respectively, the x position of the eyepoint in the cockpit.
-You can use the y or Shift-Y key to decrase or increase, respectively, the y 
+You can use the y or Shift-Y key to decrease or increase, respectively, the y 
 position of the eyepoint in the cockpit.
 You can also use the z or Shift-z key to increase or decrease the z position 
 of the eyepoint.
 
-However, the z modification contains a bug, when pressing z it should decrease 
+However, the z modification contains a bug. When pressing z it should decrease 
 the z position of the eyepoint, and instead it is increased. Similarly pressing 
 Shift-z should increase the z position of the eyepoint, but instead it is decreased.
