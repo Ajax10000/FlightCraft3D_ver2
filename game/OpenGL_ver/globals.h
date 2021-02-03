@@ -264,12 +264,6 @@ extern double k_visc2;
 // some constant deriving from viscosity of air 
 extern double k_visc3; 
 
-// some constant deriving from viscosity of air around main axis... from nose to back 
-extern double k_visc_rot; 
-
-// some constant deriving from viscosity of air around main axis... around the axis perpendicular to wings' plane 
-extern double k_visc_rot2; 
-
 // some constant vaguely related to viscosity of air **CODINO alignment**?? 
 extern double k_visc_rot3; 
 

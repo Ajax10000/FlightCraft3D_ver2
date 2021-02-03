@@ -390,6 +390,11 @@ float v[3] = {0.0f, 0.0f, 0.0f}; // (needs initial value!)
 // p = momentum
 float p[3];
 
+// Used (read and written) in function simulatePhysics to calculate 
+// R_T = transpose of Rm and also 
+// It_now = Rm*It_init*R_T 
+// in file physics.c.
+// Used (read) in function reorientAxes in graphics.c
 double Rm[3][3] = {
 	{1.0, 0.0, 0.0},
 	{0.0, 1.0, 0.0},
@@ -397,12 +402,16 @@ double Rm[3][3] = {
 };
 // orientation (angular): needs inital value (IDENTITY MATRIX!!!)
 
+// w = angular velocity of the airplane
+// Used to calculate gloTtlTorque; see function simulatePhysics in physics.c.
 double w[3] = {0.0, 0.0, 0.0};
 
-// L = angular momentum
+// L = angular momentum of the airplane
+// Used to update w; see function simulatePhysics in physics.c.
 double L[3] = {0.0, 0.0, 0.0};
 
 // constants which characterize dynamically the body
+// MASS = mass of the airplane
 float MASS = 1000.0f; // total mass (linear motion) 
 
 double It_init[3][3] = {
@@ -433,19 +442,16 @@ double gloTtlTorque[3] = {0.0, 0.0, 0.0}; 	// total torque-force on rigid body
 // costants specific to simplest **AIRPLANE** game. 
 // some constant deriving from viscosity of air 
 // air friction due to wing and backwing total area... *parp-fall resistance*
+// Used to calculate Fcm; see function simulatePhysics in physics.c.
 double k_visc = 2900.9; 
 
 // some constant deriving from viscosity of air **side-fall resistance**
+// Used to calculate Fcm; see function simulatePhysics in physics.c.
 double k_visc2 = 100.9; 
 
 // some constant deriving from viscosity of air 
+// Used to calculate Fcm; see function simulatePhysics in physics.c.
 double k_visc3 = 200.9; 
-
-// some constant deriving from viscosity of air around main axis... from nose to back 
-double k_visc_rot = 2.9; 
-
-// some constant deriving from viscosity of air around main axis... around the axis perpendicular to wings' plane 
-double k_visc_rot2 = 20.9; 
 
 // some constant vaguely related to viscosity of air **CODINO alignment**?? 
 // Used to update gloTtlTorque in function simulatePhysics in physics.c.
@@ -457,6 +463,7 @@ double k_visc_rot3 = 290.9;
 double k_visc_rot_STABILIZE = 110.0; 
 
 // Force of the propeller driven by the motor... a propulsion force. 
+// Used to update gloTtlTorque in function simulatePhysics in physics.c.
 double Pforce = 0.0; 
 
 double gloResultMatrix[3][3];
