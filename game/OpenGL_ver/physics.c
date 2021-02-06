@@ -197,6 +197,7 @@ void simulatePhysics(int plane_up, int plane_down, int plane_inclleft, int plane
 	p[1] = p[1]  +  Fcm[1] * h; // we model gravity as a force given by: g*MASS, downward 
 	p[2] = p[2]  +  Fcm[2] * h  +  g * MASS * h;
 
+	// v = linear velocity of the airplane
 	v[0] = p[0] / MASS;
 	v[1] = p[1] / MASS;
 	v[2] = p[2] / MASS;
@@ -206,13 +207,11 @@ void simulatePhysics(int plane_up, int plane_down, int plane_inclleft, int plane
 	L[1] = L[1]  +  gloTtlTorque[1] * h;
 	L[2] = L[2]  +  gloTtlTorque[2] * h;
 
-	// now we get the updated velocity, component by component.
+	// now we get the updated angular velocity w, component by component.
 	// L = Iw, so w = (I^(-1))*L, where I is the intertia tensor
 	w[0] = inv_It_now[0][0] * L[0]  +  inv_It_now[0][1] * L[1]  +  inv_It_now[0][2] * L[2];
 	w[1] = inv_It_now[1][0] * L[0]  +  inv_It_now[1][1] * L[1]  +  inv_It_now[1][2] * L[2];
 	w[2] = inv_It_now[2][0] * L[0]  +  inv_It_now[2][1] * L[1]  +  inv_It_now[2][2] * L[2];
-
-	// angular momentum (angular/rotational quantity)
 
 	// reset forces to 0.0 
 	for (i = 0; i < 3; i++)
@@ -222,7 +221,7 @@ void simulatePhysics(int plane_up, int plane_down, int plane_inclleft, int plane
 	}
 
 	// update position and orientation
-	// xp, yp, zp give the location of the airplane
+	// xp, yp, zp give the location of the airplane, v is the velocity of the plane
 	xp = xp  +  v[0] * h;
 	yp = yp  +  v[1] * h;
 	zp = zp  +  v[2] * h;
@@ -386,15 +385,23 @@ void simulatePhysics(int plane_up, int plane_down, int plane_inclleft, int plane
 
 // ####################################################################################################################
 // Function bounceAirplane bounces the airplane off of the ground (i.e., terrain).
+//
+// Called from function checkForPlaneCollision in airplane.c, as follows:
+//     bounceAirplane(xw, yw, zw, gloTerrain.auxnormal[0], gloTerrain.auxnormal[1], gloTerrain.auxnormal[2], 0.06);
 // ####################################################################################################################
 double bounceAirplane(double rx, double ry, double rz,
 					  double nx, double ny, double nz, 
 					  double e)
 {
-	double jelf = 0, jel = 300.0;
-	double vector0[3], vector1[3], axis[3];
+	double jel = 300.0;
+	// vector0 and vector1 are used in calculating auxv
+	double vector0[3], vector1[3];
 	double vvertex[3], vnorm;
-	double auxv[3], auxv2[3], UP, DOWN; // auxilliary to break up some longer formulas into feasibly small parts.
+	// auxv is used to calculate auxv2
+	double auxv[3];
+	// auxv2 is used to update global variable w
+	double auxv2[3];
+	double UP, DOWN; // auxilliary to break up some longer formulas into feasibly small parts.
 
 	vector0[0] = nx;
 	vector0[1] = ny;
@@ -404,11 +411,7 @@ double bounceAirplane(double rx, double ry, double rz,
 	vector1[1] = ry;
 	vector1[2] = rz;
 
-	axis[0] = vector0[1] * vector1[2]  -  vector0[2] * vector1[1]; // x component
-	axis[1] = vector0[2] * vector1[0]  -  vector0[0] * vector1[2]; // y component
-	axis[2] = vector0[0] * vector1[1]  -  vector0[1] * vector1[0]; // z component
-
-	// let's do the hit resolution in a correct way, also becuase when it can be done, let's do it: 
+	// let's do the hit resolution in a correct way, also because when it can be done, let's do it: 
 	// good collision simulation for single rigid-body make good landings.
 
 	vvertex[0] = v[0]  +  w[1] * vector1[2]  -  w[2] * vector1[1]; // x component
@@ -443,7 +446,7 @@ double bounceAirplane(double rx, double ry, double rz,
 		jel = UP / DOWN;
 		// "jel" is the right impulse, now appy the impulse and assign final velocity and rotation.
 
-		// update velocity of CM...
+		// update the linear velocity of CM...
 		v[0] = v[0]  +  (jel / MASS) * nx;
 		v[1] = v[1]  +  (jel / MASS) * ny;
 		v[2] = v[2]  +  (jel / MASS) * nz;
@@ -467,11 +470,12 @@ double bounceAirplane(double rx, double ry, double rz,
 		auxv2[1] = inv_It_now[1][0] * auxv[0]  +  inv_It_now[1][1] * auxv[1]  +  inv_It_now[1][2] * auxv[2]; // y component
 		auxv2[2] = inv_It_now[2][0] * auxv[0]  +  inv_It_now[2][1] * auxv[1]  +  inv_It_now[2][2] * auxv[2]; // z component
 
+		// w = angular velocity of the airplane
 		w[0] = w[0] + auxv2[0];
 		w[1] = w[1] + auxv2[1];
 		w[2] = w[2] + auxv2[2];
 
-		// update also this, to be sure you know... .
+		// L = angular momentum of the airplane
 		L[0] = It_now[0][0] * w[0]  +  It_now[0][1] * w[1]  +  It_now[0][2] * w[2];
 		L[1] = It_now[1][0] * w[0]  +  It_now[1][1] * w[1]  +  It_now[1][2] * w[2];
 		L[2] = It_now[2][0] * w[0]  +  It_now[2][1] * w[1]  +  It_now[2][2] * w[2];
