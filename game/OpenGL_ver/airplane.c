@@ -185,6 +185,7 @@ void checkForPlaneCollision()
 		if (zp + zw < he_id)
 		{ 
 			// just as any vertex of airplane touches ground and tries to go below 
+			// bounceAirplane will update the v, w and L global variables
 			bounceAirplane(xw, yw, zw, gloTerrain.auxnormal[0], gloTerrain.auxnormal[1], gloTerrain.auxnormal[2], 0.06);
 			printf("TOUCH GND \n");
 			zp = zp + (he_id - zp - zw);
