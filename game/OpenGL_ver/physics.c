@@ -20,7 +20,7 @@ void initPhysicsVars()
 {
 	int i, j;
 
-	// makeInertiaTensor will set global variable It_init
+	// makeInertiaTensor will set global variable initInaTsr
 	makeInertiaTensor(NVERTEXES);
 
 	// momentum p (linear quantity)
@@ -35,20 +35,20 @@ void initPhysicsVars()
 	p[2] = MASS * v[2];
 
 	// angular momentum (angular/rotational quantity)
-	// L = It_now * w
+	// L = currInaTsr * w
 	// See equation 466 in //http://farside.ph.utexas.edu/teaching/336k/Newtonhtml/node64.html
-	L[0] = It_now[0][0] * w[0]  +  It_now[0][1] * w[1]  +  It_now[0][2] * w[2];
-	L[1] = It_now[1][0] * w[0]  +  It_now[1][1] * w[1]  +  It_now[1][2] * w[2];
-	L[2] = It_now[2][0] * w[0]  +  It_now[2][1] * w[1]  +  It_now[2][2] * w[2];
+	L[0] = currInaTsr[0][0] * w[0]  +  currInaTsr[0][1] * w[1]  +  currInaTsr[0][2] * w[2];
+	L[1] = currInaTsr[1][0] * w[0]  +  currInaTsr[1][1] * w[1]  +  currInaTsr[1][2] * w[2];
+	L[2] = currInaTsr[2][0] * w[0]  +  currInaTsr[2][1] * w[1]  +  currInaTsr[2][2] * w[2];
 
-	invert3x3Matrix(It_init); // puts the inverse matrix into the "gloResultMatrix" global variable. 
+	invert3x3Matrix(initInaTsr); // puts the inverse matrix into the "gloResultMatrix" global variable. 
 
 	// we copy it (the gloResultMatrix) into "R_INV"... 
 	for (j = 0; j < 3; j++)
 	{
 		for (i = 0; i < 3; i++)
 		{
-			It_initINV[j][i] = gloResultMatrix[j][i];
+			initInaTsrInv[j][i] = gloResultMatrix[j][i];
 		}
 	}
 
@@ -61,17 +61,17 @@ void initPhysicsVars()
 
 	for (j = 0; j < 3; j++)
 	{ 
-		printf("CHECK Inertia tensor: %f  %f  %f \n", It_init[j][0], It_init[j][1], It_init[j][2]);
+		printf("CHECK Inertia tensor: %f  %f  %f \n", initInaTsr[j][0], initInaTsr[j][1], initInaTsr[j][2]);
 	}
 
 	for (j = 0; j < 3; j++)
 	{ 
-		printf("CHECK its inverse   : %f  %f  %f \n", It_initINV[j][0], It_initINV[j][1], It_initINV[j][2]);
+		printf("CHECK its inverse   : %f  %f  %f \n", initInaTsrInv[j][0], initInaTsrInv[j][1], initInaTsrInv[j][2]);
 	}
 } // end initPhysicsVars function
 
 // ####################################################################################################################
-// Function makeInertiaTensor
+// Function makeInertiaTensor initializes initInaTsr, the initial inertia tensor.
 // 
 // Called once, from function initPhysicsVars
 // ####################################################################################################################
@@ -85,6 +85,8 @@ void makeInertiaTensor(int n_vertexs)
 	double Ixx = 0, Iyy = 0, Izz = 0;	 // the total principal moments of inertia to put into the diagonals of the 3x3 tensor matrix. 
 	double Ixy = 0, Ixz = 0, Iyz = 0;	 // these are automatically set = 0, that's important.... 
 	double std_vxmass = 10.0;			 // 10 Kg
+
+	// Is he assuming that every point has a mass of 10kg?
 
 	// compute the elements of the final tensor matrix:
 	for (i = 0; i < n_vertexs; i++)
@@ -113,19 +115,19 @@ void makeInertiaTensor(int n_vertexs)
 	}
 
 	// put principal moments of inertia into the diagonals of the result matrix
-	It_init[0][0] = Ixx;
-	It_init[1][1] = Iyy;
-	It_init[2][2] = Izz;
+	initInaTsr[0][0] = Ixx;
+	initInaTsr[1][1] = Iyy;
+	initInaTsr[2][2] = Izz;
 
-	// put inertia products in It_init tensor
-	It_init[0][1] = -Ixy;
-	It_init[1][0] = -Ixy;
+	// put inertia products in initInaTsr tensor
+	initInaTsr[0][1] = -Ixy;
+	initInaTsr[1][0] = -Ixy;
 
-	It_init[0][2] = -Ixz;
-	It_init[2][0] = -Ixz;
+	initInaTsr[0][2] = -Ixz;
+	initInaTsr[2][0] = -Ixz;
 
-	It_init[1][2] = -Iyz;
-	It_init[2][1] = -Iyz;
+	initInaTsr[1][2] = -Iyz;
+	initInaTsr[2][1] = -Iyz;
 } // end makeInertiaTensor function
 
 // ####################################################################################################################
@@ -209,9 +211,9 @@ void simulatePhysics(int plane_up, int plane_down, int plane_inclleft, int plane
 
 	// now we get the updated angular velocity w, component by component.
 	// L = Iw, so w = (I^(-1))*L, where I is the intertia tensor
-	w[0] = inv_It_now[0][0] * L[0]  +  inv_It_now[0][1] * L[1]  +  inv_It_now[0][2] * L[2];
-	w[1] = inv_It_now[1][0] * L[0]  +  inv_It_now[1][1] * L[1]  +  inv_It_now[1][2] * L[2];
-	w[2] = inv_It_now[2][0] * L[0]  +  inv_It_now[2][1] * L[1]  +  inv_It_now[2][2] * L[2];
+	w[0] = currInaTsrInv[0][0] * L[0]  +  currInaTsrInv[0][1] * L[1]  +  currInaTsrInv[0][2] * L[2];
+	w[1] = currInaTsrInv[1][0] * L[0]  +  currInaTsrInv[1][1] * L[1]  +  currInaTsrInv[1][2] * L[2];
+	w[2] = currInaTsrInv[2][0] * L[0]  +  currInaTsrInv[2][1] * L[1]  +  currInaTsrInv[2][2] * L[2];
 
 	// reset forces to 0.0 
 	for (i = 0; i < 3; i++)
@@ -303,7 +305,7 @@ void simulatePhysics(int plane_up, int plane_down, int plane_inclleft, int plane
 
 	// -----------------------------------------------------------
 	// Set matrix R_T
-	// update inertia tensor according to new orientation: It_now = R*It_init*transpose(R) 
+	// update inertia tensor according to new orientation: currInaTsr = R*initInaTsr*transpose(R) 
 	// we build the transpose matrix of R_3x3 matrix, just here 
 	for (i = 0; i < 3; i++)
 	{
@@ -316,14 +318,16 @@ void simulatePhysics(int plane_up, int plane_down, int plane_inclleft, int plane
 	// -----------------------------------------------------------
 
 	// -----------------------------------------------------------
-	// Calculate It_now = Rm*It_init*R_T
-	// by first calculating gloTempMatrix = Rm*It_init
+	// initInaTsr = initial inertia tensor
+	// currInaTsr = current inertia tensor
+	// Calculate currInaTsr = Rm*initInaTsr*R_T
+	// by first calculating gloTempMatrix = Rm*initInaTsr
 	// and then calculating gloResultMatrix = gloTempMatrix*R_T
-	// and then copying gloResultMatrix into It_now
+	// and then copying gloResultMatrix into currInaTsr
 	//
 	// we perform the 2 matrix products 
-	// gloResultMatrix = Rm*It_Init
-	multTwo3x3Matrices(Rm, It_init);
+	// gloResultMatrix = Rm*initInaTsr
+	multTwo3x3Matrices(Rm, initInaTsr);
 
 	// Now copy gloResultMatrix into gloTempMatrix
 	for (j = 0; j < 3; j++)
@@ -338,26 +342,26 @@ void simulatePhysics(int plane_up, int plane_down, int plane_inclleft, int plane
 	// Now calculate gloResultMatrix = gloTempMatrix * R_T
 	multTwo3x3Matrices(gloTempMatrix, R_T);
 
-	// and copy gloResultMatrix into It_now
+	// and copy gloResultMatrix into currInaTsr
 	for (j = 0; j < 3; j++)
 	{
 		for (i = 0; i < 3; i++)
 		{
-			It_now[j][i] = gloResultMatrix[j][i];
+			currInaTsr[j][i] = gloResultMatrix[j][i];
 		}
 	}
-	// Done calculating It_now
+	// Done calculating currInaTsr
 	// -----------------------------------------------------------
 
 	// -----------------------------------------------------------
-	// Calculate inv_It_now = Rm * It_initINV * R_T 
-	// by first calculating gloTempMatrix = Rm*It_initINV
+	// Calculate currInaTsrInv = Rm * initInaTsrInv * R_T 
+	// by first calculating gloTempMatrix = Rm*initInaTsrInv
 	// and then calculating gloResultMatrix = gloTempMatrix*R_T
-	// and then copying gloResultMatrix into inv_It_now
+	// and then copying gloResultMatrix into currInaTsrInv
 	//
 	// its inverse too, since it's needed: 
 	// we perform the 2 matrix products 
-	multTwo3x3Matrices(Rm, It_initINV);
+	multTwo3x3Matrices(Rm, initInaTsrInv);
 
 	for (j = 0; j < 3; j++)
 	{
@@ -371,15 +375,15 @@ void simulatePhysics(int plane_up, int plane_down, int plane_inclleft, int plane
 	// Calculate gloResultMatrix = gloTempMatrix*R_T
 	multTwo3x3Matrices(gloTempMatrix, R_T);
 
-	// we copy gloResultMatrix into inv_It_now
+	// we copy gloResultMatrix into currInaTsrInv
 	for (j = 0; j < 3; j++)
 	{
 		for (i = 0; i < 3; i++)
 		{
-			inv_It_now[j][i] = gloResultMatrix[j][i];
+			currInaTsrInv[j][i] = gloResultMatrix[j][i];
 		}
 	}
-	// Done calculating inv_It_now
+	// Done calculating currInaTsrInv
 	// -----------------------------------------------------------
 } // end simulatePhysics function 
 
@@ -436,9 +440,9 @@ double bounceAirplane(double rx, double ry, double rz,
 		auxv[2] = vector0[0] * vector1[1]  -  vector0[1] * vector1[0]; // z component
 
 		// implement directly this: mat3x3_vect( inbody[0].TIworInv, auxv )
-		auxv2[0] = inv_It_now[0][0] * auxv[0]  +  inv_It_now[0][1] * auxv[1]  +  inv_It_now[0][2] * auxv[2]; // x component
-		auxv2[1] = inv_It_now[1][0] * auxv[0]  +  inv_It_now[1][1] * auxv[1]  +  inv_It_now[1][2] * auxv[2]; // y component
-		auxv2[2] = inv_It_now[2][0] * auxv[0]  +  inv_It_now[2][1] * auxv[1]  +  inv_It_now[2][2] * auxv[2]; // z component
+		auxv2[0] = currInaTsrInv[0][0] * auxv[0]  +  currInaTsrInv[0][1] * auxv[1]  +  currInaTsrInv[0][2] * auxv[2]; // x component
+		auxv2[1] = currInaTsrInv[1][0] * auxv[0]  +  currInaTsrInv[1][1] * auxv[1]  +  currInaTsrInv[1][2] * auxv[2]; // y component
+		auxv2[2] = currInaTsrInv[2][0] * auxv[0]  +  currInaTsrInv[2][1] * auxv[1]  +  currInaTsrInv[2][2] * auxv[2]; // z component
 
 		UP = -(1.0 + e) * vnorm;
 		DOWN = 1.0 / MASS  +  (auxv[0] * auxv2[0] + auxv[1] * auxv2[1] + auxv[2] * auxv2[2]);
@@ -466,9 +470,9 @@ double bounceAirplane(double rx, double ry, double rz,
 
 		// implement directly this: mat3x3_vect( inbody[0].TIworInv, auxv )
 
-		auxv2[0] = inv_It_now[0][0] * auxv[0]  +  inv_It_now[0][1] * auxv[1]  +  inv_It_now[0][2] * auxv[2]; // x component
-		auxv2[1] = inv_It_now[1][0] * auxv[0]  +  inv_It_now[1][1] * auxv[1]  +  inv_It_now[1][2] * auxv[2]; // y component
-		auxv2[2] = inv_It_now[2][0] * auxv[0]  +  inv_It_now[2][1] * auxv[1]  +  inv_It_now[2][2] * auxv[2]; // z component
+		auxv2[0] = currInaTsrInv[0][0] * auxv[0]  +  currInaTsrInv[0][1] * auxv[1]  +  currInaTsrInv[0][2] * auxv[2]; // x component
+		auxv2[1] = currInaTsrInv[1][0] * auxv[0]  +  currInaTsrInv[1][1] * auxv[1]  +  currInaTsrInv[1][2] * auxv[2]; // y component
+		auxv2[2] = currInaTsrInv[2][0] * auxv[0]  +  currInaTsrInv[2][1] * auxv[1]  +  currInaTsrInv[2][2] * auxv[2]; // z component
 
 		// w = angular velocity of the airplane
 		w[0] = w[0] + auxv2[0];
@@ -476,9 +480,9 @@ double bounceAirplane(double rx, double ry, double rz,
 		w[2] = w[2] + auxv2[2];
 
 		// L = angular momentum of the airplane
-		L[0] = It_now[0][0] * w[0]  +  It_now[0][1] * w[1]  +  It_now[0][2] * w[2];
-		L[1] = It_now[1][0] * w[0]  +  It_now[1][1] * w[1]  +  It_now[1][2] * w[2];
-		L[2] = It_now[2][0] * w[0]  +  It_now[2][1] * w[1]  +  It_now[2][2] * w[2];
+		L[0] = currInaTsr[0][0] * w[0]  +  currInaTsr[0][1] * w[1]  +  currInaTsr[0][2] * w[2];
+		L[1] = currInaTsr[1][0] * w[0]  +  currInaTsr[1][1] * w[1]  +  currInaTsr[1][2] * w[2];
+		L[2] = currInaTsr[2][0] * w[0]  +  currInaTsr[2][1] * w[1]  +  currInaTsr[2][2] * w[2];
 
 		printf("COLLISION BEING RESOLVED ....\n\n");
 	}
