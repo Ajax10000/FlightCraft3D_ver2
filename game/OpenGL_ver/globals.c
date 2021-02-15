@@ -392,7 +392,7 @@ float p[3];
 
 // Used (read and written) in function simulatePhysics to calculate 
 // R_T = transpose of Rm and also 
-// It_now = Rm*It_init*R_T 
+// currInaTsr = Rm*initInaTsr*R_T 
 // in file physics.c.
 // Used (read) in function reorientAxes in graphics.c
 double Rm[3][3] = {
@@ -414,7 +414,10 @@ double L[3] = {0.0, 0.0, 0.0};
 // MASS = mass of the airplane
 float MASS = 1000.0f; // total mass (linear motion) 
 
-double It_init[3][3] = {
+// initInaTsr = initial inertia tensor
+// initInaTsr is initialized in function makeInertiaTensor in physics.c
+// Used in function simulatePhysics in physics.c
+double initInaTsr[3][3] = {
 	{100.0,   0.0,   0.0},
 	{  0.0, 200.0,   0.0},
 	{  0.0,   0.0, 110.0}
@@ -422,14 +425,23 @@ double It_init[3][3] = {
 // sort of "rotational mass" (angular motion) 
 
 // we build also the inverse matrix of R_3x3 matrix 
-double It_initINV[3][3];
+// initInaTsrInv = inverse of initInaTsr
+double initInaTsrInv[3][3];
 
 // it's updated according to orientation
-double It_now[3][3] = {
+// currInaTsr = current inertia tensor
+double currInaTsr[3][3] = {
 	{100.0,   0.0,   0.0},
 	{  0.0, 100.0,   0.0},
 	{  0.0,   0.0, 100.0}
 }; 
+
+// currInaTsrInv = inverse of currInaTsr
+double currInaTsrInv[3][3] = {
+	{1.0, 0.0, 0.0},
+	{0.0, 1.0, 0.0},
+	{0.0, 0.0, 1.0}
+};
 
 // (DON'T CARE; info: Google --> "moment of inertia tensor" ) 
 // influences from outside: force vectors
@@ -478,12 +490,6 @@ double Id[3][3] = {
 };
 
 double dR[3][3] = {
-	{1.0, 0.0, 0.0},
-	{0.0, 1.0, 0.0},
-	{0.0, 0.0, 1.0}
-};
-
-double inv_It_now[3][3] = {
 	{1.0, 0.0, 0.0},
 	{0.0, 1.0, 0.0},
 	{0.0, 0.0, 1.0}

@@ -239,14 +239,16 @@ extern double L[3];
 // constants which characterize dynamically the body
 extern float MASS; // total mass (linear motion) 
 
-extern double It_init[3][3];
+extern double initInaTsr[3][3];
 // sort of "rotational mass" (angular motion) 
 
 // we build also the inverse matrix of R_3x3 matrix 
-extern double It_initINV[3][3];
+extern double initInaTsrInv[3][3];
 
 // it's updated according to orientation
-extern double It_now[3][3]; 
+extern double currInaTsr[3][3]; 
+
+extern double currInaTsrInv[3][3];
 
 // (DON'T CARE; info: Google --> "moment of inertia tensor" ) 
 // influences from outside: force vectors
@@ -282,8 +284,6 @@ extern double R_T[3][3];
 extern double Id[3][3];
 
 extern double dR[3][3];
-
-extern double inv_It_now[3][3];
 
 extern double gloOrigAxis1[3];
 extern double gloOrigAxis2[3];
