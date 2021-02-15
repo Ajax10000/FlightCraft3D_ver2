@@ -265,7 +265,7 @@ void initData(float h)
 		addSmokeAtPoint(xp, yp, zp, h, 1); // commented out for testing
 	}
 
-	// initPhysicsVars will set global variables It_init, p, L, It_initINV, Fcm and gloTtlTorque
+	// initPhysicsVars will set global variables initInaTsr, p, L, initInaTsrInv, Fcm and gloTtlTorque
 	initPhysicsVars();
 
 	// loadAirplaneModel sets global variable gloPunti, 
